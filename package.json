@@ -1,0 +1,20 @@
+{
+  "name": "__template_chromeextension",
+  "version": "1.0.0",
+  "main": "content.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension/issues"
+  },
+  "homepage": "https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension#readme",
+  "description": ""
+}
