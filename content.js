@@ -616,7 +616,9 @@ const musicFamilies = {
       'Pop Rock', 'Synthpop', 'Indie Pop', 'Electropop',
       'K-Pop', 'J-Pop', 'Latin Pop', 'Bubblegum Pop',
       'Teen Pop', 'Power Pop', 'Art Pop', 'Dream Pop',
-      'Chamber Pop', 'Baroque Pop'
+      'Chamber Pop', 'Baroque Pop', 'Europop', 'Dance Pop',
+      'Pop Punk', 'Emo Pop', 'Alternative Pop', 'Indie Pop',
+      'Twee Pop', 'Jangle Pop', 'Sophisti-Pop', 'New Wave Pop'
     ]
   },
   'Blues': {
@@ -674,7 +676,10 @@ const musicFamilies = {
       'Heavy Metal', 'Thrash Metal', 'Death Metal', 'Black Metal',
       'Power Metal', 'Progressive Metal', 'Doom Metal', 'Speed Metal',
       'Glam Metal', 'Nu Metal', 'Metalcore', 'Deathcore',
-      'Folk Metal', 'Symphonic Metal'
+      'Folk Metal', 'Symphonic Metal', 'Industrial Metal', 'Alternative Metal',
+      'Groove Metal', 'Melodic Death Metal', 'Technical Death Metal', 'Blackened Death Metal',
+      'Viking Metal', 'Pagan Metal', 'Atmospheric Black Metal', 'Post-Metal',
+      'Sludge Metal', 'Stoner Metal', 'Drone Metal', 'Grindcore'
     ]
   },
   'Hard Dance': {
@@ -698,6 +703,81 @@ const musicFamilies = {
       'Progressive House', 'Big Room', 'Electro House', 'Complextro',
       'Glitch Hop', 'Neurofunk', 'Liquid DnB', 'Jump Up', 'Darkstep',
       'Brostep', 'Chillstep', 'Post-Dubstep', 'Future Garage', 'UK Garage'
+    ]
+  },
+  'World Music': {
+    icon: '🌍',
+    color: '#16a085',
+    subgenres: [
+      'Afrobeat', 'Highlife', 'Soukous', 'Mbalax', 'Kuduro',
+      'Flamenco', 'Fado', 'Tango', 'Bossa Nova', 'Samba',
+      'Bhangra', 'Qawwali', 'Carnatic', 'Hindustani', 'Bollywood',
+      'Klezmer', 'Balkan', 'Gypsy', 'Celtic', 'Irish Folk',
+      'Middle Eastern', 'Arabic', 'Turkish', 'Persian', 'Indian Classical',
+      'African Traditional', 'Latin American Folk', 'European Folk', 'Asian Folk'
+    ]
+  },
+  'Latin Music': {
+    icon: '🎺',
+    color: '#e74c3c',
+    subgenres: [
+      'Salsa', 'Merengue', 'Bachata', 'Cumbia', 'Reggaeton',
+      'Latin Trap', 'Chicha', 'Nueva Canción', 'Mariachi', 'Ranchera',
+      'Norteño', 'Tejano', 'Latin Pop', 'Latin Rock', 'Latin Jazz',
+      'Bossa Nova', 'Samba', 'Tango', 'Flamenco', 'Rumba',
+      'Son Cubano', 'Mambo', 'Cha-Cha-Cha', 'Bolero', 'Guaracha'
+    ]
+  },
+  'Gospel & Spiritual': {
+    icon: '⛪',
+    color: '#f39c12',
+    subgenres: [
+      'Gospel', 'Spirituals', 'Contemporary Christian', 'Praise & Worship',
+      'Christian Rock', 'Christian Hip-Hop', 'Christian Pop', 'Christian Metal',
+      'Southern Gospel', 'Urban Gospel', 'Traditional Gospel', 'Contemporary Gospel',
+      'Christian Country', 'Christian R&B', 'Worship Music', 'Hymns'
+    ]
+  },
+  'New Age & Ambient': {
+    icon: '🧘',
+    color: '#8e44ad',
+    subgenres: [
+      'New Age', 'Ambient', 'Meditation Music', 'Nature Sounds',
+      'Healing Music', 'Spa Music', 'Relaxation', 'Zen Music',
+      'Ethereal', 'Atmospheric', 'Drone', 'Minimal Ambient',
+      'Space Music', 'Celestial', 'Mystical', 'Transcendental'
+    ]
+  },
+  'Modern Genres': {
+    icon: '🚀',
+    color: '#e91e63',
+    subgenres: [
+      'Lo-Fi Hip-Hop', 'Vaporwave', 'Synthwave', 'Retrowave', 'Outrun',
+      'Hyperpop', 'PC Music', 'Digicore', 'Cloud Rap', 'Witch House',
+      'Darkwave', 'Minimal Wave', 'Future Funk', 'Mallsoft', 'Vapor Trap',
+      'Slowed & Reverb', 'Nightcore', 'Speedcore', 'Breakcore', 'Jungle',
+      'Drumfunk', 'Liquid Funk', 'Neurofunk', 'Jump-Up', 'Rollers'
+    ]
+  },
+  'Soundtrack': {
+    icon: '🎬',
+    color: '#34495e',
+    subgenres: [
+      'Film Score', 'Video Game Music', 'Anime Music', 'Orchestral',
+      'Cinematic', 'Epic Music', 'Trailer Music', 'Documentary Music',
+      'TV Theme Songs', 'Movie Soundtracks', 'Musical Theatre', 'Broadway',
+      'Disney Music', 'Pixar Music', 'Studio Ghibli', 'Hans Zimmer Style'
+    ]
+  },
+  'Experimental': {
+    icon: '🧪',
+    color: '#95a5a6',
+    subgenres: [
+      'Noise', 'Drone', 'Field Recordings', 'Musique Concrète',
+      'Electroacoustic', 'Microsound', 'Glitch', 'Circuit Bending',
+      'Sound Art', 'Installation Music', 'Performance Art', 'Avant-Garde',
+      'Free Improvisation', 'Aleatoric', 'Stochastic', 'Spectral Music',
+      'Post-Minimalism', 'Post-Rock', 'Math Rock', 'No Wave'
     ]
   }
 };
@@ -770,14 +850,19 @@ function showMusicGenreModal() {
       }
       
       .family-button {
-        width: 80px !important;
-        height: 80px !important;
-        font-size: 12px !important;
+        width: 70px !important;
+        height: 70px !important;
+        font-size: 10px !important;
       }
       
       .family-button div:first-child {
-        font-size: 24px !important;
-        margin-bottom: 5px !important;
+        font-size: 20px !important;
+        margin-bottom: 3px !important;
+      }
+      
+      .family-button div:last-child {
+        font-size: 9px !important;
+        line-height: 1.0 !important;
       }
       
       .subgenre-button {
@@ -866,13 +951,19 @@ function showMusicGenreModal() {
       }
       
       .family-button {
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 10px !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 9px !important;
       }
       
       .family-button div:first-child {
-        font-size: 20px !important;
+        font-size: 16px !important;
+        margin-bottom: 2px !important;
+      }
+      
+      .family-button div:last-child {
+        font-size: 8px !important;
+        line-height: 1.0 !important;
       }
       
       .subgenre-button {
@@ -1086,8 +1177,8 @@ function showMusicGenreModal() {
       const button = document.createElement('button');
       button.className = 'family-button';
       button.innerHTML = `
-        <div style="font-size: 40px; margin-bottom: 10px;">${family.icon}</div>
-        <div style="font-size: 16px; font-weight: bold;">${familyName}</div>
+        <div style="font-size: 28px; margin-bottom: 5px;">${family.icon}</div>
+        <div style="font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1;">${familyName}</div>
       `;
       
       const angle = index * angleStep;
@@ -1099,30 +1190,38 @@ function showMusicGenreModal() {
       
       button.style.cssText = `
         position: absolute;
-        width: 120px;
-        height: 120px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
-        border: 3px solid ${family.color};
+        border: 2px solid ${family.color};
         background: linear-gradient(135deg, ${family.color}20, ${family.color}40);
         color: #fff;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         transform: translate(${x}px, ${y}px);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+        font-size: 12px;
+        z-index: 1;
       `;
 
       button.addEventListener('mouseenter', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
-        button.style.boxShadow = `0 8px 25px ${family.color}50`;
+        button.style.transform = `translate(${x}px, ${y}px) scale(1.3)`;
+        button.style.boxShadow = `0 12px 35px ${family.color}80, 0 6px 20px rgba(0, 0, 0, 0.4)`;
+        button.style.zIndex = '10';
+        button.style.border = `3px solid ${family.color}`;
+        button.style.background = `linear-gradient(135deg, ${family.color}40, ${family.color}60)`;
       });
 
       button.addEventListener('mouseleave', () => {
         button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-        button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+        button.style.boxShadow = '0 3px 12px rgba(0, 0, 0, 0.3)';
+        button.style.zIndex = '1';
+        button.style.border = `2px solid ${family.color}`;
+        button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
       });
 
       button.addEventListener('click', () => {
