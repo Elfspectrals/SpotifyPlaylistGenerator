@@ -176,6 +176,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     
     // Show success notification
     const notification = document.createElement('div');
+    notification.className = 'success-notification';
     notification.style.cssText = `
       position: fixed;
       top: 20px;
@@ -459,6 +460,7 @@ function showMusicGenreModal() {
 
   // Create modal content
   const modalContent = document.createElement('div');
+  modalContent.className = 'modal-content';
   modalContent.style.cssText = `
     background: #1a1a1a;
     border-radius: 20px;
@@ -468,6 +470,8 @@ function showMusicGenreModal() {
     text-align: center;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid #333;
+    max-height: 90vh;
+    overflow-y: auto;
   `;
 
   // Title
@@ -479,6 +483,218 @@ function showMusicGenreModal() {
     margin-bottom: 30px;
     font-weight: bold;
   `;
+  
+  // Add responsive styles
+  const responsiveStyles = document.createElement('style');
+  responsiveStyles.textContent = `
+    @media (max-width: 768px) {
+      #ai-playlist-modal .modal-content {
+        padding: 20px;
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-height: 95vh;
+      }
+      
+      #ai-playlist-modal h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      
+      #view-container {
+        width: 100% !important;
+        height: 400px !important;
+        max-width: 350px;
+      }
+      
+      .family-button {
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 12px !important;
+      }
+      
+      .family-button div:first-child {
+        font-size: 24px !important;
+        margin-bottom: 5px !important;
+      }
+      
+      .subgenre-button {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 10px !important;
+        padding: 2px !important;
+      }
+      
+      #selected-genres-display {
+        padding: 15px !important;
+        margin-top: 20px !important;
+      }
+      
+      #selected-genres-display div {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+        margin: 3px !important;
+      }
+      
+      #selected-genres-display button {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 10px !important;
+        margin-left: 6px !important;
+      }
+      
+      button[style*="padding: 15px 30px"] {
+        padding: 12px 24px !important;
+        font-size: 14px !important;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #ai-playlist-modal .modal-content {
+        padding: 15px;
+        margin: 5px;
+        width: calc(100% - 10px);
+      }
+      
+      #view-container {
+        height: 300px !important;
+        max-width: 280px;
+      }
+      
+      .family-button {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 10px !important;
+      }
+      
+      .family-button div:first-child {
+        font-size: 20px !important;
+      }
+      
+      .subgenre-button {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 9px !important;
+      }
+      
+      #selected-genres-display div {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+      }
+      
+      #selected-genres-display button {
+        width: 14px !important;
+        height: 14px !important;
+        font-size: 9px !important;
+        margin-left: 4px !important;
+      }
+    }
+    
+    /* Notification responsive styles */
+    @media (max-width: 768px) {
+      .success-notification,
+      .error-notification {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        padding: 15px !important;
+        font-size: 14px !important;
+      }
+      
+      .success-notification div:first-child,
+      .error-notification div:first-child {
+        font-size: 20px !important;
+        margin-right: 8px !important;
+      }
+      
+      .success-notification div:nth-child(2),
+      .error-notification div:nth-child(2) {
+        font-size: 16px !important;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .success-notification,
+      .error-notification {
+        padding: 12px !important;
+        font-size: 13px !important;
+      }
+      
+      .success-notification div:first-child,
+      .error-notification div:first-child {
+        font-size: 18px !important;
+        margin-right: 6px !important;
+      }
+      
+      .success-notification div:nth-child(2),
+      .error-notification div:nth-child(2) {
+        font-size: 14px !important;
+      }
+    }
+    
+    /* Auth modal responsive styles */
+    @media (max-width: 768px) {
+      .auth-instructions-modal {
+        width: 90% !important;
+        max-width: none !important;
+        padding: 20px !important;
+        margin: 10px !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+      }
+      
+      .auth-instructions-modal h3 {
+        font-size: 20px !important;
+        margin-bottom: 15px !important;
+      }
+      
+      .auth-instructions-modal p {
+        font-size: 14px !important;
+        margin-bottom: 15px !important;
+      }
+      
+      .auth-instructions-modal input,
+      .auth-instructions-modal textarea {
+        font-size: 14px !important;
+        padding: 6px 10px !important;
+      }
+      
+      .auth-instructions-modal button {
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .auth-instructions-modal {
+        width: 95% !important;
+        padding: 15px !important;
+        margin: 5px !important;
+      }
+      
+      .auth-instructions-modal h3 {
+        font-size: 18px !important;
+        margin-bottom: 12px !important;
+      }
+      
+      .auth-instructions-modal p {
+        font-size: 13px !important;
+        margin-bottom: 12px !important;
+      }
+      
+      .auth-instructions-modal input,
+      .auth-instructions-modal textarea {
+        font-size: 13px !important;
+        padding: 5px 8px !important;
+      }
+      
+      .auth-instructions-modal button {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+      }
+    }
+  `;
+  document.head.appendChild(responsiveStyles);
 
   // Navigation breadcrumb
   const breadcrumb = document.createElement('div');
@@ -523,7 +739,9 @@ function showMusicGenreModal() {
       `;
       
       const angle = index * angleStep;
-      const radius = 200;
+      // Responsive radius based on screen size
+      const screenWidth = window.innerWidth;
+      const radius = screenWidth <= 480 ? 120 : screenWidth <= 768 ? 150 : 200;
       const x = Math.cos(angle * Math.PI / 180) * radius;
       const y = Math.sin(angle * Math.PI / 180) * radius;
       
@@ -626,7 +844,9 @@ function showMusicGenreModal() {
       `;
       
       const angle = index * angleStep;
-      const radius = 180;
+      // Responsive radius for subgenres
+      const screenWidth = window.innerWidth;
+      const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
       const x = Math.cos(angle * Math.PI / 180) * radius;
       const y = Math.sin(angle * Math.PI / 180) * radius;
       
@@ -721,6 +941,9 @@ function showMusicGenreModal() {
     min-height: 60px;
   `;
 
+  // Song count logic (hidden - default to 5 songs)
+  let selectedSongCount = 5; // Default song count
+
   // Create button
   const createButton = document.createElement('button');
   createButton.textContent = 'Create AI Playlist';
@@ -774,14 +997,15 @@ function showMusicGenreModal() {
       
       try {
         // Appel au serveur AI pour générer la playlist
-        console.log('Sending request to generate playlist with genres:', selectedGenres);
+        console.log('Sending request to generate playlist with genres:', selectedGenres, 'and song count:', selectedSongCount);
         const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            selectedGenres: selectedGenres
+            selectedGenres: selectedGenres,
+            songCount: selectedSongCount
           }),
           mode: 'cors',
           credentials: 'omit'
@@ -837,6 +1061,43 @@ function showMusicGenreModal() {
     }
   });
 
+
+  // Function to update the visual state of a subgenre button when removed
+  function updateSubgenreButtonVisualState(genreToRemove) {
+    // Only update if we're currently viewing subgenres (not the main family view)
+    if (!currentFamily) {
+      return; // We're on the main family view, no subgenre buttons to update
+    }
+    
+    // Find the subgenre button in the current view
+    const subgenreButtons = viewContainer.querySelectorAll('.subgenre-button');
+    subgenreButtons.forEach(button => {
+      const buttonText = button.textContent.trim();
+      if (buttonText === genreToRemove) {
+        // Reset the button to unselected state
+        const isSelected = selectedGenres.includes(genreToRemove);
+        
+        if (!isSelected) {
+          // Find the family data for this genre
+          let familyData = null;
+          for (const [family, data] of Object.entries(musicFamilies)) {
+            if (data.subgenres.includes(genreToRemove)) {
+              familyData = data;
+              break;
+            }
+          }
+          
+          if (familyData) {
+            // Reset to unselected state
+            button.style.background = `linear-gradient(135deg, ${familyData.color}20, ${familyData.color}40)`;
+            button.style.border = `2px solid ${familyData.color}`;
+            button.style.transform = button.style.transform.replace('scale(1.05)', 'scale(1)');
+          }
+        }
+      }
+    });
+  }
+
   // Function to update selected display
   function updateSelectedDisplay() {
     if (selectedGenres.length === 0) {
@@ -864,7 +1125,8 @@ function showMusicGenreModal() {
         if (familyData) {
           return `
             <div style="
-              display: inline-block;
+              display: inline-flex;
+              align-items: center;
               background: ${familyData.color}20;
               color: ${familyData.color};
               padding: 8px 15px;
@@ -873,15 +1135,32 @@ function showMusicGenreModal() {
               border: 1px solid ${familyData.color};
               font-size: 14px;
               font-weight: bold;
+              position: relative;
             ">
-              ${familyData.icon} ${genre}
+              <span>${familyData.icon} ${genre}</span>
+              <button class="remove-genre-btn" data-genre="${genre}" style="
+                background: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                margin-left: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+              " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">×</button>
             </div>
           `;
         } else {
           // Fallback for unknown genres
           return `
             <div style="
-              display: inline-block;
+              display: inline-flex;
+              align-items: center;
               background: #66620;
               color: #666;
               padding: 8px 15px;
@@ -890,8 +1169,24 @@ function showMusicGenreModal() {
               border: 1px solid #666;
               font-size: 14px;
               font-weight: bold;
+              position: relative;
             ">
-              🎵 ${genre}
+              <span>🎵 ${genre}</span>
+              <button class="remove-genre-btn" data-genre="${genre}" style="
+                background: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                margin-left: 8px;
+                cursor: pointer;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+              " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">×</button>
             </div>
           `;
         }
@@ -903,6 +1198,23 @@ function showMusicGenreModal() {
         </div>
         <div>${genreElements}</div>
       `;
+      
+      // Add event listeners to remove buttons
+      selectedDisplay.querySelectorAll('.remove-genre-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const genreToRemove = button.getAttribute('data-genre');
+          console.log(`Removing genre: ${genreToRemove}`);
+          selectedGenres = selectedGenres.filter(genre => genre !== genreToRemove);
+          console.log(`Updated selected genres: ${selectedGenres.join(', ')}`);
+          
+          // Update the visual state of the subgenre button in the circle
+          updateSubgenreButtonVisualState(genreToRemove);
+          
+          updateSelectedDisplay();
+        });
+      });
       
       createButton.style.opacity = '1';
       createButton.style.pointerEvents = 'auto';
@@ -940,6 +1252,7 @@ function showMusicGenreModal() {
     `;
 
     const resultsContent = document.createElement('div');
+    resultsContent.className = 'results-modal-content';
     resultsContent.style.cssText = `
       background: #1a1a1a;
       border-radius: 20px;
@@ -952,6 +1265,86 @@ function showMusicGenreModal() {
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
       border: 1px solid #333;
     `;
+
+    // Add responsive styles for results modal
+    const resultsResponsiveStyles = document.createElement('style');
+    resultsResponsiveStyles.textContent = `
+      @media (max-width: 768px) {
+        .results-modal-content {
+          padding: 20px !important;
+          margin: 10px !important;
+          width: calc(100% - 20px) !important;
+          max-height: 90vh !important;
+        }
+        
+        .results-modal-content h2 {
+          font-size: 24px !important;
+          margin-bottom: 15px !important;
+        }
+        
+        .results-modal-content p {
+          font-size: 14px !important;
+          margin-bottom: 20px !important;
+        }
+        
+        .song-item {
+          padding: 12px !important;
+          margin-bottom: 8px !important;
+        }
+        
+        .song-item div:first-child {
+          font-size: 16px !important;
+        }
+        
+        .song-item div:nth-child(2) {
+          font-size: 14px !important;
+        }
+        
+        .song-item div:nth-child(3) {
+          font-size: 12px !important;
+        }
+        
+        .action-buttons {
+          flex-direction: column !important;
+          gap: 10px !important;
+        }
+        
+        .action-buttons button {
+          width: 100% !important;
+          padding: 10px 20px !important;
+          font-size: 14px !important;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .results-modal-content {
+          padding: 15px !important;
+          margin: 5px !important;
+          width: calc(100% - 10px) !important;
+        }
+        
+        .results-modal-content h2 {
+          font-size: 20px !important;
+        }
+        
+        .song-item {
+          padding: 10px !important;
+        }
+        
+        .song-item div:first-child {
+          font-size: 14px !important;
+        }
+        
+        .song-item div:nth-child(2) {
+          font-size: 12px !important;
+        }
+        
+        .song-item div:nth-child(3) {
+          font-size: 11px !important;
+        }
+      }
+    `;
+    document.head.appendChild(resultsResponsiveStyles);
 
     // Titre de la playlist
     const playlistTitle = document.createElement('h2');
@@ -982,6 +1375,7 @@ function showMusicGenreModal() {
 
     playlistData.playlist.songs.forEach((song, index) => {
       const songItem = document.createElement('div');
+      songItem.className = 'song-item';
       songItem.style.cssText = `
         background: #2a2a2a;
         border-radius: 10px;
@@ -1025,6 +1419,7 @@ function showMusicGenreModal() {
 
     // Boutons d'action
     const actionButtons = document.createElement('div');
+    actionButtons.className = 'action-buttons';
     actionButtons.style.cssText = `
       display: flex;
       gap: 15px;
@@ -1123,6 +1518,7 @@ function showMusicGenreModal() {
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
+        authInstructions.className = 'auth-instructions-modal';
         authInstructions.style.cssText = `
           position: fixed;
           top: 50%;
@@ -1308,6 +1704,7 @@ function showMusicGenreModal() {
         
         // Notification d'erreur plus belle
         const errorNotification = document.createElement('div');
+        errorNotification.className = 'error-notification';
         errorNotification.style.cssText = `
           position: fixed;
           top: 20px;
