@@ -61,7 +61,7 @@ async function addAIPlaylistButton() {
     // Add the text span
     const textSpan = document.createElement('span');
     textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
-    textSpan.setAttribute('data-encore-id', 'text');
+    textSpan.setAttribute('data-encore-id', 'tet');
     textSpan.textContent = 'AI Playlist';
     
     // Add click handler
@@ -515,11 +515,46 @@ function showMusicGenreModal() {
     createButton.style.boxShadow = 'none';
   });
 
-  createButton.addEventListener('click', () => {
+  createButton.addEventListener('click', async () => {
     if (selectedGenres.length > 0) {
       console.log(`Creating playlist with genres: ${selectedGenres.join(', ')}`);
-      alert(`Creating AI playlist with: ${selectedGenres.join(', ')}!`);
-      closeModal();
+      
+      // Afficher un loader
+      createButton.textContent = 'Génération en cours...';
+      createButton.disabled = true;
+      createButton.style.opacity = '0.7';
+      
+      try {
+        // Appel au serveur AI
+        const response = await fetch('http://localhost:3000/generate-playlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            selectedGenres: selectedGenres
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur serveur: ${response.status}`);
+        }
+
+        const playlistData = await response.json();
+        console.log('Playlist générée:', playlistData);
+        
+        // Afficher les résultats
+        showPlaylistResults(playlistData);
+        
+      } catch (error) {
+        console.error('Erreur lors de la génération:', error);
+        alert(`Erreur lors de la génération de la playlist: ${error.message}`);
+      } finally {
+        // Restaurer le bouton
+        createButton.textContent = 'Create AI Playlist';
+        createButton.disabled = false;
+        createButton.style.opacity = '1';
+      }
     }
   });
 
@@ -595,6 +630,189 @@ function showMusicGenreModal() {
     }
   }
 
+  // Function to show playlist results
+  function showPlaylistResults(playlistData) {
+    // Fermer toutes les modals existantes
+    const existingModal = document.getElementById('ai-playlist-modal');
+    const existingResultsModal = document.getElementById('playlist-results-modal');
+    
+    if (existingModal) {
+      existingModal.remove();
+    }
+    if (existingResultsModal) {
+      existingResultsModal.remove();
+    }
+    
+    // Créer une nouvelle modal pour les résultats
+    const resultsModal = document.createElement('div');
+    resultsModal.id = 'playlist-results-modal';
+    resultsModal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10001;
+      backdrop-filter: blur(5px);
+    `;
+
+    const resultsContent = document.createElement('div');
+    resultsContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    // Titre de la playlist
+    const playlistTitle = document.createElement('h2');
+    playlistTitle.textContent = playlistData.playlist.name;
+    playlistTitle.style.cssText = `
+      color: #1db954;
+      font-size: 28px;
+      margin-bottom: 15px;
+      font-weight: bold;
+    `;
+
+    // Description
+    const playlistDesc = document.createElement('p');
+    playlistDesc.textContent = playlistData.playlist.description;
+    playlistDesc.style.cssText = `
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 30px;
+      opacity: 0.8;
+    `;
+
+    // Liste des chansons
+    const songsList = document.createElement('div');
+    songsList.style.cssText = `
+      text-align: left;
+      margin-bottom: 30px;
+    `;
+
+    playlistData.playlist.songs.forEach((song, index) => {
+      const songItem = document.createElement('div');
+      songItem.style.cssText = `
+        background: #2a2a2a;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #1db954;
+        transition: all 0.3s ease;
+      `;
+
+      songItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+              ${song.title}
+            </div>
+            <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
+              ${song.artist} (${song.year})
+            </div>
+            <div style="color: #999; font-size: 14px;">
+              ${song.genre} • ${song.description}
+            </div>
+          </div>
+          <div style="color: #666; font-size: 14px;">
+            #${index + 1}
+          </div>
+        </div>
+      `;
+
+      songItem.addEventListener('mouseenter', () => {
+        songItem.style.background = '#333';
+        songItem.style.transform = 'translateX(5px)';
+      });
+
+      songItem.addEventListener('mouseleave', () => {
+        songItem.style.background = '#2a2a2a';
+        songItem.style.transform = 'translateX(0)';
+      });
+
+      songsList.appendChild(songItem);
+    });
+
+    // Boutons d'action
+    const actionButtons = document.createElement('div');
+    actionButtons.style.cssText = `
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    `;
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Fermer';
+    closeButton.style.cssText = `
+      background: #666;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
+
+    const copyButton = document.createElement('button');
+    copyButton.textContent = 'Copier JSON';
+    copyButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      const modal = document.getElementById('playlist-results-modal');
+      if (modal && modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+      }
+    });
+
+    copyButton.addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(playlistData, null, 2))
+        .then(() => {
+          copyButton.textContent = 'Copié!';
+          setTimeout(() => {
+            copyButton.textContent = 'Copier JSON';
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Erreur lors de la copie:', err);
+          alert('Erreur lors de la copie');
+        });
+    });
+
+    // Assemble results modal
+    resultsContent.appendChild(playlistTitle);
+    resultsContent.appendChild(playlistDesc);
+    resultsContent.appendChild(songsList);
+    actionButtons.appendChild(closeButton);
+    actionButtons.appendChild(copyButton);
+    resultsContent.appendChild(actionButtons);
+    resultsModal.appendChild(resultsContent);
+    document.body.appendChild(resultsModal);
+  }
+
   // Initialize display
   updateSelectedDisplay();
 
@@ -634,7 +852,10 @@ function showMusicGenreModal() {
 
   // Close modal function
   function closeModal() {
-    document.body.removeChild(modalOverlay);
+    const modal = document.getElementById('ai-playlist-modal');
+    if (modal && modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
   }
 
   // Close on overlay click

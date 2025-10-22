@@ -1,20 +1,28 @@
 {
-  "name": "__template_chromeextension",
+  "name": "spotify-ai-playlist-generator",
   "version": "1.0.0",
-  "main": "content.js",
+  "description": "AI-powered playlist generator using Gemini API",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "server": "nodemon server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension.git"
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "@google/generative-ai": "^0.2.1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension/issues"
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   },
-  "homepage": "https://github.com/Elfspectrals/__TEMPLATE_ChromeExtension#readme",
-  "description": ""
+  "keywords": [
+    "spotify",
+    "ai",
+    "playlist",
+    "gemini",
+    "music"
+  ],
+  "author": "Spotify AI Generator",
+  "license": "MIT"
 }
