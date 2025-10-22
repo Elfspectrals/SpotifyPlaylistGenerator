@@ -542,6 +542,22 @@ function showMusicGenreModal() {
         margin-left: 6px !important;
       }
       
+      #song-count-container {
+        padding: 15px !important;
+        margin: 15px 0 !important;
+      }
+      
+      #song-count-container div:first-child {
+        font-size: 14px !important;
+        margin-bottom: 10px !important;
+      }
+      
+      .song-count-btn {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 14px !important;
+      }
+      
       button[style*="padding: 15px 30px"] {
         padding: 12px 24px !important;
         font-size: 14px !important;
@@ -586,6 +602,22 @@ function showMusicGenreModal() {
         height: 14px !important;
         font-size: 9px !important;
         margin-left: 4px !important;
+      }
+      
+      #song-count-container {
+        padding: 12px !important;
+        margin: 12px 0 !important;
+      }
+      
+      #song-count-container div:first-child {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+      }
+      
+      .song-count-btn {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 12px !important;
       }
     }
     
@@ -941,8 +973,95 @@ function showMusicGenreModal() {
     min-height: 60px;
   `;
 
-  // Song count logic (hidden - default to 5 songs)
+  // Song count logic
   let selectedSongCount = 5; // Default song count
+  
+  // Create song count selector
+  const songCountContainer = document.createElement('div');
+  songCountContainer.id = 'song-count-container';
+  songCountContainer.style.cssText = `
+    margin: 20px 0;
+    padding: 20px;
+    background: #2a2a2a;
+    border-radius: 15px;
+    border: 1px solid #444;
+    text-align: center;
+  `;
+  
+  const songCountLabel = document.createElement('div');
+  songCountLabel.textContent = 'Number of Songs';
+  songCountLabel.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  `;
+  
+  const songCountSelector = document.createElement('div');
+  songCountSelector.style.cssText = `
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  `;
+  
+  // Create song count options
+  const songCounts = [3, 5, 8, 10, 15, 20];
+  songCounts.forEach(count => {
+    const button = document.createElement('button');
+    button.textContent = count.toString();
+    button.className = 'song-count-btn';
+    button.style.cssText = `
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #1db954;
+      background: ${count === 5 ? 'linear-gradient(135deg, #1db954, #1ed760)' : 'transparent'};
+      color: ${count === 5 ? 'white' : '#1db954'};
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    
+    button.addEventListener('click', () => {
+      // Remove selection from all buttons
+      songCountSelector.querySelectorAll('.song-count-btn').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = '#1db954';
+      });
+      
+      // Select current button
+      button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+      button.style.color = 'white';
+      
+      selectedSongCount = count;
+      console.log(`Selected song count: ${selectedSongCount}`);
+    });
+    
+    button.addEventListener('mouseenter', () => {
+      if (button.style.background === 'transparent') {
+        button.style.background = '#1db95420';
+        button.style.color = '#1db954';
+      }
+    });
+    
+    button.addEventListener('mouseleave', () => {
+      if (button.style.background.includes('20')) {
+        button.style.background = 'transparent';
+        button.style.color = '#1db954';
+      }
+    });
+    
+    songCountSelector.appendChild(button);
+  });
+  
+  songCountContainer.appendChild(songCountLabel);
+  songCountContainer.appendChild(songCountSelector);
 
   // Create button
   const createButton = document.createElement('button');
@@ -1829,6 +1948,7 @@ function showMusicGenreModal() {
   modalContent.appendChild(breadcrumb);
   modalContent.appendChild(viewContainer);
   modalContent.appendChild(selectedDisplay);
+  modalContent.appendChild(songCountContainer);
   modalContent.appendChild(createButton);
   modalOverlay.appendChild(modalContent);
   document.body.appendChild(modalOverlay);
