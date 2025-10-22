@@ -1,11 +1,12 @@
 {
-    "manifest_version": 3,
-    "name": "Name of your extension",
-    "version": "1.0",
-    "description": "description of your extension",
-    "content_scripts": [
-      {
-        "js": ["content.js"]   
-      }
-    ]
-  }
+  "manifest_version": 3,
+  "name": "Spotify AI Generator Playlist Extender",
+  "version": "1.0",
+  "description": "This extension extends the Spotify AI Generator playlist with more songs",
+  "content_scripts": [
+    {
+      "matches": ["https://open.spotify.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
