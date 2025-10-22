@@ -191,6 +191,14 @@ async function createSpotifyPlaylist(accessToken, playlistData) {
       }
     }, 5000);
     
+    // Close the results modal after successful creation
+    setTimeout(() => {
+      const resultsModal = document.getElementById('playlist-results-modal');
+      if (resultsModal && resultsModal.parentNode) {
+        resultsModal.parentNode.removeChild(resultsModal);
+      }
+    }, 2000); // Close after 2 seconds to let user see the success notification
+    
   } catch (error) {
     console.error('❌ Playlist creation error:', error);
     alert('Erreur lors de la création de la playlist: ' + error.message);
@@ -1103,13 +1111,44 @@ function showMusicGenreModal() {
         authInstructions.innerHTML = `
           <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Create Spotify Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to create your AI-generated playlist on Spotify!</p>
+          
+          <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
+            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
+            <div style="margin-bottom: 15px;">
+              <label style="display: block; margin-bottom: 5px; color: #ccc;">Playlist Name:</label>
+              <input type="text" id="playlist-name-input" value="${playlistData.playlist.name}" style="
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid #555;
+                border-radius: 5px;
+                background: #333;
+                color: white;
+                font-size: 14px;
+              " />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label style="display: block; margin-bottom: 5px; color: #ccc;">Description:</label>
+              <textarea id="playlist-desc-input" style="
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid #555;
+                border-radius: 5px;
+                background: #333;
+                color: white;
+                font-size: 14px;
+                height: 60px;
+                resize: vertical;
+              ">${playlistData.playlist.description}</textarea>
+            </div>
+          </div>
+          
           <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
             <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📋 What will happen:</p>
             <ul style="margin: 0; padding-left: 20px; color: #ccc;">
               <li>Your playlist will be created on Spotify</li>
               <li>All the AI-generated songs will be added</li>
               <li>You'll get a link to open the playlist</li>
-              <li>No authentication required - using your existing token</li>
+              <li>Modal will close automatically after creation</li>
             </ul>
           </div>
           <div style="display: flex; gap: 10px; justify-content: center;">
@@ -1140,6 +1179,12 @@ function showMusicGenreModal() {
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
           console.log('🔐 User claims auth is complete, using your working access token...');
           
+          // Get the modified playlist name and description
+          const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
+          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || playlistData.playlist.description;
+          
+          console.log('📝 Using modified playlist details:', { playlistName, playlistDescription });
+          
           // Use the access token from your working curl command
           const accessToken = "BQDUxOizH6UjwJ6iB3qFuA-_sZcGfSVZ6vycJe9H6MsmX5plM1J6UWzwgHXVKjlrXdsuXLSW9kKPiuGBWuKh8HeDaHMrdwLQjPHNTYHflMtkr08SRZEW4pTJZ7VtM54mgiSj4tni6W3A69Qb1Zm1BQrhScvvddVvQtUVOG_MsZEI1EBa4tQy0HS29nV-USxMWI_5Kz4QPLCOnX7xe8ns1gF79Eo-5rpuMO9yAv3JM__94yQwLpkB-LoGWlcjpyqQQZMwL6s3WbHNYJcMS50xanMjXp56Oh78jkzD13RTRmaYQ-R0tdhPYvWOOEAC8an3-YnX9VQ";
           
@@ -1152,8 +1197,18 @@ function showMusicGenreModal() {
             // Remove instructions
             document.getElementById('auth-instructions').remove();
             
+            // Create modified playlist data with user's changes
+            const modifiedPlaylistData = {
+              ...playlistData,
+              playlist: {
+                ...playlistData.playlist,
+                name: playlistName,
+                description: playlistDescription
+              }
+            };
+            
             // Create playlist directly with the provided token
-            await createSpotifyPlaylist(accessToken, playlistData);
+            await createSpotifyPlaylist(accessToken, modifiedPlaylistData);
             
             // Clean up
             sessionStorage.removeItem('authInProgress');
