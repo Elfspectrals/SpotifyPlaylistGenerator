@@ -554,7 +554,11 @@ const musicFamilies = {
     subgenres: [
       'Classic Rock', 'Alternative Rock', 'Indie Rock', 'Punk Rock', 
       'Grunge', 'Progressive Rock', 'Psychedelic Rock', 'Hard Rock',
-      'Soft Rock', 'Folk Rock', 'Blues Rock', 'Glam Rock'
+      'Soft Rock', 'Folk Rock', 'Blues Rock', 'Glam Rock',
+      'Post-Rock', 'Math Rock', 'Shoegaze', 'Noise Rock', 'Garage Rock',
+      'Surf Rock', 'Rockabilly', 'Southern Rock', 'Arena Rock', 'Art Rock',
+      'Krautrock', 'Space Rock', 'Stoner Rock', 'Desert Rock',
+      'Post-Punk', 'New Wave', 'Gothic Rock', 'Industrial Rock', 'Riot Grrrl'
     ]
   },
   'Electronic': {
@@ -563,7 +567,14 @@ const musicFamilies = {
     subgenres: [
       'House', 'Techno', 'Trance', 'Dubstep', 'Drum & Bass',
       'Ambient', 'IDM', 'Synthwave', 'Future Bass', 'Breakbeat',
-      'Electro', 'Minimal', 'Progressive House', 'Deep House'
+      'Electro', 'Minimal', 'Progressive House', 'Deep House',
+      'Hardstyle', 'Hardcore', 'Drumstep', 'Neurofunk', 'Liquid DnB',
+      'Psytrance', 'Goa Trance', 'Progressive Trance', 'Uplifting Trance',
+      'Tech House', 'Deep Techno', 'Industrial', 'EBM', 'Dark Ambient',
+      'Chillout', 'Downtempo', 'Trip Hop', 'Glitch Hop', 'Complextro',
+      'Melodic Dubstep', 'Riddim', 'Trap', 'Future House', 'Big Room',
+      'Electro House', 'Progressive Breaks', 'Acid House', 'Garage',
+      'UK Garage', '2-Step', 'Dub Techno', 'Ambient House', 'Deep House'
     ]
   },
   'Jazz': {
@@ -582,7 +593,10 @@ const musicFamilies = {
       'Old School', 'Gangsta Rap', 'Conscious Rap', 'Trap',
       'Drill', 'Cloud Rap', 'Alternative Hip-Hop', 'Jazz Rap',
       'Boom Bap', 'Mumble Rap', 'East Coast', 'West Coast',
-      'Southern Hip-Hop', 'UK Drill'
+      'Southern Hip-Hop', 'UK Drill', 'Phonk', 'Memphis Rap',
+      'Horrorcore', 'Political Rap', 'Underground Hip-Hop', 'Experimental Hip-Hop',
+      'Trap Soul', 'R&B Trap', 'Melodic Rap', 'Emo Rap', 'SoundCloud Rap',
+      'UK Grime', 'UK Drill', 'Afrobeat', 'Latin Trap', 'French Rap'
     ]
   },
   'Classical': {
@@ -661,6 +675,29 @@ const musicFamilies = {
       'Power Metal', 'Progressive Metal', 'Doom Metal', 'Speed Metal',
       'Glam Metal', 'Nu Metal', 'Metalcore', 'Deathcore',
       'Folk Metal', 'Symphonic Metal'
+    ]
+  },
+  'Hard Dance': {
+    icon: '💥',
+    color: '#e67e22',
+    subgenres: [
+      'Hardstyle', 'Hardcore', 'Hard Trance', 'Jumpstyle', 'Frenchcore',
+      'Rawstyle', 'Euphoric Hardstyle', 'Reverse Bass', 'Hard Bass',
+      'Gabber', 'Speedcore', 'Extratone', 'Crossbreed', 'Breakcore',
+      'Industrial Hardcore', 'UK Hardcore', 'Happy Hardcore', 'Freeform',
+      'Makina', 'Hard NRG', 'Hard Dance', 'Hard House', 'Bouncy Techno'
+    ]
+  },
+  'Bass Music': {
+    icon: '🔊',
+    color: '#9b59b6',
+    subgenres: [
+      'Dubstep', 'Drumstep', 'Riddim', 'Melodic Dubstep', 'Future Bass',
+      'Trap', 'Hybrid Trap', 'Future Trap', 'Wave', 'Phonk',
+      'UK Bass', 'Bass House', 'G-House', 'Deep House', 'Future House',
+      'Progressive House', 'Big Room', 'Electro House', 'Complextro',
+      'Glitch Hop', 'Neurofunk', 'Liquid DnB', 'Jump Up', 'Darkstep',
+      'Brostep', 'Chillstep', 'Post-Dubstep', 'Future Garage', 'UK Garage'
     ]
   }
 };
@@ -748,6 +785,32 @@ function showMusicGenreModal() {
         height: 60px !important;
         font-size: 10px !important;
         padding: 2px !important;
+      }
+      
+      /* Grid layout for many subgenres */
+      .subgenre-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+        gap: 12px !important;
+        padding: 15px !important;
+        max-height: 350px !important;
+      }
+      
+      .subgenre-grid-button {
+        height: 60px !important;
+        font-size: 11px !important;
+        padding: 5px !important;
+        border-radius: 12px !important;
+      }
+      
+      /* Search container mobile */
+      .search-container {
+        height: 45px !important;
+        padding: 0 15px !important;
+        border-radius: 22px !important;
+      }
+      
+      .search-container input {
+        font-size: 13px !important;
       }
       
       #selected-genres-display {
@@ -844,6 +907,37 @@ function showMusicGenreModal() {
         width: 35px !important;
         height: 35px !important;
         font-size: 12px !important;
+      }
+      
+      /* Grid layout for very small screens */
+      .subgenre-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+        gap: 8px !important;
+        padding: 10px !important;
+        max-height: 300px !important;
+      }
+      
+      .subgenre-grid-button {
+        height: 55px !important;
+        font-size: 10px !important;
+        padding: 4px !important;
+        border-radius: 10px !important;
+      }
+      
+      /* Search container for very small screens */
+      .search-container {
+        height: 40px !important;
+        padding: 0 12px !important;
+        border-radius: 20px !important;
+      }
+      
+      .search-container input {
+        font-size: 12px !important;
+      }
+      
+      .search-container div {
+        font-size: 14px !important;
+        margin-right: 8px !important;
       }
     }
     
@@ -1067,6 +1161,59 @@ function showMusicGenreModal() {
     // Update breadcrumb
     breadcrumb.innerHTML = `Main Categories > <span style="color: ${family.color}">${familyName}</span>`;
     
+    // Get subgenres first
+    const subgenres = family.subgenres;
+    
+    // Add search functionality for large subgenre lists
+    if (subgenres.length > 20) {
+      const searchContainer = document.createElement('div');
+      searchContainer.className = 'search-container';
+      searchContainer.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+        border-radius: 25px;
+        border: 2px solid #333;
+        padding: 0 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      `;
+      
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.placeholder = `Search ${familyName} subgenres...`;
+      searchInput.style.cssText = `
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        padding: 0 10px;
+      `;
+      
+      const searchIcon = document.createElement('div');
+      searchIcon.innerHTML = '🔍';
+      searchIcon.style.cssText = `
+        font-size: 18px;
+        margin-right: 10px;
+        opacity: 0.7;
+      `;
+      
+      searchContainer.appendChild(searchIcon);
+      searchContainer.appendChild(searchInput);
+      viewContainer.appendChild(searchContainer);
+      
+      // Store reference to search input for filtering
+      window.currentSearchInput = searchInput;
+    }
+    
     // Back button
     const backButton = document.createElement('button');
     backButton.innerHTML = '← Back';
@@ -1090,11 +1237,211 @@ function showMusicGenreModal() {
     });
     viewContainer.appendChild(backButton);
 
-    // Create subgenre buttons
-    const subgenres = family.subgenres;
-    const angleStep = 360 / subgenres.length;
+    // Create subgenre buttons with improved layout
     
-    subgenres.forEach((subgenre, index) => {
+    // If there are too many subgenres, use a grid layout instead of circular
+    if (subgenres.length > 20) {
+      // Create a scrollable grid container with improved styling
+      const gridContainer = document.createElement('div');
+      gridContainer.className = 'subgenre-grid-container';
+      gridContainer.style.cssText = `
+        position: absolute;
+        top: 80px;
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+        padding: 20px;
+        max-height: 450px;
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border-radius: 20px;
+        border: 2px solid #333;
+        box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3);
+        scrollbar-width: thin;
+        scrollbar-color: #666 #333;
+        backdrop-filter: blur(10px);
+      `;
+      
+      // Add custom scrollbar styling and animations
+      const scrollbarStyle = document.createElement('style');
+      scrollbarStyle.textContent = `
+        .subgenre-grid-container::-webkit-scrollbar {
+          width: 8px;
+        }
+        .subgenre-grid-container::-webkit-scrollbar-track {
+          background: #333;
+          border-radius: 4px;
+        }
+        .subgenre-grid-container::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #666, #888);
+          border-radius: 4px;
+          border: 1px solid #444;
+          transition: all 0.3s ease;
+        }
+        .subgenre-grid-container::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #888, #aaa);
+          transform: scale(1.1);
+        }
+        
+        /* Smooth animations for grid items */
+        .subgenre-grid-button {
+          animation: fadeInUp 0.5s ease forwards;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        
+        @keyframes fadeInUp {
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Staggered animation for grid items */
+        .subgenre-grid-button:nth-child(1) { animation-delay: 0.1s; }
+        .subgenre-grid-button:nth-child(2) { animation-delay: 0.15s; }
+        .subgenre-grid-button:nth-child(3) { animation-delay: 0.2s; }
+        .subgenre-grid-button:nth-child(4) { animation-delay: 0.25s; }
+        .subgenre-grid-button:nth-child(5) { animation-delay: 0.3s; }
+        .subgenre-grid-button:nth-child(6) { animation-delay: 0.35s; }
+        .subgenre-grid-button:nth-child(7) { animation-delay: 0.4s; }
+        .subgenre-grid-button:nth-child(8) { animation-delay: 0.45s; }
+        .subgenre-grid-button:nth-child(9) { animation-delay: 0.5s; }
+        .subgenre-grid-button:nth-child(10) { animation-delay: 0.55s; }
+        .subgenre-grid-button:nth-child(n+11) { animation-delay: 0.6s; }
+        
+        /* Search container focus animation */
+        .search-container:focus-within {
+          transform: scale(1.02);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+          border-color: #1db954;
+        }
+        
+        /* Smooth search filtering */
+        .subgenre-grid-button.hidden {
+          opacity: 0;
+          transform: scale(0.8);
+          transition: all 0.3s ease;
+        }
+        
+        .subgenre-grid-button.visible {
+          opacity: 1;
+          transform: scale(1);
+          transition: all 0.3s ease;
+        }
+      `;
+      document.head.appendChild(scrollbarStyle);
+      
+      subgenres.forEach((subgenre) => {
+        const button = document.createElement('button');
+        button.className = 'subgenre-button subgenre-grid-button';
+        button.innerHTML = `
+          <div style="font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;">${subgenre}</div>
+        `;
+        
+        button.style.cssText = `
+          width: 100%;
+          height: 70px;
+          border-radius: 15px;
+          border: 2px solid ${family.color};
+          background: linear-gradient(135deg, ${family.color}15, ${family.color}25);
+          color: #fff;
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 8px;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        `;
+        
+        button.addEventListener('click', () => {
+          // Toggle selection
+          const isSelected = selectedGenres.includes(subgenre);
+          
+          if (isSelected) {
+            // Remove from selection
+            selectedGenres = selectedGenres.filter(g => g !== subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}15, ${family.color}25)`;
+            button.style.border = `2px solid ${family.color}`;
+            button.style.transform = 'scale(1) translateY(0)';
+            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+            button.style.color = '#fff';
+          } else {
+            // Add to selection
+            selectedGenres.push(subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}dd)`;
+            button.style.border = `3px solid #fff`;
+            button.style.transform = 'scale(1.05) translateY(-3px)';
+            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
+            button.style.color = '#fff';
+          }
+          
+          console.log(`Selected genres: ${selectedGenres.join(', ')}`);
+          updateSelectedDisplay();
+        });
+        
+        button.addEventListener('mouseenter', () => {
+          if (!selectedGenres.includes(subgenre)) {
+            button.style.transform = 'scale(1.08) translateY(-2px)';
+            button.style.boxShadow = `0 8px 25px ${family.color}60, 0 4px 12px rgba(0, 0, 0, 0.3)`;
+            button.style.background = `linear-gradient(135deg, ${family.color}30, ${family.color}50)`;
+            button.style.border = `2px solid ${family.color}cc`;
+          }
+        });
+        
+        button.addEventListener('mouseleave', () => {
+          if (!selectedGenres.includes(subgenre)) {
+            button.style.transform = 'scale(1) translateY(0)';
+            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+            button.style.background = `linear-gradient(135deg, ${family.color}15, ${family.color}25)`;
+            button.style.border = `2px solid ${family.color}`;
+          }
+        });
+        
+        gridContainer.appendChild(button);
+      });
+      
+      viewContainer.appendChild(gridContainer);
+      
+      // Add search functionality after grid is created
+      if (window.currentSearchInput) {
+        window.currentSearchInput.addEventListener('input', (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          const buttons = gridContainer.querySelectorAll('.subgenre-grid-button');
+          
+          buttons.forEach(button => {
+            const subgenreText = button.textContent.toLowerCase();
+            if (subgenreText.includes(searchTerm)) {
+              button.classList.remove('hidden');
+              button.classList.add('visible');
+              button.style.display = 'flex';
+            } else {
+              button.classList.remove('visible');
+              button.classList.add('hidden');
+              setTimeout(() => {
+                if (button.classList.contains('hidden')) {
+                  button.style.display = 'none';
+                }
+              }, 300);
+            }
+          });
+        });
+      }
+    } else {
+      // Use circular layout for smaller numbers of subgenres
+      const angleStep = 360 / subgenres.length;
+      
+      subgenres.forEach((subgenre, index) => {
       const button = document.createElement('button');
       button.className = 'subgenre-button';
       button.innerHTML = `
@@ -1182,6 +1529,7 @@ function showMusicGenreModal() {
     `;
     centerCircle.innerHTML = family.icon;
     viewContainer.appendChild(centerCircle);
+    }
   }
 
   // Initialize with family buttons
@@ -1371,6 +1719,7 @@ function showMusicGenreModal() {
           console.error('Invalid playlist data structure:', playlistData);
           throw new Error('Invalid server response format');
         }
+        
         
         // S'assurer que la structure de données est correcte pour Spotify
         const spotifyPlaylistData = {
