@@ -2,20 +2,24 @@
   "manifest_version": 3,
   "name": "Spotify AI Generator Playlist",
   "version": "1.0",
-  "description": "AI-powered playlist generator with Spotify integration using Gemini",
+  "description": "🎵 AI-powered playlist generator for Spotify • Choose genres, set song count • Generate unique playlists with AI",
   "permissions": [
     "storage",
     "activeTab"
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png", 
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "host_permissions": [
-    "https://open.spotify.com/*",
-    "https://gemini.niperiusland.fr:4005/*"
+    "https://open.spotify.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://open.spotify.com/*",
-        "https://gemini.niperiusland.fr:4005/*"
+        "https://open.spotify.com/*"
       ],
       "js": ["content.js"]
     }

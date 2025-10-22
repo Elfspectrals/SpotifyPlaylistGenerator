@@ -193,14 +193,14 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     notification.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
         <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-        <div style="font-weight: bold; font-size: 18px;">Playlist créée !</div>
+        <div style="font-weight: bold; font-size: 18px;">Playlist Created!</div>
       </div>
       <div style="margin-bottom: 10px;">
-        <strong>${result.tracksAdded}/${result.totalTracks}</strong> chansons ajoutées
+        <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added
       </div>
       <div style="margin-bottom: 15px;">
         <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-          Ouvrir dans Spotify →
+          Open in Spotify →
         </a>
       </div>
       <button onclick="this.parentElement.remove()" style="
@@ -211,7 +211,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         border-radius: 20px;
         cursor: pointer;
         font-size: 14px;
-      ">Fermer</button>
+      ">Close</button>
     `;
     
     document.body.appendChild(notification);
@@ -233,7 +233,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     
   } catch (error) {
     console.error('❌ Playlist creation error:', error);
-    alert('Erreur lors de la création de la playlist: ' + error.message);
+    alert('Error creating playlist: ' + error.message);
   }
 }
 
@@ -269,8 +269,8 @@ function waitForElement(selector, timeout = 10000) {
 // Create and inject the AI Playlist button
 async function addAIPlaylistButton() {
   try {
-    // Wait for the "Créer" button to be available
-    const createButton = await waitForElement('button[aria-label="Créer"]');
+    // Wait for the "Create" button to be available
+    const createButton = await waitForElement('button[aria-label="Create"]');
     
     // Find the parent container that holds the buttons
     const buttonContainer = createButton.parentElement;
@@ -282,7 +282,7 @@ async function addAIPlaylistButton() {
     aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
     aiPlaylistButton.style.marginLeft = '8px';
     
-    // Add the plus icon (same as Créer button)
+    // Add the plus icon (same as Create button)
     const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     iconSvg.setAttribute('data-encore-id', 'icon');
     iconSvg.setAttribute('role', 'img');
@@ -311,7 +311,7 @@ async function addAIPlaylistButton() {
     aiPlaylistButton.appendChild(iconSvg);
     aiPlaylistButton.appendChild(textSpan);
     
-    // Insert the button after the Créer button
+    // Insert the button after the Create button
     buttonContainer.insertBefore(aiPlaylistButton, createButton.nextSibling);
     
     console.log('AI Playlist button added successfully!');
@@ -1098,7 +1098,7 @@ function showMusicGenreModal() {
       console.log(`Creating playlist with genres: ${selectedGenres.join(', ')}`);
       
       // Afficher un loader avec animation
-      createButton.textContent = '🤖 Génération IA...';
+      createButton.textContent = '🤖 AI Generation...';
       createButton.disabled = true;
       createButton.style.opacity = '0.7';
       
@@ -1133,17 +1133,17 @@ function showMusicGenreModal() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Server error:', errorText);
-          throw new Error(`Erreur serveur: ${response.status} - ${errorText}`);
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
 
         const playlistData = await response.json();
-        console.log('Playlist générée:', playlistData);
+        console.log('Playlist generated:', playlistData);
         console.log('Playlist structure:', JSON.stringify(playlistData, null, 2));
         
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
           console.error('Invalid playlist data structure:', playlistData);
-          throw new Error('Format de réponse invalide du serveur');
+          throw new Error('Invalid server response format');
         }
         
         // S'assurer que la structure de données est correcte pour Spotify
@@ -1162,11 +1162,11 @@ function showMusicGenreModal() {
         showPlaylistResults(playlistData);
         
       } catch (error) {
-        console.error('Erreur lors de la génération:', error);
+        console.error('Generation error:', error);
         if (error.message.includes('Failed to fetch')) {
-          alert('Erreur de connexion au serveur. Vérifiez que le serveur est démarré sur https://gemini.niperiusland.fr:4005');
+          alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
         } else {
-          alert(`Erreur lors de la génération de la playlist: ${error.message}`);
+          alert(`Error generating playlist: ${error.message}`);
         }
       } finally {
         // Restaurer le bouton
@@ -1176,7 +1176,7 @@ function showMusicGenreModal() {
         createButton.style.animation = 'none';
       }
     } else {
-      alert('Veuillez sélectionner au moins un style musical pour créer une playlist.');
+      alert('Please select at least one music style to create a playlist.');
     }
   });
 
@@ -1342,7 +1342,7 @@ function showMusicGenreModal() {
 
   // Function to show playlist results
   function showPlaylistResults(playlistData) {
-    // Fermer toutes les modals existantes
+    // Close all existing modals
     const existingModal = document.getElementById('ai-playlist-modal');
     const existingResultsModal = document.getElementById('playlist-results-modal');
     
@@ -1353,7 +1353,7 @@ function showMusicGenreModal() {
       existingResultsModal.remove();
     }
     
-    // Créer une nouvelle modal pour les résultats
+    // Create a new modal for results
     const resultsModal = document.createElement('div');
     resultsModal.id = 'playlist-results-modal';
     resultsModal.style.cssText = `
@@ -1547,7 +1547,7 @@ function showMusicGenreModal() {
     `;
 
     const closeButton = document.createElement('button');
-    closeButton.textContent = 'Fermer';
+    closeButton.textContent = 'Close';
     closeButton.style.cssText = `
       background: #666;
       color: white;
@@ -1561,7 +1561,7 @@ function showMusicGenreModal() {
     `;
 
     const copyButton = document.createElement('button');
-    copyButton.textContent = 'Copier JSON';
+    copyButton.textContent = 'Copy JSON';
     copyButton.style.cssText = `
       background: #666;
       color: white;
@@ -1575,7 +1575,7 @@ function showMusicGenreModal() {
     `;
 
     const spotifyButton = document.createElement('button');
-    spotifyButton.textContent = 'Créer sur Spotify';
+    spotifyButton.textContent = 'Create on Spotify';
     spotifyButton.style.cssText = `
       background: linear-gradient(135deg, #1db954, #1ed760);
       color: white;
@@ -1600,12 +1600,12 @@ function showMusicGenreModal() {
         .then(() => {
           copyButton.textContent = 'Copié!';
           setTimeout(() => {
-            copyButton.textContent = 'Copier JSON';
+            copyButton.textContent = 'Copy JSON';
           }, 2000);
         })
         .catch(err => {
-          console.error('Erreur lors de la copie:', err);
-          alert('Erreur lors de la copie');
+          console.error('Copy error:', err);
+          alert('Copy error');
         });
     });
 
@@ -1615,7 +1615,7 @@ function showMusicGenreModal() {
       console.log('🎵 ===== SPOTIFY BUTTON CLICKED =====');
       console.log('🎵 Current playlistData:', playlistData);
       try {
-        spotifyButton.textContent = '🔐 Connexion Spotify...';
+        spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
         
@@ -1841,7 +1841,7 @@ function showMusicGenreModal() {
         errorNotification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">❌</div>
-            <div style="font-weight: bold; font-size: 18px;">Erreur</div>
+            <div style="font-weight: bold; font-size: 18px;">Error</div>
           </div>
           <div style="margin-bottom: 15px;">
             ${error.message}
@@ -1854,12 +1854,12 @@ function showMusicGenreModal() {
             border-radius: 20px;
             cursor: pointer;
             font-size: 14px;
-          ">Fermer</button>
+          ">Close</button>
         `;
         
         document.body.appendChild(errorNotification);
         
-        spotifyButton.textContent = 'Créer sur Spotify';
+        spotifyButton.textContent = 'Create on Spotify';
         spotifyButton.disabled = false;
         spotifyButton.style.opacity = '1';
       }
