@@ -266,11 +266,237 @@ function waitForElement(selector, timeout = 10000) {
   });
 }
 
+// Watch for page changes and retry adding the button
+function watchForPageChanges() {
+  const observer = new MutationObserver((mutations) => {
+    let shouldRetry = false;
+    
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // Check if any new buttons were added
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === 'BUTTON' || node.querySelector && node.querySelector('button')) {
+              shouldRetry = true;
+            }
+          }
+        });
+      }
+    });
+    
+    if (shouldRetry) {
+      console.log('🔄 Page changed, retrying button addition...');
+      setTimeout(() => {
+        // Check if our button already exists
+        const existingButton = document.querySelector('button[aria-label="AI Playlist"]');
+        if (!existingButton) {
+          addAIPlaylistButton();
+        }
+      }, 1000);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  return observer;
+}
+
 // Create and inject the AI Playlist button
 async function addAIPlaylistButton() {
   try {
-    // Wait for the "Create" button to be available
-    const createButton = await waitForElement('button[aria-label="Create"]');
+    console.log('🔍 Starting button detection...');
+    
+    // Wait a moment for the page to fully load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // First, let's debug what buttons are available
+    const allButtons = document.querySelectorAll('button');
+    console.log('🔍 Found', allButtons.length, 'buttons on the page');
+    
+    allButtons.forEach((button, index) => {
+      console.log(`Button ${index}:`, {
+        text: button.textContent?.trim(),
+        ariaLabel: button.getAttribute('aria-label'),
+        className: button.className,
+        id: button.id,
+        title: button.getAttribute('title')
+      });
+    });
+    
+    // Try multiple selectors for the Create button
+    const possibleSelectors = [
+      'button[aria-label="Create"]',
+      'button[aria-label="Créer"]', // French version
+      'button[aria-label="Create playlist"]',
+      'button[aria-label="Créer une playlist"]', // French version
+      'button[title="Create"]',
+      'button[title="Créer"]',
+      'button:contains("Create")',
+      'button:contains("Créer")',
+      '[data-testid*="create"]',
+      '[data-testid*="playlist"]'
+    ];
+    
+    let createButton = null;
+    let usedSelector = '';
+    
+    for (const selector of possibleSelectors) {
+      try {
+        console.log(`🔍 Trying selector: ${selector}`);
+        createButton = document.querySelector(selector);
+        if (createButton) {
+          usedSelector = selector;
+          console.log(`✅ Found Create button with selector: ${selector}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`❌ Selector failed: ${selector}`, e.message);
+      }
+    }
+    
+    // If still not found, try to find any button with "create" in text or aria-label
+    if (!createButton) {
+      console.log('🔍 Trying to find button by text content...');
+      for (const button of allButtons) {
+        const text = button.textContent?.toLowerCase() || '';
+        const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+        const title = button.getAttribute('title')?.toLowerCase() || '';
+        
+        if (text.includes('create') || text.includes('créer') || 
+            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+            title.includes('create') || title.includes('créer')) {
+          createButton = button;
+          usedSelector = 'text/aria-label search';
+          console.log('✅ Found Create button by text/aria-label search');
+          break;
+        }
+      }
+    }
+    
+    // If still not found, wait a bit and try again (page might still be loading)
+    if (!createButton) {
+      console.log('🔍 Create button not found, waiting 2 seconds and trying again...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const allButtonsRetry = document.querySelectorAll('button');
+      console.log('🔍 Retry: Found', allButtonsRetry.length, 'buttons on the page');
+      
+      for (const button of allButtonsRetry) {
+        const text = button.textContent?.toLowerCase() || '';
+        const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+        const title = button.getAttribute('title')?.toLowerCase() || '';
+        
+        if (text.includes('create') || text.includes('créer') || 
+            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+            title.includes('create') || title.includes('créer')) {
+          createButton = button;
+          usedSelector = 'text/aria-label search (retry)';
+          console.log('✅ Found Create button by text/aria-label search (retry)');
+          break;
+        }
+      }
+    }
+    
+    if (!createButton) {
+      console.error('❌ Create button not found with any method');
+      console.log('Available buttons:', Array.from(allButtons).map(btn => ({
+        text: btn.textContent?.trim(),
+        ariaLabel: btn.getAttribute('aria-label'),
+        className: btn.className
+      })));
+      
+      // Try to find any suitable container for our button
+      console.log('🔍 Trying to find alternative container...');
+      const possibleContainers = [
+        'nav[role="navigation"]',
+        '[data-testid="left-sidebar"]',
+        '.main-rootlist-rootlistContainer',
+        '[role="navigation"]',
+        'nav',
+        '.main-navBar-navBar'
+      ];
+      
+      let buttonContainer = null;
+      for (const selector of possibleContainers) {
+        const container = document.querySelector(selector);
+        if (container) {
+          console.log(`✅ Found container with selector: ${selector}`);
+          buttonContainer = container;
+          break;
+        }
+      }
+      
+      if (!buttonContainer) {
+        // Last resort: use the body or a main container
+        buttonContainer = document.querySelector('main') || document.body;
+        console.log('⚠️ Using fallback container:', buttonContainer);
+      }
+      
+      // Create the AI Playlist button without reference to Create button
+      const aiPlaylistButton = document.createElement('button');
+      aiPlaylistButton.type = 'button';
+      aiPlaylistButton.className = 'UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
+      aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
+      aiPlaylistButton.style.cssText = `
+        margin: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #1db954, #1ed760);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+      `;
+      
+      // Add the plus icon
+      const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      iconSvg.setAttribute('data-encore-id', 'icon');
+      iconSvg.setAttribute('role', 'img');
+      iconSvg.setAttribute('aria-hidden', 'true');
+      iconSvg.setAttribute('class', 'e-91000-icon e-91000-baseline yoyv1_1LPucwCXYDe5AN');
+      iconSvg.setAttribute('viewBox', '0 0 16 16');
+      iconSvg.style.cssText = '--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);';
+      
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75');
+      iconSvg.appendChild(path);
+      
+      // Add the text span
+      const textSpan = document.createElement('span');
+      textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
+      textSpan.setAttribute('data-encore-id', 'tet');
+      textSpan.textContent = 'AI Playlist';
+      
+      // Add click handler
+      aiPlaylistButton.addEventListener('click', () => {
+        console.log('AI Playlist button clicked!');
+        showMusicGenreModal();
+      });
+      
+      // Assemble the button
+      aiPlaylistButton.appendChild(iconSvg);
+      aiPlaylistButton.appendChild(textSpan);
+      
+      // Insert the button
+      buttonContainer.appendChild(aiPlaylistButton);
+      
+      console.log('✅ AI Playlist button added as fallback (fixed position)');
+      return;
+    }
+    
+    console.log('✅ Create button found:', createButton);
+    console.log('✅ Used selector:', usedSelector);
     
     // Find the parent container that holds the buttons
     const buttonContainer = createButton.parentElement;
@@ -1956,7 +2182,11 @@ function showMusicGenreModal() {
 
 // Start the injection when the page loads
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', addAIPlaylistButton);
+  document.addEventListener('DOMContentLoaded', () => {
+    addAIPlaylistButton();
+    watchForPageChanges();
+  });
 } else {
   addAIPlaylistButton();
+  watchForPageChanges();
 }
