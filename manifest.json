@@ -1,11 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Spotify AI Generator Playlist Extender",
+  "name": "Spotify AI Generator Playlist",
   "version": "1.0",
-  "description": "This extension extends the Spotify AI Generator playlist with more songs",
+  "description": "AI-powered playlist generator with Spotify integration using Gemini",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://open.spotify.com/*",
+    "https://gemini.niperiusland.fr:4005/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://open.spotify.com/*"],
+      "matches": [
+        "https://open.spotify.com/*",
+        "https://gemini.niperiusland.fr:4005/*"
+      ],
       "js": ["content.js"]
     }
   ]
