@@ -92,14 +92,14 @@ async function exchangeCodeForToken(code, playlistData) {
       throw new Error('Token exchange failed');
     }
     
-    const { accessToken } = await tokenResponse.json();
+    const { accessToken, refreshToken } = await tokenResponse.json();
     console.log('✅ Access token received');
     
     // Store auth data for the popup close handler
-    sessionStorage.setItem('spotifyAuthData', JSON.stringify({ accessToken, playlistData }));
+    sessionStorage.setItem('spotifyAuthData', JSON.stringify({ accessToken, refreshToken, playlistData }));
     
     // Also create the playlist immediately
-    await createSpotifyPlaylist(accessToken, playlistData);
+    await createSpotifyPlaylist(accessToken, playlistData, refreshToken);
     
   } catch (error) {
     console.error('❌ Token exchange error:', error);
@@ -109,8 +109,8 @@ async function exchangeCodeForToken(code, playlistData) {
   }
 }
 
-// Function to create Spotify playlist
-async function createSpotifyPlaylist(accessToken, playlistData) {
+// Function to create Spotify playlist with token refresh handling
+async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = null) {
   try {
     console.log('🎵 Creating Spotify playlist...');
     
@@ -126,7 +126,7 @@ async function createSpotifyPlaylist(accessToken, playlistData) {
     
     console.log('🎵 Sending to Spotify creation:', spotifyPlaylistData);
     
-    const createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
+    let createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -134,6 +134,37 @@ async function createSpotifyPlaylist(accessToken, playlistData) {
         playlistData: spotifyPlaylistData 
       })
     });
+    
+    // If token expired, try to refresh it
+    if (!createResponse.ok && refreshToken) {
+      const errorText = await createResponse.text();
+      console.log('🔄 Token may be expired, attempting refresh...', errorText);
+      
+      try {
+        const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
+        
+        if (refreshResponse.ok) {
+          const { accessToken: newAccessToken } = await refreshResponse.json();
+          console.log('✅ Token refreshed successfully');
+          
+          // Retry with new token
+          createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              accessToken: newAccessToken, 
+              playlistData: spotifyPlaylistData 
+            })
+          });
+        }
+      } catch (refreshError) {
+        console.error('❌ Token refresh failed:', refreshError);
+      }
+    }
     
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
@@ -1177,7 +1208,7 @@ function showMusicGenreModal() {
         
         // Handle auth completion
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          console.log('🔐 User claims auth is complete, using your working access token...');
+          console.log('🔐 Starting Spotify authentication flow...');
           
           // Get the modified playlist name and description
           const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
@@ -1185,38 +1216,78 @@ function showMusicGenreModal() {
           
           console.log('📝 Using modified playlist details:', { playlistName, playlistDescription });
           
-          // Use the access token from your working curl command
-          const accessToken = "BQDUxOizH6UjwJ6iB3qFuA-_sZcGfSVZ6vycJe9H6MsmX5plM1J6UWzwgHXVKjlrXdsuXLSW9kKPiuGBWuKh8HeDaHMrdwLQjPHNTYHflMtkr08SRZEW4pTJZ7VtM54mgiSj4tni6W3A69Qb1Zm1BQrhScvvddVvQtUVOG_MsZEI1EBa4tQy0HS29nV-USxMWI_5Kz4QPLCOnX7xe8ns1gF79Eo-5rpuMO9yAv3JM__94yQwLpkB-LoGWlcjpyqQQZMwL6s3WbHNYJcMS50xanMjXp56Oh78jkzD13RTRmaYQ-R0tdhPYvWOOEAC8an3-YnX9VQ";
-          
-          console.log('🔐 Using access token from working curl command');
-          
           try {
-            // Test the token by trying to create the playlist directly
-            console.log('🎵 Creating playlist with working access token...');
+            // Step 1: Get auth URL from server
+            console.log('🔐 Step 1: Getting auth URL from server...');
+            const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
+            if (!authResponse.ok) {
+              throw new Error('Failed to get auth URL');
+            }
+            const { authUrl } = await authResponse.json();
+            console.log('🔐 Auth URL received:', authUrl);
             
-            // Remove instructions
-            document.getElementById('auth-instructions').remove();
+            // Step 2: Open auth window
+            console.log('🔐 Step 2: Opening auth window...');
+            const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
             
-            // Create modified playlist data with user's changes
-            const modifiedPlaylistData = {
-              ...playlistData,
-              playlist: {
-                ...playlistData.playlist,
-                name: playlistName,
-                description: playlistDescription
+            // Step 3: Listen for messages from the popup window
+            const messageHandler = (event) => {
+              console.log('📨 Message from popup:', event.data);
+              
+              if (event.data && event.data.success && event.data.accessToken) {
+                console.log('✅ Received tokens from popup');
+                window.removeEventListener('message', messageHandler);
+                
+                const { accessToken, refreshToken } = event.data;
+                
+                // Remove instructions
+                document.getElementById('auth-instructions').remove();
+                
+                // Create modified playlist data with user's changes
+                const modifiedPlaylistData = {
+                  ...playlistData,
+                  playlist: {
+                    ...playlistData.playlist,
+                    name: playlistName,
+                    description: playlistDescription
+                  }
+                };
+                
+                // Create playlist with fresh token
+                createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
+                
+                // Clean up
+                sessionStorage.removeItem('authInProgress');
+                sessionStorage.removeItem('pendingPlaylistData');
+                
+                // Close the popup
+                if (authWindow && !authWindow.closed) {
+                  authWindow.close();
+                }
+              } else if (event.data && event.data.success === false) {
+                console.log('❌ Auth failed:', event.data.error);
+                window.removeEventListener('message', messageHandler);
+                alert('Authentication failed: ' + event.data.error);
+                if (authWindow && !authWindow.closed) {
+                  authWindow.close();
+                }
               }
             };
             
-            // Create playlist directly with the provided token
-            await createSpotifyPlaylist(accessToken, modifiedPlaylistData);
+            window.addEventListener('message', messageHandler);
             
-            // Clean up
-            sessionStorage.removeItem('authInProgress');
-            sessionStorage.removeItem('pendingPlaylistData');
+            // Timeout after 5 minutes
+            setTimeout(() => {
+              window.removeEventListener('message', messageHandler);
+              if (!authWindow.closed) {
+                authWindow.close();
+                alert('Authentication timed out. Please try again.');
+              }
+            }, 300000);
             
           } catch (error) {
-            console.error('❌ Playlist creation failed:', error);
-            alert('Playlist creation failed: ' + error.message + '\n\nThis might be because the access token has expired. Please try getting a fresh token from the Spotify Developer Console.');
+            console.error('❌ Auth flow error:', error);
+            alert('Authentication failed: ' + error.message);
           }
         });
         
