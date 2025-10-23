@@ -1,29 +1,20 @@
-console.log("Spotify AI Generator Playlist Extender");
+// Spotify AI Generator Playlist Extender
 
 // Check if we're returning from Spotify auth
-console.log('🔍 Current URL:', window.location.href);
-console.log('🔍 Auth in progress:', sessionStorage.getItem('authInProgress'));
 
 if (sessionStorage.getItem('authInProgress') === 'true') {
-  console.log('🔄 Returning from Spotify auth, checking for auth completion...');
-  
   // Check if we have auth parameters in the URL
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
   const error = urlParams.get('error');
   
-  console.log('🔍 URL params - code:', code, 'error:', error);
-  
   if (code) {
-    console.log('✅ Auth code received:', code);
     handleAuthCallback(code);
   } else if (error) {
-    console.log('❌ Auth error:', error);
     sessionStorage.removeItem('authInProgress');
     sessionStorage.removeItem('pendingPlaylistData');
     alert('Authentication failed: ' + error);
   } else {
-    console.log('⚠️ No auth parameters found, clearing session storage');
     sessionStorage.removeItem('authInProgress');
     sessionStorage.removeItem('pendingPlaylistData');
   }
@@ -32,7 +23,6 @@ if (sessionStorage.getItem('authInProgress') === 'true') {
 // Function to handle auth callback
 async function handleAuthCallback(code) {
   try {
-    console.log('🔄 Exchanging code for token...');
     const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,7 +34,6 @@ async function handleAuthCallback(code) {
     }
     
     const { accessToken } = await tokenResponse.json();
-    console.log('✅ Access token received');
     
     // Get the pending playlist data
     const pendingPlaylistData = JSON.parse(sessionStorage.getItem('pendingPlaylistData'));
@@ -52,7 +41,6 @@ async function handleAuthCallback(code) {
       throw new Error('No pending playlist data found');
     }
     
-    console.log('🎵 Creating playlist with stored data...');
     await createSpotifyPlaylist(accessToken, pendingPlaylistData);
     
     // Clean up
@@ -60,7 +48,6 @@ async function handleAuthCallback(code) {
     sessionStorage.removeItem('pendingPlaylistData');
     
   } catch (error) {
-    console.error('❌ Auth callback error:', error);
     sessionStorage.removeItem('authInProgress');
     sessionStorage.removeItem('pendingPlaylistData');
     alert('Authentication failed: ' + error.message);
@@ -69,10 +56,8 @@ async function handleAuthCallback(code) {
 
 // Listen for messages from auth window (fallback)
 window.addEventListener('message', async (event) => {
-  console.log('📨 Message received:', event.data);
   
   if (event.data && event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
-    console.log('✅ Auth success message received');
     const { accessToken, playlistData } = event.data;
     await createSpotifyPlaylist(accessToken, playlistData);
   }
@@ -81,7 +66,6 @@ window.addEventListener('message', async (event) => {
 // Function to exchange code for token
 async function exchangeCodeForToken(code, playlistData) {
   try {
-    console.log('🔄 Exchanging code for token...');
     const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -93,7 +77,6 @@ async function exchangeCodeForToken(code, playlistData) {
     }
     
     const { accessToken, refreshToken } = await tokenResponse.json();
-    console.log('✅ Access token received');
     
     // Store auth data for the popup close handler
     sessionStorage.setItem('spotifyAuthData', JSON.stringify({ accessToken, refreshToken, playlistData }));
@@ -102,7 +85,6 @@ async function exchangeCodeForToken(code, playlistData) {
     await createSpotifyPlaylist(accessToken, playlistData, refreshToken);
     
   } catch (error) {
-    console.error('❌ Token exchange error:', error);
     sessionStorage.removeItem('authInProgress');
     sessionStorage.removeItem('pendingPlaylistData');
     alert('Authentication failed: ' + error.message);
@@ -112,7 +94,6 @@ async function exchangeCodeForToken(code, playlistData) {
 // Function to create Spotify playlist with token refresh handling
 async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = null) {
   try {
-    console.log('🎵 Creating Spotify playlist...');
     
     // Format data for Spotify
     const spotifyPlaylistData = {
@@ -124,7 +105,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
       }))
     };
     
-    console.log('🎵 Sending to Spotify creation:', spotifyPlaylistData);
     
     let createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
       method: 'POST',
@@ -138,7 +118,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     // If token expired, try to refresh it
     if (!createResponse.ok && refreshToken) {
       const errorText = await createResponse.text();
-      console.log('🔄 Token may be expired, attempting refresh...', errorText);
       
       try {
         const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
@@ -149,7 +128,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         
         if (refreshResponse.ok) {
           const { accessToken: newAccessToken } = await refreshResponse.json();
-          console.log('✅ Token refreshed successfully');
           
           // Retry with new token
           createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
@@ -162,7 +140,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
           });
         }
       } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError);
       }
     }
     
@@ -172,7 +149,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     }
     
     const result = await createResponse.json();
-    console.log('✅ Playlist created successfully:', result);
     
     // Show success notification
     const notification = document.createElement('div');
@@ -232,7 +208,6 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     }, 2000); // Close after 2 seconds to let user see the success notification
     
   } catch (error) {
-    console.error('❌ Playlist creation error:', error);
     alert('Error creating playlist: ' + error.message);
   }
 }
@@ -285,7 +260,6 @@ function watchForPageChanges() {
     });
     
     if (shouldRetry) {
-      console.log('🔄 Page changed, retrying button addition...');
       setTimeout(() => {
         // Check if our button already exists
         const existingButton = document.querySelector('button[aria-label="AI Playlist"]');
@@ -307,23 +281,14 @@ function watchForPageChanges() {
 // Create and inject the AI Playlist button
 async function addAIPlaylistButton() {
   try {
-    console.log('🔍 Starting button detection...');
     
     // Wait a moment for the page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // First, let's debug what buttons are available
     const allButtons = document.querySelectorAll('button');
-    console.log('🔍 Found', allButtons.length, 'buttons on the page');
     
     allButtons.forEach((button, index) => {
-      console.log(`Button ${index}:`, {
-        text: button.textContent?.trim(),
-        ariaLabel: button.getAttribute('aria-label'),
-        className: button.className,
-        id: button.id,
-        title: button.getAttribute('title')
-      });
     });
     
     // Try multiple selectors for the Create button
@@ -345,21 +310,17 @@ async function addAIPlaylistButton() {
     
     for (const selector of possibleSelectors) {
       try {
-        console.log(`🔍 Trying selector: ${selector}`);
         createButton = document.querySelector(selector);
         if (createButton) {
           usedSelector = selector;
-          console.log(`✅ Found Create button with selector: ${selector}`);
           break;
         }
       } catch (e) {
-        console.log(`❌ Selector failed: ${selector}`, e.message);
       }
     }
     
     // If still not found, try to find any button with "create" in text or aria-label
     if (!createButton) {
-      console.log('🔍 Trying to find button by text content...');
       for (const button of allButtons) {
         const text = button.textContent?.toLowerCase() || '';
         const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
@@ -370,7 +331,6 @@ async function addAIPlaylistButton() {
             title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search';
-          console.log('✅ Found Create button by text/aria-label search');
           break;
         }
       }
@@ -378,11 +338,9 @@ async function addAIPlaylistButton() {
     
     // If still not found, wait a bit and try again (page might still be loading)
     if (!createButton) {
-      console.log('🔍 Create button not found, waiting 2 seconds and trying again...');
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const allButtonsRetry = document.querySelectorAll('button');
-      console.log('🔍 Retry: Found', allButtonsRetry.length, 'buttons on the page');
       
       for (const button of allButtonsRetry) {
         const text = button.textContent?.toLowerCase() || '';
@@ -394,22 +352,14 @@ async function addAIPlaylistButton() {
             title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search (retry)';
-          console.log('✅ Found Create button by text/aria-label search (retry)');
           break;
         }
       }
     }
     
     if (!createButton) {
-      console.error('❌ Create button not found with any method');
-      console.log('Available buttons:', Array.from(allButtons).map(btn => ({
-        text: btn.textContent?.trim(),
-        ariaLabel: btn.getAttribute('aria-label'),
-        className: btn.className
-      })));
       
       // Try to find any suitable container for our button
-      console.log('🔍 Trying to find alternative container...');
       const possibleContainers = [
         'nav[role="navigation"]',
         '[data-testid="left-sidebar"]',
@@ -423,7 +373,6 @@ async function addAIPlaylistButton() {
       for (const selector of possibleContainers) {
         const container = document.querySelector(selector);
         if (container) {
-          console.log(`✅ Found container with selector: ${selector}`);
           buttonContainer = container;
           break;
         }
@@ -432,7 +381,6 @@ async function addAIPlaylistButton() {
       if (!buttonContainer) {
         // Last resort: use the body or a main container
         buttonContainer = document.querySelector('main') || document.body;
-        console.log('⚠️ Using fallback container:', buttonContainer);
       }
       
       // Create the AI Playlist button without reference to Create button
@@ -480,7 +428,6 @@ async function addAIPlaylistButton() {
       
       // Add click handler
       aiPlaylistButton.addEventListener('click', () => {
-        console.log('AI Playlist button clicked!');
         showMusicGenreModal();
       });
       
@@ -491,12 +438,9 @@ async function addAIPlaylistButton() {
       // Insert the button
       buttonContainer.appendChild(aiPlaylistButton);
       
-      console.log('✅ AI Playlist button added as fallback (fixed position)');
       return;
     }
     
-    console.log('✅ Create button found:', createButton);
-    console.log('✅ Used selector:', usedSelector);
     
     // Find the parent container that holds the buttons
     const buttonContainer = createButton.parentElement;
@@ -529,7 +473,6 @@ async function addAIPlaylistButton() {
     
     // Add click handler
     aiPlaylistButton.addEventListener('click', () => {
-      console.log('AI Playlist button clicked!');
       showMusicGenreModal();
     });
     
@@ -540,9 +483,7 @@ async function addAIPlaylistButton() {
     // Insert the button after the Create button
     buttonContainer.insertBefore(aiPlaylistButton, createButton.nextSibling);
     
-    console.log('AI Playlist button added successfully!');
   } catch (error) {
-    console.error('Failed to add AI Playlist button:', error);
   }
 }
 
@@ -1485,7 +1426,6 @@ function showMusicGenreModal() {
             button.style.color = '#fff';
           }
           
-          console.log(`Selected genres: ${selectedGenres.join(', ')}`);
           updateSelectedDisplay();
         });
         
@@ -1603,7 +1543,6 @@ function showMusicGenreModal() {
           button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
         }
         
-        console.log(`Selected genres: ${selectedGenres.join(', ')}`);
         updateSelectedDisplay();
       });
 
@@ -1713,7 +1652,6 @@ function showMusicGenreModal() {
       button.style.color = 'white';
       
       selectedSongCount = count;
-      console.log(`Selected song count: ${selectedSongCount}`);
     });
     
     button.addEventListener('mouseenter', () => {
@@ -1768,7 +1706,6 @@ function showMusicGenreModal() {
 
   createButton.addEventListener('click', async () => {
     if (selectedGenres.length > 0) {
-      console.log(`Creating playlist with genres: ${selectedGenres.join(', ')}`);
       
       // Afficher un loader avec animation
       createButton.textContent = '🤖 AI Generation...';
@@ -1789,7 +1726,6 @@ function showMusicGenreModal() {
       
       try {
         // Appel au serveur AI pour générer la playlist
-        console.log('Sending request to generate playlist with genres:', selectedGenres, 'and song count:', selectedSongCount);
         const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
           method: 'POST',
           headers: {
@@ -1805,17 +1741,13 @@ function showMusicGenreModal() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Server error:', errorText);
           throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
 
         const playlistData = await response.json();
-        console.log('Playlist generated:', playlistData);
-        console.log('Playlist structure:', JSON.stringify(playlistData, null, 2));
         
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
-          console.error('Invalid playlist data structure:', playlistData);
           throw new Error('Invalid server response format');
         }
         
@@ -1830,13 +1762,11 @@ function showMusicGenreModal() {
           }))
         };
         
-        console.log('Formatted for Spotify:', spotifyPlaylistData);
         
         // Afficher les résultats
         showPlaylistResults(playlistData);
         
       } catch (error) {
-        console.error('Generation error:', error);
         if (error.message.includes('Failed to fetch')) {
           alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
         } else {
@@ -1998,9 +1928,7 @@ function showMusicGenreModal() {
           e.preventDefault();
           e.stopPropagation();
           const genreToRemove = button.getAttribute('data-genre');
-          console.log(`Removing genre: ${genreToRemove}`);
           selectedGenres = selectedGenres.filter(genre => genre !== genreToRemove);
-          console.log(`Updated selected genres: ${selectedGenres.join(', ')}`);
           
           // Update the visual state of the subgenre button in the circle
           updateSubgenreButtonVisualState(genreToRemove);
@@ -2278,31 +2206,23 @@ function showMusicGenreModal() {
           }, 2000);
         })
         .catch(err => {
-          console.error('Copy error:', err);
           alert('Copy error');
         });
     });
 
-    console.log('🎵 Spotify button created and event listener added');
     
     spotifyButton.addEventListener('click', async () => {
-      console.log('🎵 ===== SPOTIFY BUTTON CLICKED =====');
-      console.log('🎵 Current playlistData:', playlistData);
       try {
         spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
         
-        console.log('🔐 Step 1: Getting auth URL...');
         // Obtenir l'URL d'authentification
         const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-        console.log('🔐 Auth response status:', authResponse.status);
         const { authUrl } = await authResponse.json();
-        console.log('🔐 Auth URL received:', authUrl);
         
         // Use a simple approach - show the auth URL to the user
-        console.log('🔐 Step 2: Showing auth instructions...');
-        console.log('🔐 Auth URL:', authUrl);
+        
         
         // Store the current playlist data in sessionStorage
         sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
@@ -2397,34 +2317,27 @@ function showMusicGenreModal() {
         
         // Handle auth completion
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          console.log('🔐 Starting Spotify authentication flow...');
           
           // Get the modified playlist name and description
           const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
           const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || playlistData.playlist.description;
           
-          console.log('📝 Using modified playlist details:', { playlistName, playlistDescription });
           
           try {
             // Step 1: Get auth URL from server
-            console.log('🔐 Step 1: Getting auth URL from server...');
             const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
             if (!authResponse.ok) {
               throw new Error('Failed to get auth URL');
             }
             const { authUrl } = await authResponse.json();
-            console.log('🔐 Auth URL received:', authUrl);
             
             // Step 2: Open auth window
-            console.log('🔐 Step 2: Opening auth window...');
             const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
             
             // Step 3: Listen for messages from the popup window
             const messageHandler = (event) => {
-              console.log('📨 Message from popup:', event.data);
               
               if (event.data && event.data.success && event.data.accessToken) {
-                console.log('✅ Received tokens from popup');
                 window.removeEventListener('message', messageHandler);
                 
                 const { accessToken, refreshToken } = event.data;
@@ -2454,7 +2367,6 @@ function showMusicGenreModal() {
                   authWindow.close();
                 }
               } else if (event.data && event.data.success === false) {
-                console.log('❌ Auth failed:', event.data.error);
                 window.removeEventListener('message', messageHandler);
                 alert('Authentication failed: ' + event.data.error);
                 if (authWindow && !authWindow.closed) {
@@ -2475,25 +2387,18 @@ function showMusicGenreModal() {
             }, 300000);
             
           } catch (error) {
-            console.error('❌ Auth flow error:', error);
             alert('Authentication failed: ' + error.message);
           }
         });
         
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          console.log('🔐 Auth cancelled');
           document.getElementById('auth-instructions').remove();
           sessionStorage.removeItem('authInProgress');
           sessionStorage.removeItem('pendingPlaylistData');
         });
         
       } catch (error) {
-        console.error('❌ ===== SPOTIFY CREATION ERROR =====');
-        console.error('❌ Error type:', error.constructor.name);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
-        console.error('❌ Full error object:', error);
         
         // Notification d'erreur plus belle
         const errorNotification = document.createElement('div');
@@ -2550,9 +2455,7 @@ function showMusicGenreModal() {
     resultsModal.appendChild(resultsContent);
     document.body.appendChild(resultsModal);
     
-    console.log('🎵 Results modal created and added to DOM');
-    console.log('🎵 Spotify button element:', spotifyButton);
-    console.log('🎵 Button text:', spotifyButton.textContent);
+    
   }
 
   // Initialize display
