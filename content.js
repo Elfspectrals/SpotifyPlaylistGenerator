@@ -1,7 +1,119 @@
 // Spotify AI Generator Playlist Extender
 
-// Utility function to disable/enable all relevant buttons
-function toggleButtonsState(disabled = true) {
+// Add global styles for disabled buttons and loading indicators
+const disabledButtonStyles = document.createElement('style');
+disabledButtonStyles.textContent = `
+  .button-disabled {
+    opacity: 0.3 !important;
+    background: #333 !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+    border: 1px solid #555 !important;
+    filter: grayscale(100%) !important;
+  }
+  
+  .button-disabled:hover {
+    background: #333 !important;
+    color: #999 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    filter: grayscale(100%) !important;
+  }
+  
+  .button-disabled:active {
+    transform: none !important;
+    box-shadow: none !important;
+    background: #333 !important;
+    color: #999 !important;
+  }
+  
+  .button-disabled * {
+    color: #999 !important;
+  }
+
+  /* Loading spinner styles */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff40;
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+  }
+
+  .loading-spinner-small {
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+    margin-right: 6px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Loading button styles */
+  .button-loading {
+    position: relative;
+    opacity: 0.8 !important;
+    cursor: not-allowed !important;
+  }
+
+  .button-loading:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Pulse animation for loading states */
+  @keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.6; }
+  }
+
+  .button-pulse {
+    animation: pulse 1.5s infinite;
+  }
+`;
+document.head.appendChild(disabledButtonStyles);
+
+// Utility function to show specific loading messages
+function showLoadingMessage(button, message) {
+  if (!button.dataset.originalText) {
+    button.dataset.originalText = button.textContent;
+  }
+  
+  const spinner = document.createElement('span');
+  spinner.className = 'loading-spinner';
+  button.innerHTML = '';
+  button.appendChild(spinner);
+  button.appendChild(document.createTextNode(' ' + message));
+  button.classList.add('button-loading', 'button-pulse');
+}
+
+// Utility function to restore button to original state
+function restoreButton(button) {
+  if (button.dataset.originalText) {
+    button.textContent = button.dataset.originalText;
+    delete button.dataset.originalText;
+  }
+  button.classList.remove('button-loading', 'button-pulse');
+  button.disabled = false;
+  button.style.opacity = '1';
+  button.style.cursor = 'pointer';
+  button.style.transform = '';
+  button.style.boxShadow = '';
+  button.style.filter = 'none';
+  button.style.border = '';
+}
+
+// Utility function to disable/enable all relevant buttons with loading indicators
+function toggleButtonsState(disabled = true, showLoading = true) {
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(button => {
     if (button.textContent && (
@@ -9,10 +121,91 @@ function toggleButtonsState(disabled = true) {
       button.textContent.includes('Create AI Playlist') ||
       button.textContent.includes('Use Selected Playlist') ||
       button.textContent.includes('Generate') ||
-      button.textContent.includes('Connecting to Spotify')
+      button.textContent.includes('Connecting to Spotify') ||
+      button.textContent.includes('AI Generation') ||
+      button.textContent.includes('🤖 AI Generation') ||
+      button.textContent.includes('🤖 Generating')
     )) {
       button.disabled = disabled;
-      button.style.opacity = disabled ? '0.7' : '1';
+      
+      if (disabled) {
+        // Store original text for restoration
+        if (!button.dataset.originalText) {
+          button.dataset.originalText = button.textContent;
+        }
+        
+        // Add loading indicator if requested
+        if (showLoading) {
+          const spinner = document.createElement('span');
+          spinner.className = 'loading-spinner';
+          button.innerHTML = '';
+          button.appendChild(spinner);
+          
+          // Add appropriate loading text based on button type
+          if (button.dataset.originalText.includes('Add to Current Playlist')) {
+            button.appendChild(document.createTextNode(' Adding to Playlist...'));
+          } else if (button.dataset.originalText.includes('Create AI Playlist')) {
+            button.appendChild(document.createTextNode(' Creating Playlist...'));
+          } else if (button.dataset.originalText.includes('Use Selected Playlist')) {
+            button.appendChild(document.createTextNode(' Generating...'));
+          } else if (button.dataset.originalText.includes('Generate')) {
+            button.appendChild(document.createTextNode(' Generating...'));
+          } else {
+            button.appendChild(document.createTextNode(' Loading...'));
+          }
+          
+          // Add loading classes
+          button.classList.add('button-loading', 'button-pulse');
+        } else {
+          // Style pour boutons désactivés - plus visible
+          button.style.opacity = '0.3';
+          button.style.background = '#333';
+          button.style.color = '#999';
+          button.style.cursor = 'not-allowed';
+          button.style.transform = 'none';
+          button.style.boxShadow = 'none';
+          button.style.border = '1px solid #555';
+          button.style.filter = 'grayscale(100%)';
+          
+          // Ajouter une classe CSS pour le style désactivé
+          button.classList.add('button-disabled');
+        }
+      } else {
+        // Restore original text
+        if (button.dataset.originalText) {
+          button.textContent = button.dataset.originalText;
+          delete button.dataset.originalText;
+        }
+        
+        // Remove loading classes
+        button.classList.remove('button-loading', 'button-pulse');
+        
+        // Restaurer le style normal
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.style.transform = '';
+        button.style.boxShadow = '';
+        button.style.filter = 'none';
+        button.style.border = '';
+        
+        // Restaurer les couleurs originales selon le type de bouton
+        if (button.textContent.includes('Create AI Playlist')) {
+          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+          button.style.color = 'white';
+        } else if (button.textContent.includes('Add to Current Playlist')) {
+          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+          button.style.color = 'white';
+        } else if (button.textContent.includes('Use Selected Playlist')) {
+          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          button.style.color = 'white';
+        } else if (button.textContent.includes('Generate') || button.textContent.includes('AI Generation')) {
+          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          button.style.color = 'white';
+        }
+        
+        // Supprimer la classe désactivée
+        button.classList.remove('button-disabled');
+      }
     }
   });
 }
@@ -22,8 +215,8 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
   try {
     console.log('🎵 Adding songs to existing playlist:', playlistId);
     
-    // Disable all relevant buttons during API call
-    toggleButtonsState(true);
+    // Disable all relevant buttons during API call with loading indicators
+    toggleButtonsState(true, true);
     
     // Format data for Spotify
     const spotifyPlaylistData = {
@@ -138,6 +331,9 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
       }
     }, 2000);
     
+    // Re-enable all buttons after successful operation
+    toggleButtonsState(false);
+    
   } catch (error) {
     alert('Error adding songs to playlist: ' + error.message);
     
@@ -240,8 +436,8 @@ async function exchangeCodeForToken(code, playlistData) {
 // Function to create Spotify playlist with token refresh handling
 async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = null) {
   try {
-    // Disable all relevant buttons during API call
-    toggleButtonsState(true);
+    // Disable all relevant buttons during API call with loading indicators
+    toggleButtonsState(true, true);
     
     // Format data for Spotify
     const spotifyPlaylistData = {
@@ -354,6 +550,9 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         resultsModal.parentNode.removeChild(resultsModal);
       }
     }, 2000); // Close after 2 seconds to let user see the success notification
+    
+    // Re-enable all buttons after successful operation
+    toggleButtonsState(false);
     
   } catch (error) {
     alert('Error creating playlist: ' + error.message);
@@ -2892,8 +3091,7 @@ function showMusicGenreModal() {
       if (selectedGenres.length > 0) {
         // Show loading state
         useSelectedPlaylistButton.textContent = '🤖 AI Generation...';
-        useSelectedPlaylistButton.disabled = true;
-        useSelectedPlaylistButton.style.opacity = '0.7';
+        toggleButtonsState(true, true);
         
         // Add animation
         useSelectedPlaylistButton.style.animation = 'pulse 1.5s infinite';
@@ -2945,6 +3143,8 @@ function showMusicGenreModal() {
         } catch (error) {
           if (error.message.includes('Failed to fetch')) {
             alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
+          } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
+            alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
           } else {
             alert(`Error generating playlist: ${error.message}`);
           }
@@ -3038,6 +3238,8 @@ function showMusicGenreModal() {
       } catch (error) {
         if (error.message.includes('Failed to fetch')) {
           alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
+        } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
+          alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
         } else {
           alert(`Error generating playlist: ${error.message}`);
         }
