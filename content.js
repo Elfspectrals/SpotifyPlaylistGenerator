@@ -112,6 +112,17 @@ function restoreButton(button) {
   button.style.border = '';
 }
 
+// Utility function to re-enable the main AI Playlist button
+function reEnableMainAIButton() {
+  const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
+  if (mainAIButton) {
+    restoreButton(mainAIButton);
+    console.log('✅ Main AI Playlist button re-enabled');
+  } else {
+    console.log('⚠️ Main AI Playlist button not found for re-enabling');
+  }
+}
+
 // Utility function to disable/enable all relevant buttons with loading indicators
 function toggleButtonsState(disabled = true, showLoading = true) {
   const allButtons = document.querySelectorAll('button');
@@ -124,7 +135,8 @@ function toggleButtonsState(disabled = true, showLoading = true) {
       button.textContent.includes('Connecting to Spotify') ||
       button.textContent.includes('AI Generation') ||
       button.textContent.includes('🤖 AI Generation') ||
-      button.textContent.includes('🤖 Generating')
+      button.textContent.includes('🤖 Generating') ||
+      button.textContent.includes('AI Playlist')
     )) {
       button.disabled = disabled;
       
@@ -334,11 +346,17 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
     
+    // Specifically re-enable the main AI Playlist button
+    reEnableMainAIButton();
+    
   } catch (error) {
     alert('Error adding songs to playlist: ' + error.message);
     
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
+    
+    // Specifically re-enable the main AI Playlist button
+    reEnableMainAIButton();
   }
 }
 
@@ -554,11 +572,17 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
     
+    // Specifically re-enable the main AI Playlist button
+    reEnableMainAIButton();
+    
   } catch (error) {
     alert('Error creating playlist: ' + error.message);
     
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
+    
+    // Specifically re-enable the main AI Playlist button
+    reEnableMainAIButton();
   }
 }
 
@@ -1480,6 +1504,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     if (modal && modal.parentNode) {
       modal.parentNode.removeChild(modal);
     }
+    // Re-enable the main AI Playlist button when modal closes
+    reEnableMainAIButton();
   });
 
   // Copy button
@@ -3136,6 +3162,8 @@ function showMusicGenreModal() {
           if (modal && modal.parentNode) {
             modal.parentNode.removeChild(modal);
           }
+          // Re-enable the main AI Playlist button when modal closes
+          reEnableMainAIButton();
           
           // Show the results and add to selected playlist
           showPlaylistResultsForAdding(playlistData, selectedPlaylistData.id);
@@ -3687,6 +3715,8 @@ function showMusicGenreModal() {
       if (modal && modal.parentNode) {
         modal.parentNode.removeChild(modal);
       }
+      // Re-enable the main AI Playlist button when modal closes
+      reEnableMainAIButton();
     });
 
     copyButton.addEventListener('click', () => {
@@ -4303,6 +4333,8 @@ function showMusicGenreModal() {
     if (modal && modal.parentNode) {
       modal.parentNode.removeChild(modal);
     }
+    // Re-enable the main AI Playlist button when modal closes
+    reEnableMainAIButton();
     
     // Restore the main AI Playlist button functionality
     const mainButton = document.querySelector('button[aria-label="AI Playlist"]');
@@ -4420,6 +4452,12 @@ function cleanupDuplicateButtons() {
     addAIPlaylistButton();
   } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
     console.log('✅ Create AI Playlist button found, no restoration needed');
+  }
+  
+  // Ensure main AI Playlist button is always enabled
+  if (mainAIButton && mainAIButton.disabled) {
+    console.log('🔓 Re-enabling disabled main AI Playlist button...');
+    reEnableMainAIButton();
   }
   
   console.log('✅ Duplicate cleanup completed');
