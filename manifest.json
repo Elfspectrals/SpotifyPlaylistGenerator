@@ -21,7 +21,15 @@
       "matches": [
         "https://open.spotify.com/*"
       ],
-      "js": ["content.js"]
+      "js": [
+        "config.js",
+        "styles.js",
+        "utils.js",
+        "api.js",
+        "buttons.js",
+        "auth.js",
+        "content.js"
+      ]
     }
   ]
 }

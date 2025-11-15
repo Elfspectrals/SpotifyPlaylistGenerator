@@ -1,291 +1,24 @@
 // Spotify AI Generator Playlist Extender
+// Point d'entrée principal - utilise les modules config, styles, utils, api, buttons, auth
 
-// Add global styles for disabled buttons and loading indicators
-const disabledButtonStyles = document.createElement('style');
-disabledButtonStyles.textContent = `
-  .button-disabled {
-    opacity: 0.3 !important;
-    background: #333 !important;
-    color: #999 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    box-shadow: none !important;
-    pointer-events: none !important;
-    border: 1px solid #555 !important;
-    filter: grayscale(100%) !important;
-  }
-  
-  .button-disabled:hover {
-    background: #333 !important;
-    color: #999 !important;
-    transform: none !important;
-    box-shadow: none !important;
-    cursor: not-allowed !important;
-    filter: grayscale(100%) !important;
-  }
-  
-  .button-disabled:active {
-    transform: none !important;
-    box-shadow: none !important;
-    background: #333 !important;
-    color: #999 !important;
-  }
-  
-  .button-disabled * {
-    color: #999 !important;
-  }
+// Injecter les styles globaux (depuis styles.js)
+injectGlobalStyles();
 
-  /* Loading spinner styles */
-  .loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ffffff40;
-    border-radius: 50%;
-    border-top-color: #ffffff;
-    animation: spin 1s ease-in-out infinite;
-    margin-right: 8px;
-  }
-
-  .loading-spinner-small {
-    width: 12px;
-    height: 12px;
-    border-width: 1.5px;
-    margin-right: 6px;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Loading button styles */
-  .button-loading {
-    position: relative;
-    opacity: 0.8 !important;
-    cursor: not-allowed !important;
-  }
-
-  .button-loading:hover {
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Pulse animation for loading states */
-  @keyframes pulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.6; }
-  }
-
-  .button-pulse {
-    animation: pulse 1.5s infinite;
-  }
-`;
-document.head.appendChild(disabledButtonStyles);
-
-// Utility function to show specific loading messages
-function showLoadingMessage(button, message) {
-  if (!button.dataset.originalText) {
-    button.dataset.originalText = button.textContent;
-  }
-  
-  const spinner = document.createElement('span');
-  spinner.className = 'loading-spinner';
-  button.innerHTML = '';
-  button.appendChild(spinner);
-  button.appendChild(document.createTextNode(' ' + message));
-  button.classList.add('button-loading', 'button-pulse');
-}
-
-// Utility function to restore button to original state
-function restoreButton(button) {
-  if (button.dataset.originalText) {
-    button.textContent = button.dataset.originalText;
-    delete button.dataset.originalText;
-  }
-  button.classList.remove('button-loading', 'button-pulse');
-  button.disabled = false;
-  button.style.opacity = '1';
-  button.style.cursor = 'pointer';
-  button.style.transform = '';
-  button.style.boxShadow = '';
-  button.style.filter = 'none';
-  button.style.border = '';
-}
-
-// Utility function to re-enable the main AI Playlist button
-function reEnableMainAIButton() {
-  const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
-  if (mainAIButton) {
-    restoreButton(mainAIButton);
-    console.log('✅ Main AI Playlist button re-enabled');
-  } else {
-    console.log('⚠️ Main AI Playlist button not found for re-enabling');
-  }
-}
-
-// Utility function to disable/enable all relevant buttons with loading indicators
-function toggleButtonsState(disabled = true, showLoading = true) {
-  const allButtons = document.querySelectorAll('button');
-  allButtons.forEach(button => {
-    if (button.textContent && (
-      button.textContent.includes('Add to Current Playlist') ||
-      button.textContent.includes('Create AI Playlist') ||
-      button.textContent.includes('Use Selected Playlist') ||
-      button.textContent.includes('Generate') ||
-      button.textContent.includes('Connecting to Spotify') ||
-      button.textContent.includes('AI Generation') ||
-      button.textContent.includes('🤖 AI Generation') ||
-      button.textContent.includes('🤖 Generating') ||
-      button.textContent.includes('AI Playlist')
-    )) {
-      button.disabled = disabled;
-      
-      if (disabled) {
-        // Store original text for restoration
-        if (!button.dataset.originalText) {
-          button.dataset.originalText = button.textContent;
-        }
-        
-        // Add loading indicator if requested
-        if (showLoading) {
-          const spinner = document.createElement('span');
-          spinner.className = 'loading-spinner';
-          button.innerHTML = '';
-          button.appendChild(spinner);
-          
-          // Add appropriate loading text based on button type
-          if (button.dataset.originalText.includes('Add to Current Playlist')) {
-            button.appendChild(document.createTextNode(' Adding to Playlist...'));
-          } else if (button.dataset.originalText.includes('Create AI Playlist')) {
-            button.appendChild(document.createTextNode(' Creating Playlist...'));
-          } else if (button.dataset.originalText.includes('Use Selected Playlist')) {
-            button.appendChild(document.createTextNode(' Generating...'));
-          } else if (button.dataset.originalText.includes('Generate')) {
-            button.appendChild(document.createTextNode(' Generating...'));
-          } else {
-            button.appendChild(document.createTextNode(' Loading...'));
-          }
-          
-          // Add loading classes
-          button.classList.add('button-loading', 'button-pulse');
-        } else {
-          // Style pour boutons désactivés - plus visible
-          button.style.opacity = '0.3';
-          button.style.background = '#333';
-          button.style.color = '#999';
-          button.style.cursor = 'not-allowed';
-          button.style.transform = 'none';
-          button.style.boxShadow = 'none';
-          button.style.border = '1px solid #555';
-          button.style.filter = 'grayscale(100%)';
-          
-          // Ajouter une classe CSS pour le style désactivé
-          button.classList.add('button-disabled');
-        }
-      } else {
-        // Restore original text
-        if (button.dataset.originalText) {
-          button.textContent = button.dataset.originalText;
-          delete button.dataset.originalText;
-        }
-        
-        // Remove loading classes
-        button.classList.remove('button-loading', 'button-pulse');
-        
-        // Restaurer le style normal
-        button.style.opacity = '1';
-        button.style.cursor = 'pointer';
-        button.style.transform = '';
-        button.style.boxShadow = '';
-        button.style.filter = 'none';
-        button.style.border = '';
-        
-        // Restaurer les couleurs originales selon le type de bouton
-        if (button.textContent.includes('Create AI Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Add to Current Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Use Selected Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Generate') || button.textContent.includes('AI Generation')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          button.style.color = 'white';
-        }
-        
-        // Supprimer la classe désactivée
-        button.classList.remove('button-disabled');
-      }
-    }
-  });
-}
+// Initialiser l'authentification (depuis auth.js)
+initAuthCallback();
+setupAuthMessageListener();
 
 // Global function to add songs to existing playlist via API
 async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
   try {
     console.log('🎵 Adding songs to existing playlist:', playlistId);
-    
+
     // Disable all relevant buttons during API call with loading indicators
     toggleButtonsState(true, true);
-    
-    // Format data for Spotify
-    const spotifyPlaylistData = {
-      name: playlistData.playlist.name || 'AI Generated Playlist',
-      description: playlistData.playlist.description || 'Generated by AI',
-      songs: (playlistData.playlist.songs || []).map(song => ({
-        title: song.title,
-        artist: song.artist
-      }))
-    };
-    
-    let addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        accessToken, 
-        playlistId,
-        playlistData: spotifyPlaylistData 
-      })
-    });
-    
-    // If token expired, try to refresh it
-    if (!addResponse.ok && refreshToken) {
-      const errorText = await addResponse.text();
-      
-      try {
-        const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        
-        if (refreshResponse.ok) {
-          const { accessToken: newAccessToken } = await refreshResponse.json();
-          
-          // Retry with new token
-          addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              accessToken: newAccessToken, 
-              playlistId,
-              playlistData: spotifyPlaylistData 
-            })
-          });
-        }
-      } catch (refreshError) {
-      }
-    }
-    
-    if (!addResponse.ok) {
-      const errorText = await addResponse.text();
-      throw new Error(`Spotify addition failed: ${addResponse.status} - ${errorText}`);
-    }
-    
-    const result = await addResponse.json();
-    
+
+    // Utiliser la fonction du module API
+    const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
+
     // Show success notification
     const notification = document.createElement('div');
     notification.className = 'success-notification';
@@ -301,7 +34,7 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
       z-index: 10002;
       max-width: 400px;
     `;
-    
+
     notification.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
         <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -325,16 +58,16 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
         font-size: 14px;
       ">Close</button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-close after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
         notification.remove();
       }
     }, 5000);
-    
+
     // Close the results modal after successful addition
     setTimeout(() => {
       const resultsModal = document.getElementById('playlist-results-modal');
@@ -342,112 +75,21 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
         resultsModal.parentNode.removeChild(resultsModal);
       }
     }, 2000);
-    
+
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-    
+
   } catch (error) {
     alert('Error adding songs to playlist: ' + error.message);
-    
+
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-  }
-}
-
-// Check if we're returning from Spotify auth
-
-if (sessionStorage.getItem('authInProgress') === 'true') {
-  // Check if we have auth parameters in the URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const error = urlParams.get('error');
-  
-  if (code) {
-    handleAuthCallback(code);
-  } else if (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error);
-  } else {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-  }
-}
-
-// Function to handle auth callback
-async function handleAuthCallback(code) {
-  try {
-    const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    if (!tokenResponse.ok) {
-      throw new Error('Token exchange failed');
-    }
-    
-    const { accessToken } = await tokenResponse.json();
-    
-    // Get the pending playlist data
-    const pendingPlaylistData = JSON.parse(sessionStorage.getItem('pendingPlaylistData'));
-    if (!pendingPlaylistData) {
-      throw new Error('No pending playlist data found');
-    }
-    
-    await createSpotifyPlaylist(accessToken, pendingPlaylistData);
-    
-    // Clean up
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    
-  } catch (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error.message);
-  }
-}
-
-// Listen for messages from auth window (fallback)
-window.addEventListener('message', async (event) => {
-  
-  if (event.data && event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
-    const { accessToken, playlistData } = event.data;
-    await createSpotifyPlaylist(accessToken, playlistData);
-  }
-});
-
-// Function to exchange code for token
-async function exchangeCodeForToken(code, playlistData) {
-  try {
-    const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    if (!tokenResponse.ok) {
-      throw new Error('Token exchange failed');
-    }
-    
-    const { accessToken, refreshToken } = await tokenResponse.json();
-    
-    // Store auth data for the popup close handler
-    sessionStorage.setItem('spotifyAuthData', JSON.stringify({ accessToken, refreshToken, playlistData }));
-    
-    // Also create the playlist immediately
-    await createSpotifyPlaylist(accessToken, playlistData, refreshToken);
-    
-  } catch (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error.message);
   }
 }
 
@@ -456,62 +98,10 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
   try {
     // Disable all relevant buttons during API call with loading indicators
     toggleButtonsState(true, true);
-    
-    // Format data for Spotify
-    const spotifyPlaylistData = {
-      name: playlistData.playlist.name || 'AI Generated Playlist',
-      description: playlistData.playlist.description || 'Generated by AI',
-      songs: (playlistData.playlist.songs || []).map(song => ({
-        title: song.title,
-        artist: song.artist
-      }))
-    };
-    
-    
-    let createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        accessToken, 
-        playlistData: spotifyPlaylistData 
-      })
-    });
-    
-    // If token expired, try to refresh it
-    if (!createResponse.ok && refreshToken) {
-      const errorText = await createResponse.text();
-      
-      try {
-        const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        
-        if (refreshResponse.ok) {
-          const { accessToken: newAccessToken } = await refreshResponse.json();
-          
-          // Retry with new token
-          createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              accessToken: newAccessToken, 
-              playlistData: spotifyPlaylistData 
-            })
-          });
-        }
-      } catch (refreshError) {
-      }
-    }
-    
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      throw new Error(`Spotify creation failed: ${createResponse.status} - ${errorText}`);
-    }
-    
-    const result = await createResponse.json();
-    
+
+    // Utiliser la fonction du module API (appelée via window pour éviter conflit de nom)
+    const result = await window.createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken);
+
     // Show success notification
     const notification = document.createElement('div');
     notification.className = 'success-notification';
@@ -527,7 +117,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
       z-index: 10002;
       max-width: 400px;
     `;
-    
+
     notification.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
         <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -551,16 +141,16 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         font-size: 14px;
       ">Close</button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-close after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
         notification.remove();
       }
     }, 5000);
-    
+
     // Close the results modal after successful creation
     setTimeout(() => {
       const resultsModal = document.getElementById('playlist-results-modal');
@@ -568,94 +158,34 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         resultsModal.parentNode.removeChild(resultsModal);
       }
     }, 2000); // Close after 2 seconds to let user see the success notification
-    
+
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-    
+
   } catch (error) {
     alert('Error creating playlist: ' + error.message);
-    
+
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
   }
 }
 
-// Wait for the page to load
-function waitForElement(selector, timeout = 10000) {
-  return new Promise((resolve, reject) => {
-    const element = document.querySelector(selector);
-    if (element) {
-      resolve(element);
-      return;
-    }
-
-    const observer = new MutationObserver((mutations, obs) => {
-      const element = document.querySelector(selector);
-      if (element) {
-        obs.disconnect();
-        resolve(element);
-      }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    setTimeout(() => {
-      observer.disconnect();
-      reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-    }, timeout);
-  });
-}
-
 // Watch for page changes and retry adding the button
-function watchForPageChanges() {
-  const observer = new MutationObserver((mutations) => {
-    let shouldRetry = false;
-    
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        // Check if any new buttons were added, but ignore modal elements
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Ignore modal elements to prevent conflicts
-            if (node.id && (node.id.includes('modal') || node.id.includes('ai-playlist'))) {
-              return; // Skip modal elements
-            }
-            
-            if (node.tagName === 'BUTTON' || node.querySelector && node.querySelector('button')) {
-              shouldRetry = true;
-            }
-          }
-        });
-      }
-    });
-    
-    if (shouldRetry) {
-      setTimeout(() => {
-        // Check if our button already exists
-        const existingButton = document.querySelector('button[aria-label="AI Playlist"]');
-        if (!existingButton) {
-          console.log('🔄 MutationObserver: Re-adding AI Playlist button...');
-          addAIPlaylistButton();
-        }
-      }, 1000);
+function watchForPageChangesWrapper() {
+  return watchForPageChanges(() => {
+    // Check if our button already exists
+    const existingButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
+    if (!existingButton) {
+      console.log('🔄 MutationObserver: Re-adding AI Playlist button...');
+      addAIPlaylistButton();
     }
   });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  return observer;
 }
 
 // Function to add "Choose Playlist" button
@@ -664,35 +194,35 @@ function addChoosePlaylistButton() {
     // Check if we're on a playlist page
     const currentUrl = window.location.href;
     const isPlaylistPage = currentUrl.includes('/playlist/');
-    
+
     if (!isPlaylistPage) {
       return; // Only add the button on playlist pages
     }
-    
+
     // Check if Choose Playlist button already exists to avoid duplicates
-    const existingChooseButton = document.querySelector('button[aria-label="Choose Playlist"]');
+    const existingChooseButton = document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
     if (existingChooseButton) {
       console.log('Choose Playlist button already exists, skipping...');
       return;
     }
-    
+
     // Set up observer to watch for playlist changes
     setupPlaylistChangeObserver();
-    
+
     // Wait a bit for the page to load
     setTimeout(() => {
       // Look for the action buttons container (where the play, shuffle, download buttons are)
-      const actionButtonsContainer = document.querySelector('[data-testid="action-bar-row"]') || 
-                                   document.querySelector('.main-actionBar-ActionBarRow') ||
-                                   document.querySelector('[role="toolbar"]');
-      
+      const actionButtonsContainer = document.querySelector('[data-testid="action-bar-row"]') ||
+        document.querySelector('.main-actionBar-ActionBarRow') ||
+        document.querySelector('[role="toolbar"]');
+
       if (actionButtonsContainer) {
         // Check if our button already exists
         const existingButton = actionButtonsContainer.querySelector('[aria-label="Choose Playlist"]');
         if (existingButton) {
           return; // Button already exists
         }
-        
+
         // Create the "Choose Playlist" button
         const choosePlaylistButton = document.createElement('button');
         choosePlaylistButton.setAttribute('aria-label', 'Choose Playlist');
@@ -712,33 +242,33 @@ function addChoosePlaylistButton() {
           margin-left: 8px;
           box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         `;
-        
+
         // Add the icon (checkmark or plus icon)
         choosePlaylistButton.innerHTML = `
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
         `;
-        
+
         // Add hover effects
         choosePlaylistButton.addEventListener('mouseenter', () => {
           choosePlaylistButton.style.transform = 'scale(1.1)';
           choosePlaylistButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
         });
-        
+
         choosePlaylistButton.addEventListener('mouseleave', () => {
           choosePlaylistButton.style.transform = 'scale(1)';
           choosePlaylistButton.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
         });
-        
+
         // Add click handler
         choosePlaylistButton.addEventListener('click', () => {
           saveCurrentPlaylist();
         });
-        
+
         // Insert the button at the end of the action buttons
         actionButtonsContainer.appendChild(choosePlaylistButton);
-        
+
         console.log('✅ Choose Playlist button added successfully');
       } else {
         console.log('⚠️ Action buttons container not found, retrying...');
@@ -746,7 +276,7 @@ function addChoosePlaylistButton() {
         setTimeout(() => addChoosePlaylistButton(), 2000);
       }
     }, 1500);
-    
+
   } catch (error) {
     console.log('Error adding Choose Playlist button:', error);
   }
@@ -757,29 +287,29 @@ function setupPlaylistChangeObserver() {
   let currentPlaylistId = null;
   let saveTimeout = null;
   let buttonTimeout = null;
-  
+
   // Get current playlist ID
   const currentUrl = window.location.href;
   const playlistMatch = currentUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
   if (playlistMatch) {
     currentPlaylistId = playlistMatch[1];
   }
-  
+
   // Observer to watch for URL changes and page content changes
   const observer = new MutationObserver((mutations) => {
     // Check if URL has changed
     const newUrl = window.location.href;
     const newPlaylistMatch = newUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
-    
+
     if (newPlaylistMatch) {
       const newPlaylistId = newPlaylistMatch[1];
-      
+
       // If we're on a different playlist, update the selected playlist automatically
       // BUT only if the user has already selected a playlist before
       if (currentPlaylistId !== newPlaylistId) {
         console.log('Playlist changed from', currentPlaylistId, 'to', newPlaylistId);
         currentPlaylistId = newPlaylistId;
-        
+
         // Only auto-save if user has previously selected a playlist
         const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
         if (hasSelectedPlaylist) {
@@ -793,12 +323,12 @@ function setupPlaylistChangeObserver() {
         }
       }
     }
-    
+
     // Also watch for changes in the action buttons area (with debounce)
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         // Check if our button was removed and needs to be re-added
-        const existingButton = document.querySelector('[aria-label="Choose Playlist"]');
+        const existingButton = document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
         if (!existingButton && window.location.href.includes('/playlist/')) {
           // Clear existing timeout and set new one (debounce)
           if (buttonTimeout) {
@@ -806,7 +336,7 @@ function setupPlaylistChangeObserver() {
           }
           buttonTimeout = setTimeout(() => {
             // Double-check that button still doesn't exist before adding
-            const stillNoButton = !document.querySelector('[aria-label="Choose Playlist"]');
+            const stillNoButton = !document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
             if (stillNoButton) {
               addChoosePlaylistButton();
             }
@@ -815,13 +345,13 @@ function setupPlaylistChangeObserver() {
       }
     });
   });
-  
+
   // Start observing
   observer.observe(document.body, {
     childList: true,
     subtree: true
   });
-  
+
   // Also listen for popstate events (back/forward navigation) with debounce
   let popstateTimeout = null;
   window.addEventListener('popstate', () => {
@@ -834,7 +364,7 @@ function setupPlaylistChangeObserver() {
         const newPlaylistMatch = window.location.href.match(/\/playlist\/([a-zA-Z0-9]+)/);
         if (newPlaylistMatch && newPlaylistMatch[1] !== currentPlaylistId) {
           currentPlaylistId = newPlaylistMatch[1];
-          
+
           // Only auto-save if user has previously selected a playlist
           const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
           if (hasSelectedPlaylist) {
@@ -850,7 +380,7 @@ function setupPlaylistChangeObserver() {
       }
     }, 500); // Wait 500ms to avoid spam
   });
-  
+
   console.log('Playlist change observer set up');
 }
 
@@ -859,13 +389,13 @@ function saveCurrentPlaylist(showNotification = true) {
   try {
     const currentUrl = window.location.href;
     const playlistMatch = currentUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
-    
+
     if (playlistMatch) {
       const playlistId = playlistMatch[1];
-      
+
       // Get playlist name from the page - try multiple selectors for better reliability
       let playlistName = 'Selected Playlist';
-      
+
       // Try different selectors to find the playlist name, prioritizing the main title
       const nameSelectors = [
         // Try to find the main playlist title in the header area first
@@ -886,25 +416,25 @@ function saveCurrentPlaylist(showNotification = true) {
         '.main-entityHeader .encore-text-body-small',
         '.encore-text-body-small'
       ];
-      
+
       for (const selector of nameSelectors) {
         const element = document.querySelector(selector);
         if (element && element.textContent && element.textContent.trim()) {
           const text = element.textContent.trim();
           // Make sure it's not just "Bibliothèque" or other navigation text
           // Also avoid generic names like "Titre • [name]"
-          if (text !== 'Bibliothèque' && 
-              text !== 'Playlists' && 
-              text.length > 3 &&
-              !text.includes('Titre •') &&
-              !text.includes('Playlist •')) {
+          if (text !== 'Bibliothèque' &&
+            text !== 'Playlists' &&
+            text.length > 3 &&
+            !text.includes('Titre •') &&
+            !text.includes('Playlist •')) {
             playlistName = text;
             console.log('Found playlist name:', text, 'using selector:', selector);
             break;
           }
         }
       }
-      
+
       // If we still haven't found a good name, try to get it from the page title or URL
       if (playlistName === 'Selected Playlist' || playlistName === 'Bibliothèque') {
         // Try to get from page title
@@ -916,7 +446,7 @@ function saveCurrentPlaylist(showNotification = true) {
           }
         }
       }
-      
+
       // Save to localStorage
       const playlistData = {
         id: playlistId,
@@ -924,9 +454,9 @@ function saveCurrentPlaylist(showNotification = true) {
         url: currentUrl,
         savedAt: new Date().toISOString()
       };
-      
+
       localStorage.setItem('selectedPlaylist', JSON.stringify(playlistData));
-      
+
       // Only show notification if explicitly requested
       if (showNotification) {
         // Show success notification
@@ -945,7 +475,7 @@ function saveCurrentPlaylist(showNotification = true) {
           max-width: 400px;
           animation: slideIn 0.3s ease;
         `;
-        
+
         notification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">✅</div>
@@ -967,9 +497,9 @@ function saveCurrentPlaylist(showNotification = true) {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-close after 4 seconds
         setTimeout(() => {
           if (notification.parentElement) {
@@ -977,7 +507,7 @@ function saveCurrentPlaylist(showNotification = true) {
           }
         }, 4000);
       }
-      
+
       console.log('✅ Playlist saved:', playlistData);
     } else {
       if (showNotification) {
@@ -1051,7 +581,7 @@ function showChoosePlaylistModal() {
     margin-bottom: 30px;
     border: 1px solid #444;
   `;
-  
+
   playlistInfo.innerHTML = `
     <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
       🎵 Current Playlist
@@ -1074,7 +604,7 @@ function showChoosePlaylistModal() {
     border: 1px solid #444;
     text-align: center;
   `;
-  
+
   const songCountLabel = document.createElement('div');
   songCountLabel.textContent = 'Number of Songs to Add';
   songCountLabel.style.cssText = `
@@ -1083,7 +613,7 @@ function showChoosePlaylistModal() {
     font-weight: bold;
     margin-bottom: 15px;
   `;
-  
+
   const songCountSelector = document.createElement('div');
   songCountSelector.style.cssText = `
     display: flex;
@@ -1092,11 +622,11 @@ function showChoosePlaylistModal() {
     gap: 10px;
     flex-wrap: wrap;
   `;
-  
+
   // Create song count options
-  const songCounts = [3, 5, 8, 10, 15];
-  let selectedSongCount = 5;
-  
+  const songCounts = CONFIG.DEFAULTS.SONG_COUNT_OPTIONS;
+  let selectedSongCount = CONFIG.DEFAULTS.SONG_COUNT;
+
   songCounts.forEach(count => {
     const button = document.createElement('button');
     button.textContent = count.toString();
@@ -1115,24 +645,24 @@ function showChoosePlaylistModal() {
       align-items: center;
       justify-content: center;
     `;
-    
+
     button.addEventListener('click', () => {
       // Remove selection from all buttons
       songCountSelector.querySelectorAll('button').forEach(btn => {
         btn.style.background = 'transparent';
         btn.style.color = '#667eea';
       });
-      
+
       // Select current button
       button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
       button.style.color = 'white';
-      
+
       selectedSongCount = count;
     });
-    
+
     songCountSelector.appendChild(button);
   });
-  
+
   songCountContainer.appendChild(songCountLabel);
   songCountContainer.appendChild(songCountSelector);
 
@@ -1179,13 +709,13 @@ function showChoosePlaylistModal() {
       generateButton.textContent = '🤖 Generating...';
       generateButton.disabled = true;
       generateButton.style.opacity = '0.7';
-      
+
       // Generate playlist with random genres for variety
       const randomGenres = [
-        'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical', 
+        'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical',
         'Metal', 'Folk', 'R&B', 'Blues', 'Reggae', 'World Music'
       ];
-      
+
       // Select 2-3 random genres
       const selectedGenres = [];
       const numGenres = Math.floor(Math.random() * 2) + 2; // 2 or 3 genres
@@ -1195,37 +725,20 @@ function showChoosePlaylistModal() {
           selectedGenres.push(randomGenre);
         }
       }
-      
-      // Call the AI to generate songs
-      const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          selectedGenres: selectedGenres,
-          songCount: selectedSongCount
-        }),
-        mode: 'cors',
-        credentials: 'omit'
-      });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+      // Call the AI to generate songs (utilise le module API)
+      const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
 
-      const playlistData = await response.json();
-      
       if (!playlistData || !playlistData.playlist) {
         throw new Error('Invalid server response format');
       }
-      
+
       // Close the modal
       modalOverlay.remove();
-      
+
       // Show the results and add to playlist
       showPlaylistResultsForAdding(playlistData, playlistId);
-      
+
     } catch (error) {
       alert('Error generating songs: ' + error.message);
       generateButton.textContent = 'Generate & Add Songs';
@@ -1267,7 +780,7 @@ function showChoosePlaylistModal() {
   // Assemble modal
   actionButtons.appendChild(cancelButton);
   actionButtons.appendChild(generateButton);
-  
+
   modalContent.appendChild(closeButton);
   modalContent.appendChild(title);
   modalContent.appendChild(playlistInfo);
@@ -1282,14 +795,14 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Close all existing modals
   const existingModal = document.getElementById('ai-playlist-modal');
   const existingResultsModal = document.getElementById('playlist-results-modal');
-  
+
   if (existingModal) {
     existingModal.remove();
   }
   if (existingResultsModal) {
     existingResultsModal.remove();
   }
-  
+
   // Create a new modal for results
   const resultsModal = document.createElement('div');
   resultsModal.id = 'playlist-results-modal';
@@ -1443,18 +956,30 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
     songItem.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
+        <div style="flex: 1;">
           <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
             ${song.title}
           </div>
           <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
-            ${song.artist} (${song.year})
+            ${song.artist}${song.year ? ` (${song.year})` : ''}
           </div>
+          ${song.album ? `
+          <div style="color: #888; font-size: 14px; margin-bottom: 3px; font-style: italic;">
+            📀 ${song.album}
+          </div>
+          ` : ''}
+          ${song.genre || song.description ? `
           <div style="color: #999; font-size: 14px;">
-            ${song.genre} • ${song.description}
+            ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
           </div>
+          ` : ''}
+          ${song.duration ? `
+          <div style="color: #666; font-size: 12px; margin-top: 3px;">
+            ⏱️ ${song.duration}
+          </div>
+          ` : ''}
         </div>
-        <div style="color: #666; font-size: 14px;">
+        <div style="color: #666; font-size: 14px; margin-left: 15px;">
           #${index + 1}
         </div>
       </div>
@@ -1524,10 +1049,14 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   `;
 
   copyButton.addEventListener('click', () => {
-    const playlistText = `${playlistData.playlist.name}\n\n${playlistData.playlist.songs.map((song, index) => 
-      `${index + 1}. ${song.title} - ${song.artist} (${song.year})`
-    ).join('\n')}`;
-    
+    const playlistText = `${playlistData.playlist.name}\n\n${playlistData.playlist.songs.map((song, index) => {
+      let line = `${index + 1}. ${song.title} - ${song.artist}`;
+      if (song.year) line += ` (${song.year})`;
+      if (song.album) line += ` [${song.album}]`;
+      if (song.duration) line += ` - ${song.duration}`;
+      return line;
+    }).join('\n')}`;
+
     navigator.clipboard.writeText(playlistText).then(() => {
       alert('Playlist copied to clipboard!');
     }).catch(() => {
@@ -1555,34 +1084,33 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
       addToPlaylistButton.disabled = true;
       addToPlaylistButton.style.opacity = '0.7';
-      
-      // Get auth URL and handle authentication
-      const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-      const { authUrl } = await authResponse.json();
-      
+
+      // Get auth URL and handle authentication (utilise le module API)
+      const { authUrl } = await window.getSpotifyAuthUrl();
+
       // Store the current playlist data and ID
-      sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
-      sessionStorage.setItem('pendingPlaylistId', playlistId);
-      sessionStorage.setItem('authInProgress', 'true');
-      
+      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
+      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
+      sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
+
       // Open auth window
       const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-      
+
       // Listen for messages from the popup window
       const messageHandler = (event) => {
         if (event.data && event.data.success && event.data.accessToken) {
           window.removeEventListener('message', messageHandler);
-          
+
           const { accessToken, refreshToken } = event.data;
-          
+
           // Add songs to existing playlist
           addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-          
+
           // Clean up
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
-          sessionStorage.removeItem('pendingPlaylistId');
-          
+          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
+          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
+          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID);
+
           // Close the popup
           if (authWindow && !authWindow.closed) {
             authWindow.close();
@@ -1595,18 +1123,18 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
           }
         }
       };
-      
+
       window.addEventListener('message', messageHandler);
-      
-      // Timeout after 5 minutes
+
+      // Timeout after configured time
       setTimeout(() => {
         window.removeEventListener('message', messageHandler);
         if (!authWindow.closed) {
           authWindow.close();
           alert('Authentication timed out. Please try again.');
         }
-      }, 300000);
-      
+      }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+
     } catch (error) {
       alert('Error adding to playlist: ' + error.message);
       addToPlaylistButton.textContent = 'Add to Current Playlist';
@@ -1630,17 +1158,17 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 // Create and inject the AI Playlist button
 async function addAIPlaylistButton() {
   try {
-    
+
     // Wait a moment for the page to fully load
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise(resolve => setTimeout(resolve, CONFIG.TIMEOUTS.PAGE_LOAD_DELAY));
+
     // Check if AI Playlist button already exists to avoid duplicates
-    const existingAIButton = document.querySelector('button[aria-label="AI Playlist"]');
+    const existingAIButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (existingAIButton) {
       console.log('AI Playlist button already exists, skipping...');
       return;
     }
-    
+
     // Also check for buttons with the exact text content - but only check for Create buttons
     const existingButtons = document.querySelectorAll('button');
     for (let button of existingButtons) {
@@ -1649,16 +1177,16 @@ async function addAIPlaylistButton() {
         return;
       }
     }
-    
+
     // Add the "Choose Playlist" button for existing playlists
     addChoosePlaylistButton();
-    
+
     // First, let's debug what buttons are available
     const allButtons = document.querySelectorAll('button');
-    
+
     allButtons.forEach((button, index) => {
     });
-    
+
     // Try multiple selectors for the Create button
     const possibleSelectors = [
       'button[aria-label="Create"]',
@@ -1672,10 +1200,10 @@ async function addAIPlaylistButton() {
       '[data-testid*="create"]',
       '[data-testid*="playlist"]'
     ];
-    
+
     let createButton = null;
     let usedSelector = '';
-    
+
     for (const selector of possibleSelectors) {
       try {
         createButton = document.querySelector(selector);
@@ -1686,47 +1214,47 @@ async function addAIPlaylistButton() {
       } catch (e) {
       }
     }
-    
+
     // If still not found, try to find any button with "create" in text or aria-label
     if (!createButton) {
       for (const button of allButtons) {
         const text = button.textContent?.toLowerCase() || '';
         const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
         const title = button.getAttribute('title')?.toLowerCase() || '';
-        
-        if (text.includes('create') || text.includes('créer') || 
-            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
-            title.includes('create') || title.includes('créer')) {
+
+        if (text.includes('create') || text.includes('créer') ||
+          ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+          title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search';
           break;
         }
       }
     }
-    
+
     // If still not found, wait a bit and try again (page might still be loading)
     if (!createButton) {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       const allButtonsRetry = document.querySelectorAll('button');
-      
+
       for (const button of allButtonsRetry) {
         const text = button.textContent?.toLowerCase() || '';
         const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
         const title = button.getAttribute('title')?.toLowerCase() || '';
-        
-        if (text.includes('create') || text.includes('créer') || 
-            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
-            title.includes('create') || title.includes('créer')) {
+
+        if (text.includes('create') || text.includes('créer') ||
+          ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+          title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search (retry)';
           break;
         }
       }
     }
-    
+
     if (!createButton) {
-      
+
       // Try to find any suitable container for our button
       const possibleContainers = [
         'nav[role="navigation"]',
@@ -1736,7 +1264,7 @@ async function addAIPlaylistButton() {
         'nav',
         '.main-navBar-navBar'
       ];
-      
+
       let buttonContainer = null;
       for (const selector of possibleContainers) {
         const container = document.querySelector(selector);
@@ -1745,12 +1273,12 @@ async function addAIPlaylistButton() {
           break;
         }
       }
-      
+
       if (!buttonContainer) {
         // Last resort: use the body or a main container
         buttonContainer = document.querySelector('main') || document.body;
       }
-      
+
       // Create the AI Playlist button without reference to Create button
       const aiPlaylistButton = document.createElement('button');
       aiPlaylistButton.type = 'button';
@@ -1774,7 +1302,7 @@ async function addAIPlaylistButton() {
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
       `;
-      
+
       // Add the plus icon
       const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       iconSvg.setAttribute('data-encore-id', 'icon');
@@ -1783,43 +1311,43 @@ async function addAIPlaylistButton() {
       iconSvg.setAttribute('class', 'e-91000-icon e-91000-baseline yoyv1_1LPucwCXYDe5AN');
       iconSvg.setAttribute('viewBox', '0 0 16 16');
       iconSvg.style.cssText = '--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);';
-      
+
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', 'M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75');
       iconSvg.appendChild(path);
-      
+
       // Add the text span
       const textSpan = document.createElement('span');
       textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
       textSpan.setAttribute('data-encore-id', 'tet');
       textSpan.textContent = 'AI Playlist';
-      
+
       // Add click handler
       aiPlaylistButton.addEventListener('click', () => {
         showMusicGenreModal();
       });
-      
+
       // Assemble the button
       aiPlaylistButton.appendChild(iconSvg);
       aiPlaylistButton.appendChild(textSpan);
-      
+
       // Insert the button
       buttonContainer.appendChild(aiPlaylistButton);
-      
+
       return;
     }
-    
-    
+
+
     // Find the parent container that holds the buttons
     const buttonContainer = createButton.parentElement;
-    
+
     // Create the AI Playlist button
     const aiPlaylistButton = document.createElement('button');
     aiPlaylistButton.type = 'button';
     aiPlaylistButton.className = 'UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
     aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
     aiPlaylistButton.style.marginLeft = '8px';
-    
+
     // Add the plus icon (same as Create button)
     const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     iconSvg.setAttribute('data-encore-id', 'icon');
@@ -1828,29 +1356,29 @@ async function addAIPlaylistButton() {
     iconSvg.setAttribute('class', 'e-91000-icon e-91000-baseline yoyv1_1LPucwCXYDe5AN');
     iconSvg.setAttribute('viewBox', '0 0 16 16');
     iconSvg.style.cssText = '--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);';
-    
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', 'M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75');
     iconSvg.appendChild(path);
-    
+
     // Add the text span
     const textSpan = document.createElement('span');
     textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
     textSpan.setAttribute('data-encore-id', 'tet');
     textSpan.textContent = 'AI Playlist';
-    
+
     // Add click handler
     aiPlaylistButton.addEventListener('click', () => {
       showMusicGenreModal();
     });
-    
+
     // Assemble the button
     aiPlaylistButton.appendChild(iconSvg);
     aiPlaylistButton.appendChild(textSpan);
-    
+
     // Insert the button after the Create button
     buttonContainer.insertBefore(aiPlaylistButton, createButton.nextSibling);
-    
+
   } catch (error) {
   }
 }
@@ -1861,7 +1389,7 @@ const musicFamilies = {
     icon: '🎸',
     color: '#ff6b6b',
     subgenres: [
-      'Classic Rock', 'Alternative Rock', 'Indie Rock', 'Punk Rock', 
+      'Classic Rock', 'Alternative Rock', 'Indie Rock', 'Punk Rock',
       'Grunge', 'Progressive Rock', 'Psychedelic Rock', 'Hard Rock',
       'Soft Rock', 'Folk Rock', 'Blues Rock', 'Glam Rock',
       'Post-Rock', 'Math Rock', 'Shoegaze', 'Noise Rock', 'Garage Rock',
@@ -2094,12 +1622,12 @@ const musicFamilies = {
 // Music genre modal
 function showMusicGenreModal() {
   // Ensure the main AI Playlist button stays visible
-  const mainButton = document.querySelector('button[aria-label="AI Playlist"]');
+  const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
   if (mainButton) {
     console.log('🔒 Protecting main AI Playlist button during modal...');
     mainButton.style.pointerEvents = 'none'; // Temporarily disable to prevent conflicts
   }
-  
+
   // Create modal overlay
   const modalOverlay = document.createElement('div');
   modalOverlay.id = 'ai-playlist-modal';
@@ -2142,7 +1670,7 @@ function showMusicGenreModal() {
     margin-bottom: 30px;
     font-weight: bold;
   `;
-  
+
   // Add responsive styles
   const responsiveStyles = document.createElement('style');
   responsiveStyles.textContent = `
@@ -2487,7 +2015,7 @@ function showMusicGenreModal() {
     viewContainer.innerHTML = '';
     const families = Object.keys(musicFamilies);
     const angleStep = 360 / families.length;
-    
+
     families.forEach((familyName, index) => {
       const family = musicFamilies[familyName];
       const button = document.createElement('button');
@@ -2496,14 +2024,14 @@ function showMusicGenreModal() {
         <div style="font-size: 28px; margin-bottom: 5px;">${family.icon}</div>
         <div style="font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1;">${familyName}</div>
       `;
-      
+
       const angle = index * angleStep;
       // Responsive radius based on screen size
       const screenWidth = window.innerWidth;
       const radius = screenWidth <= 480 ? 120 : screenWidth <= 768 ? 150 : 200;
       const x = Math.cos(angle * Math.PI / 180) * radius;
       const y = Math.sin(angle * Math.PI / 180) * radius;
-      
+
       button.style.cssText = `
         position: absolute;
         width: 90px;
@@ -2572,13 +2100,13 @@ function showMusicGenreModal() {
     currentFamily = familyName;
     const family = musicFamilies[familyName];
     viewContainer.innerHTML = '';
-    
+
     // Update breadcrumb
     breadcrumb.innerHTML = `Main Categories > <span style="color: ${family.color}">${familyName}</span>`;
-    
+
     // Get subgenres first
     const subgenres = family.subgenres;
-    
+
     // Add search functionality for large subgenre lists
     if (subgenres.length > 20) {
       const searchContainer = document.createElement('div');
@@ -2599,7 +2127,7 @@ function showMusicGenreModal() {
         backdrop-filter: blur(10px);
         transition: all 0.3s ease;
       `;
-      
+
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.placeholder = `Search ${familyName} subgenres...`;
@@ -2612,7 +2140,7 @@ function showMusicGenreModal() {
         outline: none;
         padding: 0 10px;
       `;
-      
+
       const searchIcon = document.createElement('div');
       searchIcon.innerHTML = '🔍';
       searchIcon.style.cssText = `
@@ -2620,15 +2148,15 @@ function showMusicGenreModal() {
         margin-right: 10px;
         opacity: 0.7;
       `;
-      
+
       searchContainer.appendChild(searchIcon);
       searchContainer.appendChild(searchInput);
       viewContainer.appendChild(searchContainer);
-      
+
       // Store reference to search input for filtering
       window.currentSearchInput = searchInput;
     }
-    
+
     // Back button
     const backButton = document.createElement('button');
     backButton.innerHTML = '← Back';
@@ -2653,7 +2181,7 @@ function showMusicGenreModal() {
     viewContainer.appendChild(backButton);
 
     // Create subgenre buttons with improved layout
-    
+
     // If there are too many subgenres, use a grid layout instead of circular
     if (subgenres.length > 20) {
       // Create a scrollable grid container with improved styling
@@ -2680,7 +2208,7 @@ function showMusicGenreModal() {
         scrollbar-color: #666 #333;
         backdrop-filter: blur(10px);
       `;
-      
+
       // Add custom scrollbar styling and animations
       const scrollbarStyle = document.createElement('style');
       scrollbarStyle.textContent = `
@@ -2750,14 +2278,14 @@ function showMusicGenreModal() {
         }
       `;
       document.head.appendChild(scrollbarStyle);
-      
+
       subgenres.forEach((subgenre) => {
         const button = document.createElement('button');
         button.className = 'subgenre-button subgenre-grid-button';
         button.innerHTML = `
           <div style="font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;">${subgenre}</div>
         `;
-        
+
         button.style.cssText = `
           width: 100%;
           height: 70px;
@@ -2778,11 +2306,11 @@ function showMusicGenreModal() {
           overflow: hidden;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         `;
-        
+
         button.addEventListener('click', () => {
           // Toggle selection
           const isSelected = selectedGenres.includes(subgenre);
-          
+
           if (isSelected) {
             // Remove from selection
             selectedGenres = selectedGenres.filter(g => g !== subgenre);
@@ -2800,10 +2328,10 @@ function showMusicGenreModal() {
             button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
             button.style.color = '#fff';
           }
-          
+
           updateSelectedDisplay();
         });
-        
+
         button.addEventListener('mouseenter', () => {
           if (!selectedGenres.includes(subgenre)) {
             button.style.transform = 'scale(1.08) translateY(-2px)';
@@ -2812,7 +2340,7 @@ function showMusicGenreModal() {
             button.style.border = `2px solid ${family.color}cc`;
           }
         });
-        
+
         button.addEventListener('mouseleave', () => {
           if (!selectedGenres.includes(subgenre)) {
             button.style.transform = 'scale(1) translateY(0)';
@@ -2821,18 +2349,18 @@ function showMusicGenreModal() {
             button.style.border = `2px solid ${family.color}`;
           }
         });
-        
+
         gridContainer.appendChild(button);
       });
-      
+
       viewContainer.appendChild(gridContainer);
-      
+
       // Add search functionality after grid is created
       if (window.currentSearchInput) {
         window.currentSearchInput.addEventListener('input', (e) => {
           const searchTerm = e.target.value.toLowerCase();
           const buttons = gridContainer.querySelectorAll('.subgenre-grid-button');
-          
+
           buttons.forEach(button => {
             const subgenreText = button.textContent.toLowerCase();
             if (subgenreText.includes(searchTerm)) {
@@ -2854,22 +2382,22 @@ function showMusicGenreModal() {
     } else {
       // Use circular layout for smaller numbers of subgenres
       const angleStep = 360 / subgenres.length;
-      
+
       subgenres.forEach((subgenre, index) => {
-      const button = document.createElement('button');
-      button.className = 'subgenre-button';
-      button.innerHTML = `
+        const button = document.createElement('button');
+        button.className = 'subgenre-button';
+        button.innerHTML = `
         <div style="font-size: 14px; font-weight: bold;">${subgenre}</div>
       `;
-      
-      const angle = index * angleStep;
-      // Responsive radius for subgenres
-      const screenWidth = window.innerWidth;
-      const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
-      const x = Math.cos(angle * Math.PI / 180) * radius;
-      const y = Math.sin(angle * Math.PI / 180) * radius;
-      
-      button.style.cssText = `
+
+        const angle = index * angleStep;
+        // Responsive radius for subgenres
+        const screenWidth = window.innerWidth;
+        const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
+        const x = Math.cos(angle * Math.PI / 180) * radius;
+        const y = Math.sin(angle * Math.PI / 180) * radius;
+
+        button.style.cssText = `
         position: absolute;
         width: 80px;
         height: 80px;
@@ -2890,43 +2418,43 @@ function showMusicGenreModal() {
         padding: 5px;
       `;
 
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
-        button.style.boxShadow = `0 8px 25px ${family.color}50`;
-      });
+        button.addEventListener('mouseenter', () => {
+          button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
+          button.style.boxShadow = `0 8px 25px ${family.color}50`;
+        });
 
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-        button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-      });
-
-      button.addEventListener('click', () => {
-        // Toggle selection
-        const isSelected = selectedGenres.includes(subgenre);
-        
-        if (isSelected) {
-          // Remove from selection
-          selectedGenres = selectedGenres.filter(g => g !== subgenre);
-          button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
-          button.style.border = `2px solid ${family.color}`;
+        button.addEventListener('mouseleave', () => {
           button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-        } else {
-          // Add to selection
-          selectedGenres.push(subgenre);
-          button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}cc)`;
-          button.style.border = `2px solid #fff`;
-          button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
-        }
-        
-        updateSelectedDisplay();
+          button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+        });
+
+        button.addEventListener('click', () => {
+          // Toggle selection
+          const isSelected = selectedGenres.includes(subgenre);
+
+          if (isSelected) {
+            // Remove from selection
+            selectedGenres = selectedGenres.filter(g => g !== subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
+            button.style.border = `2px solid ${family.color}`;
+            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+          } else {
+            // Add to selection
+            selectedGenres.push(subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}cc)`;
+            button.style.border = `2px solid #fff`;
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+          }
+
+          updateSelectedDisplay();
+        });
+
+        viewContainer.appendChild(button);
       });
 
-      viewContainer.appendChild(button);
-    });
-
-    // Center family icon
-    const centerCircle = document.createElement('div');
-    centerCircle.style.cssText = `
+      // Center family icon
+      const centerCircle = document.createElement('div');
+      centerCircle.style.cssText = `
       position: absolute;
       width: 100px;
       height: 100px;
@@ -2940,8 +2468,8 @@ function showMusicGenreModal() {
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       z-index: 10;
     `;
-    centerCircle.innerHTML = family.icon;
-    viewContainer.appendChild(centerCircle);
+      centerCircle.innerHTML = family.icon;
+      viewContainer.appendChild(centerCircle);
     }
   }
 
@@ -2962,7 +2490,7 @@ function showMusicGenreModal() {
 
   // Song count logic
   let selectedSongCount = 5; // Default song count
-  
+
   // Create song count selector
   const songCountContainer = document.createElement('div');
   songCountContainer.id = 'song-count-container';
@@ -2974,7 +2502,7 @@ function showMusicGenreModal() {
     border: 1px solid #444;
     text-align: center;
   `;
-  
+
   const songCountLabel = document.createElement('div');
   songCountLabel.textContent = 'Number of Songs';
   songCountLabel.style.cssText = `
@@ -2983,7 +2511,7 @@ function showMusicGenreModal() {
     font-weight: bold;
     margin-bottom: 15px;
   `;
-  
+
   const songCountSelector = document.createElement('div');
   songCountSelector.style.cssText = `
     display: flex;
@@ -2992,7 +2520,7 @@ function showMusicGenreModal() {
     gap: 10px;
     flex-wrap: wrap;
   `;
-  
+
   // Create song count options
   const songCounts = [3, 5, 8, 10, 15, 20];
   songCounts.forEach(count => {
@@ -3014,38 +2542,38 @@ function showMusicGenreModal() {
       align-items: center;
       justify-content: center;
     `;
-    
+
     button.addEventListener('click', () => {
       // Remove selection from all buttons
       songCountSelector.querySelectorAll('.song-count-btn').forEach(btn => {
         btn.style.background = 'transparent';
         btn.style.color = '#1db954';
       });
-      
+
       // Select current button
       button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
       button.style.color = 'white';
-      
+
       selectedSongCount = count;
     });
-    
+
     button.addEventListener('mouseenter', () => {
       if (button.style.background === 'transparent') {
         button.style.background = '#1db95420';
         button.style.color = '#1db954';
       }
     });
-    
+
     button.addEventListener('mouseleave', () => {
       if (button.style.background.includes('20')) {
         button.style.background = 'transparent';
         button.style.color = '#1db954';
       }
     });
-    
+
     songCountSelector.appendChild(button);
   });
-  
+
   songCountContainer.appendChild(songCountLabel);
   songCountContainer.appendChild(songCountSelector);
 
@@ -3118,7 +2646,7 @@ function showMusicGenreModal() {
         // Show loading state
         useSelectedPlaylistButton.textContent = '🤖 AI Generation...';
         toggleButtonsState(true, true);
-        
+
         // Add animation
         useSelectedPlaylistButton.style.animation = 'pulse 1.5s infinite';
         const pulseStyle = document.createElement('style');
@@ -3130,33 +2658,15 @@ function showMusicGenreModal() {
           }
         `;
         document.head.appendChild(pulseStyle);
-        
+
         try {
-          // Call the AI to generate songs
-          const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              selectedGenres: selectedGenres,
-              songCount: selectedSongCount
-            }),
-            mode: 'cors',
-            credentials: 'omit'
-          });
+          // Call the AI to generate songs (utilise le module API)
+          const playlistData = await generatePlaylist(selectedGenres, selectedSongCount);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
-          }
-
-          const playlistData = await response.json();
-          
           if (!playlistData || !playlistData.playlist) {
             throw new Error('Invalid server response format');
           }
-          
+
           // Close the modal
           const modal = document.getElementById('ai-playlist-modal');
           if (modal && modal.parentNode) {
@@ -3164,13 +2674,13 @@ function showMusicGenreModal() {
           }
           // Re-enable the main AI Playlist button when modal closes
           reEnableMainAIButton();
-          
+
           // Show the results and add to selected playlist
           showPlaylistResultsForAdding(playlistData, selectedPlaylistData.id);
-          
+
         } catch (error) {
           if (error.message.includes('Failed to fetch')) {
-            alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
+            alert(`Server connection error. Please check that the server is running on ${CONFIG.API_BASE_URL}`);
           } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
             alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
           } else {
@@ -3203,12 +2713,12 @@ function showMusicGenreModal() {
 
   createButton.addEventListener('click', async () => {
     if (selectedGenres.length > 0) {
-      
+
       // Afficher un loader avec animation
       createButton.textContent = '🤖 AI Generation...';
       createButton.disabled = true;
       createButton.style.opacity = '0.7';
-      
+
       // Ajouter une animation de pulsation
       createButton.style.animation = 'pulse 1.5s infinite';
       const pulseStyle = document.createElement('style');
@@ -3220,35 +2730,17 @@ function showMusicGenreModal() {
         }
       `;
       document.head.appendChild(pulseStyle);
-      
+
       try {
-        // Appel au serveur AI pour générer la playlist
-        const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            selectedGenres: selectedGenres,
-            songCount: selectedSongCount
-          }),
-          mode: 'cors',
-          credentials: 'omit'
-        });
+        // Appel au serveur AI pour générer la playlist (utilise le module API)
+        const playlistData = await generatePlaylist(selectedGenres, selectedSongCount);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Server error: ${response.status} - ${errorText}`);
-        }
-
-        const playlistData = await response.json();
-        
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
           throw new Error('Invalid server response format');
         }
-        
-        
+
+
         // S'assurer que la structure de données est correcte pour Spotify
         const spotifyPlaylistData = {
           name: playlistData.playlist.name || 'AI Generated Playlist',
@@ -3258,11 +2750,11 @@ function showMusicGenreModal() {
             artist: song.artist
           }))
         };
-        
-        
+
+
         // Afficher les résultats
         showPlaylistResults(playlistData);
-        
+
       } catch (error) {
         if (error.message.includes('Failed to fetch')) {
           alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
@@ -3290,7 +2782,7 @@ function showMusicGenreModal() {
     if (!currentFamily) {
       return; // We're on the main family view, no subgenre buttons to update
     }
-    
+
     // Find the subgenre button in the current view
     const subgenreButtons = viewContainer.querySelectorAll('.subgenre-button');
     subgenreButtons.forEach(button => {
@@ -3298,7 +2790,7 @@ function showMusicGenreModal() {
       if (buttonText === genreToRemove) {
         // Reset the button to unselected state
         const isSelected = selectedGenres.includes(genreToRemove);
-        
+
         if (!isSelected) {
           // Find the family data for this genre
           let familyData = null;
@@ -3308,7 +2800,7 @@ function showMusicGenreModal() {
               break;
             }
           }
-          
+
           if (familyData) {
             // Reset to unselected state
             button.style.background = `linear-gradient(135deg, ${familyData.color}20, ${familyData.color}40)`;
@@ -3335,7 +2827,7 @@ function showMusicGenreModal() {
         // Find which family this genre belongs to
         let familyData = null;
         let familyName = '';
-        
+
         for (const [family, data] of Object.entries(musicFamilies)) {
           if (data.subgenres.includes(genre)) {
             familyData = data;
@@ -3343,7 +2835,7 @@ function showMusicGenreModal() {
             break;
           }
         }
-        
+
         if (familyData) {
           return `
             <div style="
@@ -3413,14 +2905,14 @@ function showMusicGenreModal() {
           `;
         }
       }).join('');
-      
+
       selectedDisplay.innerHTML = `
         <div style="color: #fff; margin-bottom: 10px; font-weight: bold;">
           Selected Styles (${selectedGenres.length}):
         </div>
         <div>${genreElements}</div>
       `;
-      
+
       // Add event listeners to remove buttons
       selectedDisplay.querySelectorAll('.remove-genre-btn').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -3428,17 +2920,17 @@ function showMusicGenreModal() {
           e.stopPropagation();
           const genreToRemove = button.getAttribute('data-genre');
           selectedGenres = selectedGenres.filter(genre => genre !== genreToRemove);
-          
+
           // Update the visual state of the subgenre button in the circle
           updateSubgenreButtonVisualState(genreToRemove);
-          
+
           updateSelectedDisplay();
         });
       });
-      
+
       createButton.style.opacity = '1';
       createButton.style.pointerEvents = 'auto';
-      
+
       // Also enable the Use Selected Playlist button if it exists
       if (useSelectedPlaylistButton) {
         useSelectedPlaylistButton.style.opacity = '1';
@@ -3452,14 +2944,14 @@ function showMusicGenreModal() {
     // Close all existing modals
     const existingModal = document.getElementById('ai-playlist-modal');
     const existingResultsModal = document.getElementById('playlist-results-modal');
-    
+
     if (existingModal) {
       existingModal.remove();
     }
     if (existingResultsModal) {
       existingResultsModal.remove();
     }
-    
+
     // Create a new modal for results
     const resultsModal = document.createElement('div');
     resultsModal.id = 'playlist-results-modal';
@@ -3732,7 +3224,7 @@ function showMusicGenreModal() {
         });
     });
 
-    
+
     // Function to get current playlist ID from URL
     function getCurrentPlaylistId() {
       const currentUrl = window.location.href;
@@ -3744,7 +3236,7 @@ function showMusicGenreModal() {
     async function addToExistingPlaylist(playlistData) {
       try {
         const playlistId = getCurrentPlaylistId();
-        
+
         if (!playlistId) {
           alert('No playlist detected. Please make sure you are on a Spotify playlist page.');
           return;
@@ -3757,12 +3249,12 @@ function showMusicGenreModal() {
         // Get auth URL and handle authentication
         const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
         const { authUrl } = await authResponse.json();
-        
+
         // Store the current playlist data and ID
-        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
-        sessionStorage.setItem('pendingPlaylistId', playlistId);
-        sessionStorage.setItem('authInProgress', 'true');
-        
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
+
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -3782,7 +3274,7 @@ function showMusicGenreModal() {
           max-width: 500px;
           text-align: center;
         `;
-        
+
         authInstructions.innerHTML = `
           <h3 style="margin-bottom: 20px; color: #667eea;">🎵 Add to Current Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to add AI-generated songs to your current playlist!</p>
@@ -3837,9 +3329,9 @@ function showMusicGenreModal() {
             ">Cancel</button>
           </div>
         `;
-        
+
         document.body.appendChild(authInstructions);
-        
+
         // Handle auth completion
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
           try {
@@ -3849,28 +3341,28 @@ function showMusicGenreModal() {
               throw new Error('Failed to get auth URL');
             }
             const { authUrl } = await authResponse.json();
-            
+
             // Step 2: Open auth window
             const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-            
+
             // Step 3: Listen for messages from the popup window
             const messageHandler = (event) => {
               if (event.data && event.data.success && event.data.accessToken) {
                 window.removeEventListener('message', messageHandler);
-                
+
                 const { accessToken, refreshToken } = event.data;
-                
+
                 // Remove instructions
                 document.getElementById('auth-instructions').remove();
-                
+
                 // Add songs to existing playlist
                 addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-                
+
                 // Clean up
                 sessionStorage.removeItem('authInProgress');
                 sessionStorage.removeItem('pendingPlaylistData');
                 sessionStorage.removeItem('pendingPlaylistId');
-                
+
                 // Close the popup
                 if (authWindow && !authWindow.closed) {
                   authWindow.close();
@@ -3883,9 +3375,9 @@ function showMusicGenreModal() {
                 }
               }
             };
-            
+
             window.addEventListener('message', messageHandler);
-            
+
             // Timeout after 5 minutes
             setTimeout(() => {
               window.removeEventListener('message', messageHandler);
@@ -3893,13 +3385,13 @@ function showMusicGenreModal() {
                 authWindow.close();
                 alert('Authentication timed out. Please try again.');
               }
-            }, 300000);
-            
+            }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+
           } catch (error) {
             alert('Authentication failed: ' + error.message);
           }
         });
-        
+
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
           document.getElementById('auth-instructions').remove();
@@ -3907,7 +3399,7 @@ function showMusicGenreModal() {
           sessionStorage.removeItem('pendingPlaylistData');
           sessionStorage.removeItem('pendingPlaylistId');
         });
-        
+
       } catch (error) {
         alert('Error adding to playlist: ' + error.message);
         addToPlaylistButton.textContent = 'Add to Current Playlist';
@@ -3928,53 +3420,10 @@ function showMusicGenreModal() {
             artist: song.artist
           }))
         };
-        
-        let addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            accessToken, 
-            playlistId,
-            playlistData: spotifyPlaylistData 
-          })
-        });
-        
-        // If token expired, try to refresh it
-        if (!addResponse.ok && refreshToken) {
-          const errorText = await addResponse.text();
-          
-          try {
-            const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken })
-            });
-            
-            if (refreshResponse.ok) {
-              const { accessToken: newAccessToken } = await refreshResponse.json();
-              
-              // Retry with new token
-              addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  accessToken: newAccessToken, 
-                  playlistId,
-                  playlistData: spotifyPlaylistData 
-                })
-              });
-            }
-          } catch (refreshError) {
-          }
-        }
-        
-        if (!addResponse.ok) {
-          const errorText = await addResponse.text();
-          throw new Error(`Spotify addition failed: ${addResponse.status} - ${errorText}`);
-        }
-        
-        const result = await addResponse.json();
-        
+
+        // Utiliser la fonction du module API
+        const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
+
         // Show success notification
         const notification = document.createElement('div');
         notification.className = 'success-notification';
@@ -3990,7 +3439,7 @@ function showMusicGenreModal() {
           z-index: 10002;
           max-width: 400px;
         `;
-        
+
         notification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -4014,16 +3463,16 @@ function showMusicGenreModal() {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-close after 5 seconds
         setTimeout(() => {
           if (notification.parentElement) {
             notification.remove();
           }
         }, 5000);
-        
+
         // Close the results modal after successful addition
         setTimeout(() => {
           const resultsModal = document.getElementById('playlist-results-modal');
@@ -4031,7 +3480,7 @@ function showMusicGenreModal() {
             resultsModal.parentNode.removeChild(resultsModal);
           }
         }, 2000);
-        
+
       } catch (error) {
         alert('Error adding songs to playlist: ' + error.message);
       }
@@ -4047,18 +3496,18 @@ function showMusicGenreModal() {
         spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
-        
+
         // Obtenir l'URL d'authentification
         const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
         const { authUrl } = await authResponse.json();
-        
+
         // Use a simple approach - show the auth URL to the user
-        
-        
+
+
         // Store the current playlist data in sessionStorage
         sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
         sessionStorage.setItem('authInProgress', 'true');
-        
+
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -4078,7 +3527,7 @@ function showMusicGenreModal() {
           max-width: 500px;
           text-align: center;
         `;
-        
+
         authInstructions.innerHTML = `
           <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Create Spotify Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to create your AI-generated playlist on Spotify!</p>
@@ -4143,17 +3592,17 @@ function showMusicGenreModal() {
             ">Cancel</button>
           </div>
         `;
-        
+
         document.body.appendChild(authInstructions);
-        
+
         // Handle auth completion
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          
+
           // Get the modified playlist name and description
           const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
           const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || playlistData.playlist.description;
-          
-          
+
+
           try {
             // Step 1: Get auth URL from server
             const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
@@ -4161,21 +3610,21 @@ function showMusicGenreModal() {
               throw new Error('Failed to get auth URL');
             }
             const { authUrl } = await authResponse.json();
-            
+
             // Step 2: Open auth window
             const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-            
+
             // Step 3: Listen for messages from the popup window
             const messageHandler = (event) => {
-              
+
               if (event.data && event.data.success && event.data.accessToken) {
                 window.removeEventListener('message', messageHandler);
-                
+
                 const { accessToken, refreshToken } = event.data;
-                
+
                 // Remove instructions
                 document.getElementById('auth-instructions').remove();
-                
+
                 // Create modified playlist data with user's changes
                 const modifiedPlaylistData = {
                   ...playlistData,
@@ -4185,14 +3634,14 @@ function showMusicGenreModal() {
                     description: playlistDescription
                   }
                 };
-                
+
                 // Create playlist with fresh token
                 createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
-                
+
                 // Clean up
                 sessionStorage.removeItem('authInProgress');
                 sessionStorage.removeItem('pendingPlaylistData');
-                
+
                 // Close the popup
                 if (authWindow && !authWindow.closed) {
                   authWindow.close();
@@ -4205,9 +3654,9 @@ function showMusicGenreModal() {
                 }
               }
             };
-            
+
             window.addEventListener('message', messageHandler);
-            
+
             // Timeout after 5 minutes
             setTimeout(() => {
               window.removeEventListener('message', messageHandler);
@@ -4215,22 +3664,22 @@ function showMusicGenreModal() {
                 authWindow.close();
                 alert('Authentication timed out. Please try again.');
               }
-            }, 300000);
-            
+            }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+
           } catch (error) {
             alert('Authentication failed: ' + error.message);
           }
         });
-        
+
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
           document.getElementById('auth-instructions').remove();
           sessionStorage.removeItem('authInProgress');
           sessionStorage.removeItem('pendingPlaylistData');
         });
-        
+
       } catch (error) {
-        
+
         // Notification d'erreur plus belle
         const errorNotification = document.createElement('div');
         errorNotification.className = 'error-notification';
@@ -4247,7 +3696,7 @@ function showMusicGenreModal() {
           max-width: 400px;
           animation: slideIn 0.3s ease;
         `;
-        
+
         errorNotification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">❌</div>
@@ -4266,9 +3715,9 @@ function showMusicGenreModal() {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(errorNotification);
-        
+
         spotifyButton.textContent = 'Create on Spotify';
         spotifyButton.disabled = false;
         spotifyButton.style.opacity = '1';
@@ -4286,8 +3735,8 @@ function showMusicGenreModal() {
     resultsContent.appendChild(actionButtons);
     resultsModal.appendChild(resultsContent);
     document.body.appendChild(resultsModal);
-    
-    
+
+
   }
 
   // Initialize display
@@ -4335,9 +3784,9 @@ function showMusicGenreModal() {
     }
     // Re-enable the main AI Playlist button when modal closes
     reEnableMainAIButton();
-    
+
     // Restore the main AI Playlist button functionality
-    const mainButton = document.querySelector('button[aria-label="AI Playlist"]');
+    const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (mainButton) {
       console.log('🔓 Restoring main AI Playlist button functionality...');
       mainButton.style.pointerEvents = 'auto'; // Re-enable interactions
@@ -4367,13 +3816,13 @@ function showMusicGenreModal() {
   modalContent.appendChild(viewContainer);
   modalContent.appendChild(selectedDisplay);
   modalContent.appendChild(songCountContainer);
-  
+
   // Add buttons in order
   if (useSelectedPlaylistButton) {
     modalContent.appendChild(useSelectedPlaylistButton);
   }
   modalContent.appendChild(createButton);
-  
+
   modalOverlay.appendChild(modalContent);
   document.body.appendChild(modalOverlay);
 }
@@ -4381,7 +3830,7 @@ function showMusicGenreModal() {
 // Function to clean up duplicate buttons
 function cleanupDuplicateButtons() {
   console.log('🧹 Cleaning up duplicate buttons...');
-  
+
   // Remove duplicate AI Playlist buttons (by aria-label)
   const aiButtons = document.querySelectorAll('button[aria-label="AI Playlist"]');
   if (aiButtons.length > 1) {
@@ -4390,12 +3839,12 @@ function cleanupDuplicateButtons() {
       aiButtons[i].remove();
     }
   }
-  
+
   // Remove duplicate AI Playlist buttons (by text content) - but distinguish between different types
   const allButtons = document.querySelectorAll('button');
   const createButtons = [];
   const addButtons = [];
-  
+
   allButtons.forEach(button => {
     if (button.textContent) {
       if (button.textContent.includes('Create AI Playlist')) {
@@ -4405,7 +3854,7 @@ function cleanupDuplicateButtons() {
       }
     }
   });
-  
+
   // Only remove duplicates of the same type
   if (createButtons.length > 1) {
     console.log(`Found ${createButtons.length} Create AI Playlist buttons, removing ${createButtons.length - 1} duplicates...`);
@@ -4413,25 +3862,25 @@ function cleanupDuplicateButtons() {
       createButtons[i].remove();
     }
   }
-  
+
   if (addButtons.length > 1) {
     console.log(`Found ${addButtons.length} Add to Current Playlist buttons, removing ${addButtons.length - 1} duplicates...`);
     for (let i = 1; i < addButtons.length; i++) {
       addButtons[i].remove();
     }
   }
-  
+
   // Remove duplicate Choose Playlist buttons
-  const chooseButtons = document.querySelectorAll('button[aria-label="Choose Playlist"]');
+  const chooseButtons = document.querySelectorAll(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
   if (chooseButtons.length > 1) {
     console.log(`Found ${chooseButtons.length} Choose Playlist buttons, removing ${chooseButtons.length - 1} duplicates...`);
     for (let i = 1; i < chooseButtons.length; i++) {
       chooseButtons[i].remove();
     }
   }
-  
+
   // Check if main AI Playlist button is missing and restore it
-  const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
+  const mainAIButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
   let hasCreateButton = false;
   let hasAddButton = false;
 
@@ -4445,7 +3894,7 @@ function cleanupDuplicateButtons() {
       }
     }
   });
-  
+
   // Only restore if we're on a playlist page AND no Create button exists
   if (window.location.href.includes('/playlist/') && !mainAIButton && !hasCreateButton) {
     console.log('⚠️ No Create AI Playlist button found, attempting to restore...');
@@ -4453,13 +3902,13 @@ function cleanupDuplicateButtons() {
   } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
     console.log('✅ Create AI Playlist button found, no restoration needed');
   }
-  
+
   // Ensure main AI Playlist button is always enabled
   if (mainAIButton && mainAIButton.disabled) {
     console.log('🔓 Re-enabling disabled main AI Playlist button...');
     reEnableMainAIButton();
   }
-  
+
   console.log('✅ Duplicate cleanup completed');
 }
 
@@ -4468,16 +3917,16 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     cleanupDuplicateButtons();
     addAIPlaylistButton();
-    watchForPageChanges();
-    
+    watchForPageChangesWrapper();
+
     // Periodic cleanup to prevent duplicates
-    setInterval(cleanupDuplicateButtons, 5000); // Every 5 seconds
+    setInterval(cleanupDuplicateButtons, CONFIG.TIMEOUTS.CLEANUP_INTERVAL);
   });
 } else {
   cleanupDuplicateButtons();
   addAIPlaylistButton();
   watchForPageChanges();
-  
+
   // Periodic cleanup to prevent duplicates
   setInterval(cleanupDuplicateButtons, 5000); // Every 5 seconds
 }
