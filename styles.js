@@ -79,6 +79,104 @@ function injectGlobalStyles() {
     .button-pulse {
       animation: pulse 1.5s infinite;
     }
+
+    /* Song item styles */
+    .song-item {
+      background: #2a2a2a;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid #1db954;
+      transition: all 0.3s ease;
+    }
+
+    .song-item:hover {
+      background: #333;
+      transform: translateX(5px);
+    }
+
+    .song-item-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .song-item-content {
+      flex: 1;
+    }
+
+    .song-title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .song-artist {
+      color: #1db954;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .song-album {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 3px;
+      font-style: italic;
+    }
+
+    .song-genre {
+      color: #999;
+      font-size: 14px;
+    }
+
+    .song-duration {
+      color: #666;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .song-number {
+      color: #666;
+      font-size: 14px;
+      margin-left: 15px;
+    }
+
+    /* Tooltip styles for quick action buttons */
+    button[title] {
+      position: relative;
+    }
+
+    button[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 10001;
+      margin-bottom: 5px;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    button[title]:hover::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: rgba(0, 0, 0, 0.9);
+      z-index: 10001;
+      margin-bottom: -5px;
+      pointer-events: none;
+    }
   `;
   document.head.appendChild(disabledButtonStyles);
 }

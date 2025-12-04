@@ -3,7 +3,7 @@
 const CONFIG = {
   // URL du serveur backend
   API_BASE_URL: 'https://gemini.niperiusland.fr:4005',
-  
+
   // Endpoints API
   ENDPOINTS: {
     GENERATE_PLAYLIST: '/generate-playlist',
@@ -13,7 +13,7 @@ const CONFIG = {
     SPOTIFY_TOKEN: '/spotify-token',
     REFRESH_SPOTIFY_TOKEN: '/refresh-spotify-token'
   },
-  
+
   // Timeouts et délais
   TIMEOUTS: {
     ELEMENT_WAIT: 10000, // 10 secondes
@@ -22,13 +22,84 @@ const CONFIG = {
     PAGE_LOAD_DELAY: 1000, // 1 seconde
     RETRY_DELAY: 2000 // 2 secondes
   },
-  
+
   // Options par défaut
   DEFAULTS: {
     SONG_COUNT: 5,
     SONG_COUNT_OPTIONS: [3, 5, 8, 10, 15]
   },
-  
+
+  // Templates de playlists
+  PLAYLIST_TEMPLATES: {
+    'Workout': {
+      genres: ['Rock', 'Electronic', 'Hip-Hop'],
+      songCount: 15,
+      mood: 'Énergique',
+      icon: '💪'
+    },
+    'Study': {
+      genres: ['Classical', 'Jazz', 'Ambient'],
+      songCount: 20,
+      mood: 'Concentré',
+      icon: '📚'
+    },
+    'Party': {
+      genres: ['Pop', 'Electronic', 'Hip-Hop'],
+      songCount: 25,
+      mood: 'Festif',
+      icon: '🎉'
+    },
+    'Chill': {
+      genres: ['Jazz', 'Folk', 'Ambient'],
+      songCount: 12,
+      mood: 'Détendu',
+      icon: '😌'
+    },
+    'Road Trip': {
+      genres: ['Rock', 'Pop', 'Country'],
+      songCount: 30,
+      mood: 'Aventureux',
+      icon: '🚗'
+    }
+  },
+
+  // Décennies disponibles
+  DECADES: [
+    { label: 'Années 60', value: '1960s', icon: '🎸' },
+    { label: 'Années 70', value: '1970s', icon: '🎹' },
+    { label: 'Années 80', value: '1980s', icon: '📻' },
+    { label: 'Années 90', value: '1990s', icon: '💿' },
+    { label: 'Années 2000', value: '2000s', icon: '📱' },
+    { label: 'Années 2010', value: '2010s', icon: '🎧' },
+    { label: 'Années 2020', value: '2020s', icon: '🎵' }
+  ],
+
+  // Humeurs disponibles
+  MOODS: [
+    { label: 'Énergique', value: 'energetic', icon: '⚡', color: '#ff6b6b' },
+    { label: 'Relaxant', value: 'relaxing', icon: '🌊', color: '#4ecdc4' },
+    { label: 'Mélancolique', value: 'melancholic', icon: '🌙', color: '#95a5a6' },
+    { label: 'Festif', value: 'festive', icon: '🎊', color: '#feca57' },
+    { label: 'Romantique', value: 'romantic', icon: '💕', color: '#ff9ff3' },
+    { label: 'Motivant', value: 'motivational', icon: '🔥', color: '#ee5a6f' }
+  ],
+
+  // Durées disponibles
+  DURATIONS: [
+    { label: 'Courte (15-30 min)', value: 'short', icon: '⏱️' },
+    { label: 'Moyenne (30-60 min)', value: 'medium', icon: '⏰' },
+    { label: 'Longue (60+ min)', value: 'long', icon: '⏳' }
+  ],
+
+  // Genres rares pour le mode Découverte
+  DISCOVERY_GENRES: [
+    'Post-Rock', 'Shoegaze', 'Krautrock', 'Noise Rock', 'Math Rock',
+    'Dark Ambient', 'IDM', 'Glitch Hop', 'Neurofunk', 'Psytrance',
+    'Avant-Garde Jazz', 'Free Jazz', 'Jazz Fusion', 'Progressive Rock',
+    'Post-Punk', 'Gothic Rock', 'Industrial', 'EBM', 'Trip Hop',
+    'World Music', 'Ethnic Fusion', 'Neofolk', 'Darkwave', 'Synthwave'
+  ],
+
   // Clés de stockage
   STORAGE_KEYS: {
     AUTH_IN_PROGRESS: 'authInProgress',
@@ -36,7 +107,7 @@ const CONFIG = {
     PENDING_PLAYLIST_ID: 'pendingPlaylistId',
     SELECTED_PLAYLIST: 'selectedPlaylist'
   },
-  
+
   // Sélecteurs DOM
   SELECTORS: {
     AI_PLAYLIST_BUTTON: 'button[aria-label="AI Playlist"]',

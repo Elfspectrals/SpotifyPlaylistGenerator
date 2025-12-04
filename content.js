@@ -803,6 +803,31 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     existingResultsModal.remove();
   }
 
+  // Check if there's a selected playlist in localStorage (for display purposes)
+  // But don't force playlistId - we want to show both options
+  let selectedPlaylistData = null;
+  if (!playlistId) {
+    const selectedPlaylist = localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PLAYLIST);
+    if (selectedPlaylist) {
+      try {
+        selectedPlaylistData = JSON.parse(selectedPlaylist);
+        playlistId = selectedPlaylistData.id; // Use it for the "Add to" button
+      } catch (e) {
+        console.log('Error parsing selected playlist:', e);
+      }
+    }
+  } else {
+    // If playlistId is provided, also get the name
+    const selectedPlaylist = localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PLAYLIST);
+    if (selectedPlaylist) {
+      try {
+        selectedPlaylistData = JSON.parse(selectedPlaylist);
+      } catch (e) {
+        console.log('Error parsing selected playlist:', e);
+      }
+    }
+  }
+
   // Create a new modal for results
   const resultsModal = document.createElement('div');
   resultsModal.id = 'playlist-results-modal';
@@ -945,55 +970,37 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   playlistData.playlist.songs.forEach((song, index) => {
     const songItem = document.createElement('div');
     songItem.className = 'song-item';
-    songItem.style.cssText = `
-      background: #2a2a2a;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-left: 4px solid #1db954;
-      transition: all 0.3s ease;
-    `;
 
     songItem.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="flex: 1;">
-          <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+      <div class="song-item-container">
+        <div class="song-item-content">
+          <div class="song-title">
             ${song.title}
           </div>
-          <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
+          <div class="song-artist">
             ${song.artist}${song.year ? ` (${song.year})` : ''}
           </div>
           ${song.album ? `
-          <div style="color: #888; font-size: 14px; margin-bottom: 3px; font-style: italic;">
+          <div class="song-album">
             📀 ${song.album}
           </div>
           ` : ''}
           ${song.genre || song.description ? `
-          <div style="color: #999; font-size: 14px;">
+          <div class="song-genre">
             ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
           </div>
           ` : ''}
           ${song.duration ? `
-          <div style="color: #666; font-size: 12px; margin-top: 3px;">
+          <div class="song-duration">
             ⏱️ ${song.duration}
           </div>
           ` : ''}
         </div>
-        <div style="color: #666; font-size: 14px; margin-left: 15px;">
+        <div class="song-number">
           #${index + 1}
         </div>
       </div>
     `;
-
-    songItem.addEventListener('mouseenter', () => {
-      songItem.style.background = '#333';
-      songItem.style.transform = 'translateX(5px)';
-    });
-
-    songItem.addEventListener('mouseleave', () => {
-      songItem.style.background = '#2a2a2a';
-      songItem.style.transform = 'translateX(0)';
-    });
 
     songsList.appendChild(songItem);
   });
@@ -1064,33 +1071,32 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     });
   });
 
-  // Add to Current Playlist button
-  const addToPlaylistButton = document.createElement('button');
-  addToPlaylistButton.textContent = 'Add to Current Playlist';
-  addToPlaylistButton.style.cssText = `
-    background: linear-gradient(135deg, #1db954, #1ed760);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  `;
+  // Create New Playlist button (always show - user can always create a new playlist)
+  const createPlaylistButton = document.createElement('button');
+  createPlaylistButton.textContent = 'Create New Playlist';
+  createPlaylistButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
 
-  addToPlaylistButton.addEventListener('click', async () => {
+  createPlaylistButton.addEventListener('click', async () => {
     try {
-      addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
-      addToPlaylistButton.disabled = true;
-      addToPlaylistButton.style.opacity = '0.7';
+      createPlaylistButton.textContent = '🔐 Connecting to Spotify...';
+      createPlaylistButton.disabled = true;
+      createPlaylistButton.style.opacity = '0.7';
 
       // Get auth URL and handle authentication (utilise le module API)
       const { authUrl } = await window.getSpotifyAuthUrl();
 
-      // Store the current playlist data and ID
+      // Store the current playlist data
       sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
-      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
       sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
 
       // Open auth window
@@ -1103,13 +1109,12 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
           const { accessToken, refreshToken } = event.data;
 
-          // Add songs to existing playlist
-          addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+          // Create new playlist
+          createSpotifyPlaylist(accessToken, playlistData, refreshToken);
 
           // Clean up
           sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
           sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID);
 
           // Close the popup
           if (authWindow && !authWindow.closed) {
@@ -1136,12 +1141,100 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
 
     } catch (error) {
-      alert('Error adding to playlist: ' + error.message);
-      addToPlaylistButton.textContent = 'Add to Current Playlist';
-      addToPlaylistButton.disabled = false;
-      addToPlaylistButton.style.opacity = '1';
+      alert('Error creating playlist: ' + error.message);
+      createPlaylistButton.textContent = 'Create New Playlist';
+      createPlaylistButton.disabled = false;
+      createPlaylistButton.style.opacity = '1';
     }
   });
+
+  // Add to Current Playlist button (show when playlistId is provided or selected playlist exists)
+  let addToPlaylistButton = null;
+  let selectedPlaylistName = null;
+
+  if (playlistId && selectedPlaylistData) {
+    selectedPlaylistName = selectedPlaylistData.name;
+
+    addToPlaylistButton = document.createElement('button');
+    addToPlaylistButton.textContent = `Add to Playlist: ${selectedPlaylistName}`;
+    addToPlaylistButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
+
+    addToPlaylistButton.addEventListener('click', async () => {
+      try {
+        addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
+        addToPlaylistButton.disabled = true;
+        addToPlaylistButton.style.opacity = '0.7';
+
+        // Get auth URL and handle authentication (utilise le module API)
+        const { authUrl } = await window.getSpotifyAuthUrl();
+
+        // Store the current playlist data and ID
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
+
+        // Open auth window
+        const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+
+        // Listen for messages from the popup window
+        const messageHandler = (event) => {
+          if (event.data && event.data.success && event.data.accessToken) {
+            window.removeEventListener('message', messageHandler);
+
+            const { accessToken, refreshToken } = event.data;
+
+            // Add songs to existing playlist
+            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+
+            // Clean up
+            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
+            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
+            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID);
+
+            // Close the popup
+            if (authWindow && !authWindow.closed) {
+              authWindow.close();
+            }
+          } else if (event.data && event.data.success === false) {
+            window.removeEventListener('message', messageHandler);
+            alert('Authentication failed: ' + event.data.error);
+            if (authWindow && !authWindow.closed) {
+              authWindow.close();
+            }
+          }
+        };
+
+        window.addEventListener('message', messageHandler);
+
+        // Timeout after configured time
+        setTimeout(() => {
+          window.removeEventListener('message', messageHandler);
+          if (!authWindow.closed) {
+            authWindow.close();
+            alert('Authentication timed out. Please try again.');
+          }
+        }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+
+      } catch (error) {
+        alert('Error adding to playlist: ' + error.message);
+        addToPlaylistButton.textContent = selectedPlaylistName
+          ? `Add to Playlist: ${selectedPlaylistName}`
+          : 'Add to Current Playlist';
+        addToPlaylistButton.disabled = false;
+        addToPlaylistButton.style.opacity = '1';
+      }
+    });
+  }
 
   // Assemble results modal
   resultsContent.appendChild(playlistTitle);
@@ -1149,7 +1242,15 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   resultsContent.appendChild(songsList);
   actionButtons.appendChild(closeButton);
   actionButtons.appendChild(copyButton);
-  actionButtons.appendChild(addToPlaylistButton);
+
+  // Always show Create New Playlist button
+  actionButtons.appendChild(createPlaylistButton);
+
+  // Show Add to Playlist button if a playlist is selected
+  if (addToPlaylistButton) {
+    actionButtons.appendChild(addToPlaylistButton);
+  }
+
   resultsContent.appendChild(actionButtons);
   resultsModal.appendChild(resultsContent);
   document.body.appendChild(resultsModal);
@@ -1667,9 +1768,247 @@ function showMusicGenreModal() {
   title.style.cssText = `
     color: #fff;
     font-size: 28px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     font-weight: bold;
   `;
+
+  // Quick Actions Container (Random, Discovery, Templates)
+  const quickActionsContainer = document.createElement('div');
+  quickActionsContainer.style.cssText = `
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  `;
+
+  // Random Button Container
+  const randomContainer = document.createElement('div');
+  randomContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  `;
+
+  // Random Button
+  const randomButton = document.createElement('button');
+  randomButton.textContent = '🎲 Random Playlist';
+  randomButton.title = 'Generate a playlist with random popular genres (Rock, Pop, Electronic, etc.)';
+  randomButton.style.cssText = `
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  `;
+
+  // Random Description
+  const randomDesc = document.createElement('div');
+  randomDesc.textContent = 'Popular genres';
+  randomDesc.style.cssText = `
+    color: #999;
+    font-size: 11px;
+    text-align: center;
+    max-width: 150px;
+  `;
+  randomButton.addEventListener('mouseenter', () => {
+    randomButton.style.transform = 'scale(1.05)';
+    randomButton.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+  });
+  randomButton.addEventListener('mouseleave', () => {
+    randomButton.style.transform = 'scale(1)';
+    randomButton.style.boxShadow = 'none';
+  });
+  randomButton.addEventListener('click', () => {
+    // Clear previous selections
+    selectedGenres = [];
+
+    // Get random genres from all available subgenres
+    const allSubgenres = [];
+    Object.values(musicFamilies).forEach(family => {
+      allSubgenres.push(...family.subgenres);
+    });
+
+    const numGenres = Math.floor(Math.random() * 2) + 2; // 2-3 genres
+    const randomGenres = [];
+    for (let i = 0; i < numGenres; i++) {
+      const randomGenre = allSubgenres[Math.floor(Math.random() * allSubgenres.length)];
+      if (!randomGenres.includes(randomGenre)) {
+        randomGenres.push(randomGenre);
+      }
+    }
+
+    // Add selected genres to the array
+    selectedGenres.push(...randomGenres);
+
+    // Update the display
+    updateSelectedDisplay();
+
+    // Reset to main family view to show all selections
+    currentFamily = null;
+    createFamilyButtons();
+
+    // Scroll to selected display to show the user what was selected
+    selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  // Discovery Button Container
+  const discoveryContainer = document.createElement('div');
+  discoveryContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  `;
+
+  // Discovery Button
+  const discoveryButton = document.createElement('button');
+  discoveryButton.textContent = '🔍 Discovery Mode';
+  discoveryButton.title = 'Explore rare and niche genres (Post-Rock, Shoegaze, Krautrock, etc.)';
+  discoveryButton.style.cssText = `
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  `;
+
+  // Discovery Description
+  const discoveryDesc = document.createElement('div');
+  discoveryDesc.textContent = 'Rare & niche genres';
+  discoveryDesc.style.cssText = `
+    color: #999;
+    font-size: 11px;
+    text-align: center;
+    max-width: 150px;
+  `;
+  discoveryButton.addEventListener('mouseenter', () => {
+    discoveryButton.style.transform = 'scale(1.05)';
+    discoveryButton.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.4)';
+  });
+  discoveryButton.addEventListener('mouseleave', () => {
+    discoveryButton.style.transform = 'scale(1)';
+    discoveryButton.style.boxShadow = 'none';
+  });
+  discoveryButton.addEventListener('click', () => {
+    // Clear previous selections
+    selectedGenres = [];
+
+    // Get random genres from discovery genres
+    const numGenres = Math.floor(Math.random() * 2) + 2; // 2-3 genres rares
+    const discoveryGenres = [];
+    for (let i = 0; i < numGenres; i++) {
+      const randomGenre = CONFIG.DISCOVERY_GENRES[Math.floor(Math.random() * CONFIG.DISCOVERY_GENRES.length)];
+      if (!discoveryGenres.includes(randomGenre)) {
+        discoveryGenres.push(randomGenre);
+      }
+    }
+
+    // Add selected genres to the array
+    selectedGenres.push(...discoveryGenres);
+
+    // Update the display
+    updateSelectedDisplay();
+
+    // Reset to main family view to show all selections
+    currentFamily = null;
+    createFamilyButtons();
+
+    // Scroll to selected display to show the user what was selected
+    selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  randomContainer.appendChild(randomButton);
+  randomContainer.appendChild(randomDesc);
+  discoveryContainer.appendChild(discoveryButton);
+  discoveryContainer.appendChild(discoveryDesc);
+
+  quickActionsContainer.appendChild(randomContainer);
+  quickActionsContainer.appendChild(discoveryContainer);
+
+  // Templates Section
+  const templatesSection = document.createElement('div');
+  templatesSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 15px;
+    border: 1px solid #444;
+  `;
+  const templatesTitle = document.createElement('div');
+  templatesTitle.textContent = '📋 Quick Templates';
+  templatesTitle.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  `;
+  const templatesContainer = document.createElement('div');
+  templatesContainer.style.cssText = `
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  `;
+
+  Object.keys(CONFIG.PLAYLIST_TEMPLATES).forEach(templateName => {
+    const template = CONFIG.PLAYLIST_TEMPLATES[templateName];
+    const templateButton = document.createElement('button');
+    templateButton.innerHTML = `${template.icon} ${templateName}`;
+    templateButton.style.cssText = `
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    templateButton.addEventListener('mouseenter', () => {
+      templateButton.style.transform = 'scale(1.05)';
+    });
+    templateButton.addEventListener('mouseleave', () => {
+      templateButton.style.transform = 'scale(1)';
+    });
+    templateButton.addEventListener('click', async () => {
+      templateButton.disabled = true;
+      templateButton.textContent = '🤖 Generating...';
+      toggleButtonsState(true, true);
+
+      try {
+        const playlistData = await window.generatePlaylist(template.genres, template.songCount);
+        if (!playlistData || !playlistData.playlist) {
+          throw new Error('Invalid server response format');
+        }
+
+        modalOverlay.remove();
+        reEnableMainAIButton();
+        showPlaylistResultsForAdding(playlistData, null);
+      } catch (error) {
+        alert('Error generating template playlist: ' + error.message);
+        templateButton.disabled = false;
+        templateButton.innerHTML = `${template.icon} ${templateName}`;
+        toggleButtonsState(false);
+      }
+    });
+    templatesContainer.appendChild(templateButton);
+  });
+
+  templatesSection.appendChild(templatesTitle);
+  templatesSection.appendChild(templatesContainer);
 
   // Add responsive styles
   const responsiveStyles = document.createElement('style');
@@ -2577,6 +2916,153 @@ function showMusicGenreModal() {
   songCountContainer.appendChild(songCountLabel);
   songCountContainer.appendChild(songCountSelector);
 
+  // Advanced Filters Section
+  const filtersSection = document.createElement('div');
+  filtersSection.style.cssText = `
+    margin: 20px 0;
+    padding: 20px;
+    background: #2a2a2a;
+    border-radius: 15px;
+    border: 1px solid #444;
+  `;
+
+  const filtersTitle = document.createElement('div');
+  filtersTitle.textContent = '🎛️ Advanced Filters (Optional)';
+  filtersTitle.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  `;
+
+  // Track selected filters
+  let selectedDecade = null;
+  let selectedMood = null;
+  let selectedDuration = null;
+
+  // Decade Filter
+  const decadeContainer = document.createElement('div');
+  decadeContainer.style.cssText = `margin-bottom: 15px;`;
+  const decadeLabel = document.createElement('div');
+  decadeLabel.textContent = '📅 Decade:';
+  decadeLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const decadeButtons = document.createElement('div');
+  decadeButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.DECADES.forEach(decade => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${decade.icon} ${decade.label.split(' ')[1]}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #555;
+      background: transparent;
+      color: #999;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      decadeButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#999';
+        b.style.borderColor = '#555';
+      });
+      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#667eea';
+      selectedDecade = decade.value;
+    });
+    decadeButtons.appendChild(btn);
+  });
+  decadeContainer.appendChild(decadeLabel);
+  decadeContainer.appendChild(decadeButtons);
+
+  // Mood Filter
+  const moodContainer = document.createElement('div');
+  moodContainer.style.cssText = `margin-bottom: 15px;`;
+  const moodLabel = document.createElement('div');
+  moodLabel.textContent = '😊 Mood:';
+  moodLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const moodButtons = document.createElement('div');
+  moodButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.MOODS.forEach(mood => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${mood.icon} ${mood.label}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid ${mood.color};
+      background: transparent;
+      color: ${mood.color};
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      moodButtons.querySelectorAll('button').forEach(b => {
+        const originalMood = CONFIG.MOODS.find(m => b.textContent.includes(m.label));
+        b.style.background = 'transparent';
+        b.style.color = originalMood.color;
+        b.style.borderColor = originalMood.color;
+      });
+      btn.style.background = mood.color;
+      btn.style.color = 'white';
+      btn.style.borderColor = mood.color;
+      selectedMood = mood.value;
+    });
+    moodButtons.appendChild(btn);
+  });
+  moodContainer.appendChild(moodLabel);
+  moodContainer.appendChild(moodButtons);
+
+  // Duration Filter
+  const durationContainer = document.createElement('div');
+  const durationLabel = document.createElement('div');
+  durationLabel.textContent = '⏱️ Duration:';
+  durationLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const durationButtons = document.createElement('div');
+  durationButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.DURATIONS.forEach(duration => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${duration.icon} ${duration.label.split(' ')[0]}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #1db954;
+      background: transparent;
+      color: #1db954;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      durationButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#1db954';
+        b.style.borderColor = '#1db954';
+      });
+      btn.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#1db954';
+      selectedDuration = duration.value;
+      // Adjust song count based on duration
+      if (duration.value === 'short') selectedSongCount = 5;
+      else if (duration.value === 'medium') selectedSongCount = 10;
+      else if (duration.value === 'long') selectedSongCount = 20;
+    });
+    durationButtons.appendChild(btn);
+  });
+  durationContainer.appendChild(durationLabel);
+  durationContainer.appendChild(durationButtons);
+
+  filtersSection.appendChild(filtersTitle);
+  filtersSection.appendChild(decadeContainer);
+  filtersSection.appendChild(moodContainer);
+  filtersSection.appendChild(durationContainer);
+
   // Check if there's a selected playlist
   const selectedPlaylist = localStorage.getItem('selectedPlaylist');
   let selectedPlaylistData = null;
@@ -2661,7 +3147,7 @@ function showMusicGenreModal() {
 
         try {
           // Call the AI to generate songs (utilise le module API)
-          const playlistData = await generatePlaylist(selectedGenres, selectedSongCount);
+          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
 
           if (!playlistData || !playlistData.playlist) {
             throw new Error('Invalid server response format');
@@ -2733,7 +3219,7 @@ function showMusicGenreModal() {
 
       try {
         // Appel au serveur AI pour générer la playlist (utilise le module API)
-        const playlistData = await generatePlaylist(selectedGenres, selectedSongCount);
+        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
 
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
@@ -3094,43 +3580,37 @@ function showMusicGenreModal() {
     playlistData.playlist.songs.forEach((song, index) => {
       const songItem = document.createElement('div');
       songItem.className = 'song-item';
-      songItem.style.cssText = `
-        background: #2a2a2a;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-left: 4px solid #1db954;
-        transition: all 0.3s ease;
-      `;
 
       songItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+        <div class="song-item-container">
+          <div class="song-item-content">
+            <div class="song-title">
               ${song.title}
             </div>
-            <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
-              ${song.artist} (${song.year})
+            <div class="song-artist">
+              ${song.artist}${song.year ? ` (${song.year})` : ''}
             </div>
-            <div style="color: #999; font-size: 14px;">
-              ${song.genre} • ${song.description}
+            ${song.album ? `
+            <div class="song-album">
+              📀 ${song.album}
             </div>
+            ` : ''}
+            ${song.genre || song.description ? `
+            <div class="song-genre">
+              ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
+            </div>
+            ` : ''}
+            ${song.duration ? `
+            <div class="song-duration">
+              ⏱️ ${song.duration}
+            </div>
+            ` : ''}
           </div>
-          <div style="color: #666; font-size: 14px;">
+          <div class="song-number">
             #${index + 1}
           </div>
         </div>
       `;
-
-      songItem.addEventListener('mouseenter', () => {
-        songItem.style.background = '#333';
-        songItem.style.transform = 'translateX(5px)';
-      });
-
-      songItem.addEventListener('mouseleave', () => {
-        songItem.style.background = '#2a2a2a';
-        songItem.style.transform = 'translateX(0)';
-      });
 
       songsList.appendChild(songItem);
     });
@@ -3812,9 +4292,12 @@ function showMusicGenreModal() {
   // Assemble modal
   modalContent.appendChild(closeButton);
   modalContent.appendChild(title);
+  modalContent.appendChild(quickActionsContainer);
+  modalContent.appendChild(templatesSection);
   modalContent.appendChild(breadcrumb);
   modalContent.appendChild(viewContainer);
   modalContent.appendChild(selectedDisplay);
+  modalContent.appendChild(filtersSection);
   modalContent.appendChild(songCountContainer);
 
   // Add buttons in order
