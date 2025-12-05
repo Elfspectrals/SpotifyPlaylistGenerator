@@ -91,6 +91,22 @@ const CONFIG = {
     { label: 'Longue (60+ min)', value: 'long', icon: '⏳' }
   ],
 
+  // Pays d'origine disponibles
+  COUNTRIES: [
+    { label: 'Any Country', value: null, icon: '🌍', flag: '' },
+    { label: 'France', value: 'FR', icon: '🇫🇷', flag: 'FR' },
+    { label: 'Germany', value: 'GER', icon: '🇩🇪', flag: 'GER' },
+    { label: 'United Kingdom', value: 'ENG', icon: '🇬🇧', flag: 'ENG' },
+    { label: 'United States', value: 'US', icon: '🇺🇸', flag: 'US' },
+    { label: 'Canada', value: 'CA', icon: '🇨🇦', flag: 'CA' },
+    { label: 'Spain', value: 'ES', icon: '🇪🇸', flag: 'ES' },
+    { label: 'Italy', value: 'IT', icon: '🇮🇹', flag: 'IT' },
+    { label: 'Japan', value: 'JP', icon: '🇯🇵', flag: 'JP' },
+    { label: 'South Korea', value: 'KR', icon: '🇰🇷', flag: 'KR' },
+    { label: 'Brazil', value: 'BR', icon: '🇧🇷', flag: 'BR' },
+    { label: 'Australia', value: 'AU', icon: '🇦🇺', flag: 'AU' }
+  ],
+
   // Genres rares pour le mode Découverte
   DISCOVERY_GENRES: [
     'Post-Rock', 'Shoegaze', 'Krautrock', 'Noise Rock', 'Math Rock',

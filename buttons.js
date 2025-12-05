@@ -4,6 +4,11 @@
 function toggleButtonsState(disabled = true, showLoading = true) {
   const allButtons = document.querySelectorAll('button');
   allButtons.forEach(button => {
+    // Skip the main "+ AI Playlist" button - it should always stay enabled
+    if (button.getAttribute('aria-label') === 'AI Playlist') {
+      return; // Skip this button, keep it enabled
+    }
+    
     if (button.textContent && (
       button.textContent.includes('Add to Current Playlist') ||
       button.textContent.includes('Create AI Playlist') ||

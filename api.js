@@ -22,14 +22,15 @@ async function apiRequest(url, options = {}) {
 }
 
 // Générer une playlist avec l'IA
-async function generatePlaylist(selectedGenres, songCount) {
+async function generatePlaylist(selectedGenres, songCount, countryOrigin = null) {
   const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.GENERATE_PLAYLIST}`;
   
   return apiRequest(url, {
     method: 'POST',
     body: JSON.stringify({
       selectedGenres,
-      songCount
+      songCount,
+      countryOrigin
     }),
     mode: 'cors',
     credentials: 'omit'

@@ -457,6 +457,18 @@ function saveCurrentPlaylist(showNotification = true) {
 
       localStorage.setItem('selectedPlaylist', JSON.stringify(playlistData));
 
+      // Refresh the modal if it's open to update the button text
+      const existingModal = document.getElementById('ai-playlist-modal');
+      if (existingModal) {
+        // Close and reopen the modal to refresh the button
+        existingModal.remove();
+        reEnableMainAIButton();
+        // Reopen the modal after a short delay
+        setTimeout(() => {
+          showMusicGenreModal();
+        }, 300);
+      }
+
       // Only show notification if explicitly requested
       if (showNotification) {
         // Show success notification
@@ -727,7 +739,7 @@ function showChoosePlaylistModal() {
       }
 
       // Call the AI to generate songs (utilise le module API)
-      const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
+      const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
       if (!playlistData || !playlistData.playlist) {
         throw new Error('Invalid server response format');
@@ -967,11 +979,128 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     margin-bottom: 30px;
   `;
 
+  // Track selected songs (all selected by default)
+  const selectedSongs = new Set(playlistData.playlist.songs.map((_, index) => index));
+
+  // Select All / Deselect All controls
+  const selectAllContainer = document.createElement('div');
+  selectAllContainer.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 10px;
+  `;
+
+  const selectAllLabel = document.createElement('label');
+  selectAllLabel.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  `;
+
+  const selectAllCheckbox = document.createElement('input');
+  selectAllCheckbox.type = 'checkbox';
+  selectAllCheckbox.checked = true;
+  selectAllCheckbox.style.cssText = `
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+  `;
+
+  const selectedCount = document.createElement('span');
+  selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+  selectedCount.style.cssText = `
+    color: #667eea;
+    font-size: 14px;
+    font-weight: bold;
+  `;
+
+  selectAllLabel.appendChild(selectAllCheckbox);
+  selectAllLabel.appendChild(document.createTextNode('Select All'));
+  selectAllContainer.appendChild(selectAllLabel);
+  selectAllContainer.appendChild(selectedCount);
+
+  // Select All / Deselect All functionality
+  selectAllCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    selectedSongs.clear();
+    
+    if (isChecked) {
+      playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
+    }
+    
+    // Update all checkboxes
+    songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
+      checkbox.checked = isChecked;
+      const songIndex = parseInt(checkbox.getAttribute('data-song-index'));
+      const songItem = checkbox.closest('.song-item');
+      if (isChecked) {
+        songItem.style.opacity = '1';
+        songItem.style.background = '';
+      } else {
+        songItem.style.opacity = '0.5';
+        songItem.style.background = '#2a2a2a';
+      }
+    });
+    
+    selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+  });
+
   playlistData.playlist.songs.forEach((song, index) => {
     const songItem = document.createElement('div');
     songItem.className = 'song-item';
+    songItem.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      margin-bottom: 10px;
+      background: #2a2a2a;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    `;
 
-    songItem.innerHTML = `
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    checkbox.setAttribute('data-song-index', index);
+    checkbox.style.cssText = `
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+      flex-shrink: 0;
+    `;
+
+    checkbox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      if (isChecked) {
+        selectedSongs.add(index);
+        songItem.style.opacity = '1';
+        songItem.style.background = '#2a2a2a';
+      } else {
+        selectedSongs.delete(index);
+        songItem.style.opacity = '0.5';
+        songItem.style.background = '#1a1a1a';
+      }
+      
+      // Update select all checkbox
+      selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
+      selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    });
+
+    const songContent = document.createElement('div');
+    songContent.style.cssText = 'flex: 1;';
+    songContent.innerHTML = `
       <div class="song-item-container">
         <div class="song-item-content">
           <div class="song-title">
@@ -1002,6 +1131,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       </div>
     `;
 
+    songItem.appendChild(checkbox);
+    songItem.appendChild(songContent);
     songsList.appendChild(songItem);
   });
 
@@ -1055,21 +1186,22 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     transition: all 0.3s ease;
   `;
 
-  copyButton.addEventListener('click', () => {
-    const playlistText = `${playlistData.playlist.name}\n\n${playlistData.playlist.songs.map((song, index) => {
-      let line = `${index + 1}. ${song.title} - ${song.artist}`;
-      if (song.year) line += ` (${song.year})`;
-      if (song.album) line += ` [${song.album}]`;
-      if (song.duration) line += ` - ${song.duration}`;
-      return line;
-    }).join('\n')}`;
+    copyButton.addEventListener('click', () => {
+      const selectedSongsList = playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index));
+      const playlistText = `${playlistData.playlist.name}\n\n${selectedSongsList.map((song, index) => {
+        let line = `${index + 1}. ${song.title} - ${song.artist}`;
+        if (song.year) line += ` (${song.year})`;
+        if (song.album) line += ` [${song.album}]`;
+        if (song.duration) line += ` - ${song.duration}`;
+        return line;
+      }).join('\n')}`;
 
-    navigator.clipboard.writeText(playlistText).then(() => {
-      alert('Playlist copied to clipboard!');
-    }).catch(() => {
-      alert('Copy error');
+      navigator.clipboard.writeText(playlistText).then(() => {
+        alert('Selected songs copied to clipboard!');
+      }).catch(() => {
+        alert('Copy error');
+      });
     });
-  });
 
   // Create New Playlist button (always show - user can always create a new playlist)
   const createPlaylistButton = document.createElement('button');
@@ -1088,6 +1220,20 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
   createPlaylistButton.addEventListener('click', async () => {
     try {
+      // Filter songs based on selection
+      if (selectedSongs.size === 0) {
+        alert('Please select at least one song to add to the playlist.');
+        return;
+      }
+
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+        }
+      };
+
       createPlaylistButton.textContent = '🔐 Connecting to Spotify...';
       createPlaylistButton.disabled = true;
       createPlaylistButton.style.opacity = '0.7';
@@ -1095,8 +1241,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       // Get auth URL and handle authentication (utilise le module API)
       const { authUrl } = await window.getSpotifyAuthUrl();
 
-      // Store the current playlist data
-      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
+      // Store the filtered playlist data
+      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(filteredPlaylistData));
       sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
 
       // Open auth window
@@ -1109,8 +1255,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
           const { accessToken, refreshToken } = event.data;
 
-          // Create new playlist
-          createSpotifyPlaylist(accessToken, playlistData, refreshToken);
+          // Create new playlist with filtered songs
+          createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
 
           // Clean up
           sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
@@ -1171,6 +1317,20 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
     addToPlaylistButton.addEventListener('click', async () => {
       try {
+        // Filter songs based on selection
+        if (selectedSongs.size === 0) {
+          alert('Please select at least one song to add to the playlist.');
+          return;
+        }
+
+        const filteredPlaylistData = {
+          ...playlistData,
+          playlist: {
+            ...playlistData.playlist,
+            songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+          }
+        };
+
         addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
         addToPlaylistButton.disabled = true;
         addToPlaylistButton.style.opacity = '0.7';
@@ -1178,8 +1338,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         // Get auth URL and handle authentication (utilise le module API)
         const { authUrl } = await window.getSpotifyAuthUrl();
 
-        // Store the current playlist data and ID
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
+        // Store the filtered playlist data and ID
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(filteredPlaylistData));
         sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
         sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
 
@@ -1193,8 +1353,8 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
             const { accessToken, refreshToken } = event.data;
 
-            // Add songs to existing playlist
-            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+            // Add filtered songs to existing playlist
+            addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
 
             // Clean up
             sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
@@ -1239,6 +1399,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Assemble results modal
   resultsContent.appendChild(playlistTitle);
   resultsContent.appendChild(playlistDesc);
+  resultsContent.appendChild(selectAllContainer);
   resultsContent.appendChild(songsList);
   actionButtons.appendChild(closeButton);
   actionButtons.appendChild(copyButton);
@@ -1989,7 +2150,7 @@ function showMusicGenreModal() {
       toggleButtonsState(true, true);
 
       try {
-        const playlistData = await window.generatePlaylist(template.genres, template.songCount);
+        const playlistData = await window.generatePlaylist(template.genres, template.songCount, null);
         if (!playlistData || !playlistData.playlist) {
           throw new Error('Invalid server response format');
         }
@@ -2939,6 +3100,7 @@ function showMusicGenreModal() {
   let selectedDecade = null;
   let selectedMood = null;
   let selectedDuration = null;
+  let selectedCountry = null;
 
   // Decade Filter
   const decadeContainer = document.createElement('div');
@@ -3058,10 +3220,49 @@ function showMusicGenreModal() {
   durationContainer.appendChild(durationLabel);
   durationContainer.appendChild(durationButtons);
 
+  // Country Origin Filter
+  const countryContainer = document.createElement('div');
+  countryContainer.style.cssText = `margin-bottom: 15px;`;
+  const countryLabel = document.createElement('div');
+  countryLabel.textContent = '🌍 Country Origin:';
+  countryLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const countryButtons = document.createElement('div');
+  countryButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.COUNTRIES.forEach(country => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${country.icon} ${country.label}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #667eea;
+      background: ${country.value === null ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent'};
+      color: ${country.value === null ? 'white' : '#667eea'};
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      countryButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#667eea';
+        b.style.borderColor = '#667eea';
+      });
+      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#667eea';
+      selectedCountry = country.value;
+    });
+    countryButtons.appendChild(btn);
+  });
+  countryContainer.appendChild(countryLabel);
+  countryContainer.appendChild(countryButtons);
+
   filtersSection.appendChild(filtersTitle);
   filtersSection.appendChild(decadeContainer);
   filtersSection.appendChild(moodContainer);
   filtersSection.appendChild(durationContainer);
+  filtersSection.appendChild(countryContainer);
 
   // Check if there's a selected playlist
   const selectedPlaylist = localStorage.getItem('selectedPlaylist');
@@ -3073,6 +3274,110 @@ function showMusicGenreModal() {
       console.log('Error parsing selected playlist:', e);
     }
   }
+
+  // Choose Playlist button (always visible)
+  const choosePlaylistButton = document.createElement('button');
+  choosePlaylistButton.textContent = selectedPlaylistData 
+    ? `📋 Change Selected Playlist (${selectedPlaylistData.name})` 
+    : '📋 Choose Playlist to Add Songs';
+  choosePlaylistButton.style.cssText = `
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+  `;
+
+  choosePlaylistButton.addEventListener('mouseenter', () => {
+    choosePlaylistButton.style.transform = 'scale(1.05)';
+    choosePlaylistButton.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+  });
+
+  choosePlaylistButton.addEventListener('mouseleave', () => {
+    choosePlaylistButton.style.transform = 'scale(1)';
+    choosePlaylistButton.style.boxShadow = 'none';
+  });
+
+  choosePlaylistButton.addEventListener('click', () => {
+    // Close the current modal
+    const modal = document.getElementById('ai-playlist-modal');
+    if (modal && modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+    reEnableMainAIButton();
+
+    // Show instructions to select a playlist
+    const instructionModal = document.createElement('div');
+    instructionModal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10001;
+      backdrop-filter: blur(5px);
+    `;
+
+    const instructionContent = document.createElement('div');
+    instructionContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    instructionContent.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+      <h2 style="color: #667eea; font-size: 24px; margin-bottom: 20px; font-weight: bold;">
+        Choose a Playlist
+      </h2>
+      <p style="color: #fff; font-size: 16px; margin-bottom: 30px; line-height: 1.6;">
+        To add AI-generated songs to a playlist:<br><br>
+        1. Navigate to the playlist you want to use<br>
+        2. Click the <strong style="color: #667eea;">✓ Choose Playlist</strong> button on that playlist page<br>
+        3. Then open the AI Playlist Generator again
+      </p>
+      <button id="close-instruction-modal" style="
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      ">Got it!</button>
+    `;
+
+    instructionModal.appendChild(instructionContent);
+    document.body.appendChild(instructionModal);
+
+    // Close button handler
+    document.getElementById('close-instruction-modal').addEventListener('click', () => {
+      instructionModal.remove();
+    });
+
+    // Close on overlay click
+    instructionModal.addEventListener('click', (e) => {
+      if (e.target === instructionModal) {
+        instructionModal.remove();
+      }
+    });
+  });
 
   // Create button
   const createButton = document.createElement('button');
@@ -3147,7 +3452,7 @@ function showMusicGenreModal() {
 
         try {
           // Call the AI to generate songs (utilise le module API)
-          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
+          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
           if (!playlistData || !playlistData.playlist) {
             throw new Error('Invalid server response format');
@@ -3219,7 +3524,7 @@ function showMusicGenreModal() {
 
       try {
         // Appel au serveur AI pour générer la playlist (utilise le module API)
-        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount);
+        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
@@ -3577,11 +3882,128 @@ function showMusicGenreModal() {
       margin-bottom: 30px;
     `;
 
+    // Track selected songs (all selected by default)
+    const selectedSongs = new Set(playlistData.playlist.songs.map((_, index) => index));
+
+    // Select All / Deselect All controls
+    const selectAllContainer = document.createElement('div');
+    selectAllContainer.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #2a2a2a;
+      border-radius: 10px;
+    `;
+
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    `;
+
+    const selectAllCheckbox = document.createElement('input');
+    selectAllCheckbox.type = 'checkbox';
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.style.cssText = `
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+    `;
+
+    const selectedCount = document.createElement('span');
+    selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    selectedCount.style.cssText = `
+      color: #667eea;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    selectAllLabel.appendChild(selectAllCheckbox);
+    selectAllLabel.appendChild(document.createTextNode('Select All'));
+    selectAllContainer.appendChild(selectAllLabel);
+    selectAllContainer.appendChild(selectedCount);
+
+    // Select All / Deselect All functionality
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      selectedSongs.clear();
+      
+      if (isChecked) {
+        playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
+      }
+      
+      // Update all checkboxes
+      songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
+        checkbox.checked = isChecked;
+        const songIndex = parseInt(checkbox.getAttribute('data-song-index'));
+        const songItem = checkbox.closest('.song-item');
+        if (isChecked) {
+          songItem.style.opacity = '1';
+          songItem.style.background = '';
+        } else {
+          songItem.style.opacity = '0.5';
+          songItem.style.background = '#2a2a2a';
+        }
+      });
+      
+      selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    });
+
     playlistData.playlist.songs.forEach((song, index) => {
       const songItem = document.createElement('div');
       songItem.className = 'song-item';
+      songItem.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #2a2a2a;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+      `;
 
-      songItem.innerHTML = `
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+      checkbox.setAttribute('data-song-index', index);
+      checkbox.style.cssText = `
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+        flex-shrink: 0;
+      `;
+
+      checkbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        if (isChecked) {
+          selectedSongs.add(index);
+          songItem.style.opacity = '1';
+          songItem.style.background = '#2a2a2a';
+        } else {
+          selectedSongs.delete(index);
+          songItem.style.opacity = '0.5';
+          songItem.style.background = '#1a1a1a';
+        }
+        
+        // Update select all checkbox
+        selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
+        selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+      });
+
+      const songContent = document.createElement('div');
+      songContent.style.cssText = 'flex: 1;';
+      songContent.innerHTML = `
         <div class="song-item-container">
           <div class="song-item-content">
             <div class="song-title">
@@ -3612,6 +4034,8 @@ function showMusicGenreModal() {
         </div>
       `;
 
+      songItem.appendChild(checkbox);
+      songItem.appendChild(songContent);
       songsList.appendChild(songItem);
     });
 
@@ -3692,7 +4116,14 @@ function showMusicGenreModal() {
     });
 
     copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(playlistData, null, 2))
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+        }
+      };
+      navigator.clipboard.writeText(JSON.stringify(filteredPlaylistData, null, 2))
         .then(() => {
           copyButton.textContent = 'Copié!';
           setTimeout(() => {
@@ -3968,11 +4399,38 @@ function showMusicGenreModal() {
 
     // Add event listener for add to playlist button
     addToPlaylistButton.addEventListener('click', () => {
-      addToExistingPlaylist(playlistData);
+      // Filter songs based on selection
+      if (selectedSongs.size === 0) {
+        alert('Please select at least one song to add to the playlist.');
+        return;
+      }
+
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+        }
+      };
+      addToExistingPlaylist(filteredPlaylistData);
     });
 
     spotifyButton.addEventListener('click', async () => {
       try {
+        // Filter songs based on selection
+        if (selectedSongs.size === 0) {
+          alert('Please select at least one song to create the playlist.');
+          return;
+        }
+
+        const filteredPlaylistData = {
+          ...playlistData,
+          playlist: {
+            ...playlistData.playlist,
+            songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+          }
+        };
+
         spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
@@ -3984,8 +4442,8 @@ function showMusicGenreModal() {
         // Use a simple approach - show the auth URL to the user
 
 
-        // Store the current playlist data in sessionStorage
-        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
+        // Store the filtered playlist data in sessionStorage
+        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(filteredPlaylistData));
         sessionStorage.setItem('authInProgress', 'true');
 
         // Show instructions to the user
@@ -4016,7 +4474,7 @@ function showMusicGenreModal() {
             <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
             <div style="margin-bottom: 15px;">
               <label style="display: block; margin-bottom: 5px; color: #ccc;">Playlist Name:</label>
-              <input type="text" id="playlist-name-input" value="${playlistData.playlist.name}" style="
+              <input type="text" id="playlist-name-input" value="${filteredPlaylistData.playlist.name}" style="
                 width: 100%;
                 padding: 8px 12px;
                 border: 1px solid #555;
@@ -4038,7 +4496,7 @@ function showMusicGenreModal() {
                 font-size: 14px;
                 height: 60px;
                 resize: vertical;
-              ">${playlistData.playlist.description}</textarea>
+              ">${filteredPlaylistData.playlist.description}</textarea>
             </div>
           </div>
           
@@ -4079,8 +4537,8 @@ function showMusicGenreModal() {
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
 
           // Get the modified playlist name and description
-          const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
-          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || playlistData.playlist.description;
+          const playlistName = document.getElementById('playlist-name-input').value.trim() || filteredPlaylistData.playlist.name;
+          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || filteredPlaylistData.playlist.description;
 
 
           try {
@@ -4107,9 +4565,9 @@ function showMusicGenreModal() {
 
                 // Create modified playlist data with user's changes
                 const modifiedPlaylistData = {
-                  ...playlistData,
+                  ...filteredPlaylistData,
                   playlist: {
-                    ...playlistData.playlist,
+                    ...filteredPlaylistData.playlist,
                     name: playlistName,
                     description: playlistDescription
                   }
@@ -4207,6 +4665,7 @@ function showMusicGenreModal() {
     // Assemble results modal
     resultsContent.appendChild(playlistTitle);
     resultsContent.appendChild(playlistDesc);
+    resultsContent.appendChild(selectAllContainer);
     resultsContent.appendChild(songsList);
     actionButtons.appendChild(closeButton);
     actionButtons.appendChild(copyButton);
@@ -4301,6 +4760,7 @@ function showMusicGenreModal() {
   modalContent.appendChild(songCountContainer);
 
   // Add buttons in order
+  modalContent.appendChild(choosePlaylistButton);
   if (useSelectedPlaylistButton) {
     modalContent.appendChild(useSelectedPlaylistButton);
   }
