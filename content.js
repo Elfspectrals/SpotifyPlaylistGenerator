@@ -1032,11 +1032,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   selectAllCheckbox.addEventListener('change', (e) => {
     const isChecked = e.target.checked;
     selectedSongs.clear();
-    
+
     if (isChecked) {
       playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
     }
-    
+
     // Update all checkboxes
     songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
       checkbox.checked = isChecked;
@@ -1050,7 +1050,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         songItem.style.background = '#2a2a2a';
       }
     });
-    
+
     selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
   });
 
@@ -1092,7 +1092,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         songItem.style.opacity = '0.5';
         songItem.style.background = '#1a1a1a';
       }
-      
+
       // Update select all checkbox
       selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
       selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
@@ -1186,22 +1186,22 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     transition: all 0.3s ease;
   `;
 
-    copyButton.addEventListener('click', () => {
-      const selectedSongsList = playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index));
-      const playlistText = `${playlistData.playlist.name}\n\n${selectedSongsList.map((song, index) => {
-        let line = `${index + 1}. ${song.title} - ${song.artist}`;
-        if (song.year) line += ` (${song.year})`;
-        if (song.album) line += ` [${song.album}]`;
-        if (song.duration) line += ` - ${song.duration}`;
-        return line;
-      }).join('\n')}`;
+  copyButton.addEventListener('click', () => {
+    const selectedSongsList = playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index));
+    const playlistText = `${playlistData.playlist.name}\n\n${selectedSongsList.map((song, index) => {
+      let line = `${index + 1}. ${song.title} - ${song.artist}`;
+      if (song.year) line += ` (${song.year})`;
+      if (song.album) line += ` [${song.album}]`;
+      if (song.duration) line += ` - ${song.duration}`;
+      return line;
+    }).join('\n')}`;
 
-      navigator.clipboard.writeText(playlistText).then(() => {
-        alert('Selected songs copied to clipboard!');
-      }).catch(() => {
-        alert('Copy error');
-      });
+    navigator.clipboard.writeText(playlistText).then(() => {
+      alert('Selected songs copied to clipboard!');
+    }).catch(() => {
+      alert('Copy error');
     });
+  });
 
   // Create New Playlist button (always show - user can always create a new playlist)
   const createPlaylistButton = document.createElement('button');
@@ -2144,26 +2144,49 @@ function showMusicGenreModal() {
     templateButton.addEventListener('mouseleave', () => {
       templateButton.style.transform = 'scale(1)';
     });
-    templateButton.addEventListener('click', async () => {
-      templateButton.disabled = true;
-      templateButton.textContent = '🤖 Generating...';
-      toggleButtonsState(true, true);
-
-      try {
-        const playlistData = await window.generatePlaylist(template.genres, template.songCount, null);
-        if (!playlistData || !playlistData.playlist) {
-          throw new Error('Invalid server response format');
+    templateButton.addEventListener('click', () => {
+      // Helper function to map family names to subgenres
+      function mapGenreToSubgenre(genreName) {
+        // Check if it's already a subgenre
+        for (const [family, data] of Object.entries(musicFamilies)) {
+          if (data.subgenres.includes(genreName)) {
+            return genreName; // Already a subgenre
+          }
         }
 
-        modalOverlay.remove();
-        reEnableMainAIButton();
-        showPlaylistResultsForAdding(playlistData, null);
-      } catch (error) {
-        alert('Error generating template playlist: ' + error.message);
-        templateButton.disabled = false;
-        templateButton.innerHTML = `${template.icon} ${templateName}`;
-        toggleButtonsState(false);
+        // If it's a family name, return the first subgenre
+        if (musicFamilies[genreName]) {
+          return musicFamilies[genreName].subgenres[0];
+        }
+
+        // If not found, return as is (might be a valid subgenre we don't know about)
+        return genreName;
       }
+
+      // Clear previous selections
+      selectedGenres = [];
+
+      // Map template genres to actual subgenres and add them
+      template.genres.forEach(genre => {
+        const subgenre = mapGenreToSubgenre(genre);
+        if (!selectedGenres.includes(subgenre)) {
+          selectedGenres.push(subgenre);
+        }
+      });
+
+      // Update the display
+      updateSelectedDisplay();
+
+      // If we're currently viewing subgenres, reload that view to show selected state
+      if (currentFamily) {
+        showSubgenres(currentFamily);
+      } else {
+        // Reset to main family view to show all selections
+        createFamilyButtons();
+      }
+
+      // Scroll to selected display to show the user what was selected
+      selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
     templatesContainer.appendChild(templateButton);
   });
@@ -2786,12 +2809,15 @@ function showMusicGenreModal() {
           <div style="font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;">${subgenre}</div>
         `;
 
+        // Check if this subgenre is already selected
+        const isAlreadySelected = selectedGenres.includes(subgenre);
+
         button.style.cssText = `
           width: 100%;
           height: 70px;
           border-radius: 15px;
-          border: 2px solid ${family.color};
-          background: linear-gradient(135deg, ${family.color}15, ${family.color}25);
+          border: ${isAlreadySelected ? '3px solid #fff' : `2px solid ${family.color}`};
+          background: ${isAlreadySelected ? `linear-gradient(135deg, ${family.color}, ${family.color}dd)` : `linear-gradient(135deg, ${family.color}15, ${family.color}25)`};
           color: #fff;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2804,7 +2830,8 @@ function showMusicGenreModal() {
           padding: 8px;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: ${isAlreadySelected ? `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)` : '0 4px 12px rgba(0, 0, 0, 0.2)'};
+          transform: ${isAlreadySelected ? 'scale(1.05) translateY(-3px)' : 'scale(1) translateY(0)'};
         `;
 
         button.addEventListener('click', () => {
@@ -2897,35 +2924,45 @@ function showMusicGenreModal() {
         const x = Math.cos(angle * Math.PI / 180) * radius;
         const y = Math.sin(angle * Math.PI / 180) * radius;
 
+        // Check if this subgenre is already selected
+        const isAlreadySelected = selectedGenres.includes(subgenre);
+
         button.style.cssText = `
         position: absolute;
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        border: 2px solid ${family.color};
-        background: linear-gradient(135deg, ${family.color}20, ${family.color}40);
+        border: ${isAlreadySelected ? '3px solid #fff' : `2px solid ${family.color}`};
+        background: ${isAlreadySelected ? `linear-gradient(135deg, ${family.color}, ${family.color}cc)` : `linear-gradient(135deg, ${family.color}20, ${family.color}40)`};
         color: #fff;
         cursor: pointer;
         transition: all 0.3s ease;
-        transform: translate(${x}px, ${y}px);
+        transform: translate(${x}px, ${y}px) ${isAlreadySelected ? 'scale(1.05)' : 'scale(1)'};
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        box-shadow: ${isAlreadySelected ? `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)` : '0 4px 15px rgba(0, 0, 0, 0.3)'};
         font-size: 12px;
         text-align: center;
         padding: 5px;
       `;
 
         button.addEventListener('mouseenter', () => {
-          button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
-          button.style.boxShadow = `0 8px 25px ${family.color}50`;
+          if (!isAlreadySelected) {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
+            button.style.boxShadow = `0 8px 25px ${family.color}50`;
+          }
         });
 
         button.addEventListener('mouseleave', () => {
-          button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-          button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+          if (!isAlreadySelected) {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+            button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+          } else {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
+          }
         });
 
         button.addEventListener('click', () => {
@@ -3277,8 +3314,8 @@ function showMusicGenreModal() {
 
   // Choose Playlist button (always visible)
   const choosePlaylistButton = document.createElement('button');
-  choosePlaylistButton.textContent = selectedPlaylistData 
-    ? `📋 Change Selected Playlist (${selectedPlaylistData.name})` 
+  choosePlaylistButton.textContent = selectedPlaylistData
+    ? `📋 Change Selected Playlist (${selectedPlaylistData.name})`
     : '📋 Choose Playlist to Add Songs';
   choosePlaylistButton.style.cssText = `
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -3935,11 +3972,11 @@ function showMusicGenreModal() {
     selectAllCheckbox.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       selectedSongs.clear();
-      
+
       if (isChecked) {
         playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
       }
-      
+
       // Update all checkboxes
       songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
         checkbox.checked = isChecked;
@@ -3953,7 +3990,7 @@ function showMusicGenreModal() {
           songItem.style.background = '#2a2a2a';
         }
       });
-      
+
       selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
     });
 
@@ -3995,7 +4032,7 @@ function showMusicGenreModal() {
           songItem.style.opacity = '0.5';
           songItem.style.background = '#1a1a1a';
         }
-        
+
         // Update select all checkbox
         selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
         selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
