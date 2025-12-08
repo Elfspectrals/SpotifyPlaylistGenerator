@@ -2145,33 +2145,36 @@ function showMusicGenreModal() {
       templateButton.style.transform = 'scale(1)';
     });
     templateButton.addEventListener('click', () => {
-      // Helper function to map family names to subgenres
-      function mapGenreToSubgenre(genreName) {
-        // Check if it's already a subgenre
-        for (const [family, data] of Object.entries(musicFamilies)) {
-          if (data.subgenres.includes(genreName)) {
-            return genreName; // Already a subgenre
+      // Helper function to get random subgenres from a family
+      function getRandomSubgenresFromFamily(familyName, count = 2) {
+        if (!musicFamilies[familyName]) {
+          // If it's not a family name, check if it's already a subgenre
+          for (const [family, data] of Object.entries(musicFamilies)) {
+            if (data.subgenres.includes(familyName)) {
+              return [familyName]; // Already a subgenre, return it as is
+            }
           }
+          // If not found, return as is (might be a valid subgenre we don't know about)
+          return [familyName];
         }
 
-        // If it's a family name, return the first subgenre
-        if (musicFamilies[genreName]) {
-          return musicFamilies[genreName].subgenres[0];
-        }
-
-        // If not found, return as is (might be a valid subgenre we don't know about)
-        return genreName;
+        // Get random subgenres from the family
+        const subgenres = musicFamilies[familyName].subgenres;
+        const shuffled = [...subgenres].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, Math.min(count, subgenres.length));
       }
 
       // Clear previous selections
       selectedGenres = [];
 
-      // Map template genres to actual subgenres and add them
+      // Map template genres to random subgenres and add them
       template.genres.forEach(genre => {
-        const subgenre = mapGenreToSubgenre(genre);
-        if (!selectedGenres.includes(subgenre)) {
-          selectedGenres.push(subgenre);
-        }
+        const subgenres = getRandomSubgenresFromFamily(genre, 2); // Get 2 random subgenres per family
+        subgenres.forEach(subgenre => {
+          if (!selectedGenres.includes(subgenre)) {
+            selectedGenres.push(subgenre);
+          }
+        });
       });
 
       // Update the display

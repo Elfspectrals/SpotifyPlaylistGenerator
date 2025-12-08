@@ -38,7 +38,7 @@ const CONFIG = {
       icon: '💪'
     },
     'Study': {
-      genres: ['Classical', 'Jazz', 'Ambient'],
+      genres: ['Classical', 'Jazz', 'New Age & Ambient'],
       songCount: 20,
       mood: 'Concentré',
       icon: '📚'
@@ -50,7 +50,7 @@ const CONFIG = {
       icon: '🎉'
     },
     'Chill': {
-      genres: ['Jazz', 'Folk', 'Ambient'],
+      genres: ['Jazz', 'Folk', 'New Age & Ambient'],
       songCount: 12,
       mood: 'Détendu',
       icon: '😌'
