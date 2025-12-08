@@ -872,85 +872,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     border: 1px solid #333;
   `;
 
-  // Add responsive styles for results modal
-  const resultsResponsiveStyles = document.createElement('style');
-  resultsResponsiveStyles.textContent = `
-    @media (max-width: 768px) {
-      .results-modal-content {
-        padding: 20px !important;
-        margin: 10px !important;
-        width: calc(100% - 20px) !important;
-        max-height: 90vh !important;
-      }
-      
-      .results-modal-content h2 {
-        font-size: 24px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .results-modal-content p {
-        font-size: 14px !important;
-        margin-bottom: 20px !important;
-      }
-      
-      .song-item {
-        padding: 12px !important;
-        margin-bottom: 8px !important;
-      }
-      
-      .song-item div:first-child {
-        font-size: 16px !important;
-      }
-      
-      .song-item div:nth-child(2) {
-        font-size: 14px !important;
-      }
-      
-      .song-item div:nth-child(3) {
-        font-size: 12px !important;
-      }
-      
-      .action-buttons {
-        flex-direction: column !important;
-        gap: 10px !important;
-      }
-      
-      .action-buttons button {
-        width: 100% !important;
-        padding: 10px 20px !important;
-        font-size: 14px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .results-modal-content {
-        padding: 15px !important;
-        margin: 5px !important;
-        width: calc(100% - 10px) !important;
-      }
-      
-      .results-modal-content h2 {
-        font-size: 20px !important;
-      }
-      
-      .song-item {
-        padding: 10px !important;
-      }
-      
-      .song-item div:first-child {
-        font-size: 14px !important;
-      }
-      
-      .song-item div:nth-child(2) {
-        font-size: 12px !important;
-      }
-      
-      .song-item div:nth-child(3) {
-        font-size: 11px !important;
-      }
-    }
-  `;
-  document.head.appendChild(resultsResponsiveStyles);
+  // Responsive styles are now in styles.js
 
   // Titre de la playlist
   const playlistTitle = document.createElement('h2');
@@ -2123,12 +2045,55 @@ function showMusicGenreModal() {
     justify-content: center;
   `;
 
-  Object.keys(CONFIG.PLAYLIST_TEMPLATES).forEach(templateName => {
-    const template = CONFIG.PLAYLIST_TEMPLATES[templateName];
+  // Function to load custom templates from localStorage
+  function loadCustomTemplates() {
+    try {
+      const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Error loading custom templates:', e);
+      return {};
+    }
+  }
+
+  // Function to save custom template to localStorage
+  function saveCustomTemplate(templateName, templateData) {
+    try {
+      const customTemplates = loadCustomTemplates();
+      customTemplates[templateName] = templateData;
+      localStorage.setItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(customTemplates));
+      return true;
+    } catch (e) {
+      console.error('Error saving custom template:', e);
+      return false;
+    }
+  }
+
+  // Function to delete custom template
+  function deleteCustomTemplate(templateName) {
+    try {
+      const customTemplates = loadCustomTemplates();
+      delete customTemplates[templateName];
+      localStorage.setItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(customTemplates));
+      return true;
+    } catch (e) {
+      console.error('Error deleting custom template:', e);
+      return false;
+    }
+  }
+
+  // Function to get all templates (predefined + custom)
+  function getAllTemplates() {
+    const customTemplates = loadCustomTemplates();
+    return { ...CONFIG.PLAYLIST_TEMPLATES, ...customTemplates };
+  }
+
+  // Function to create template button
+  function createTemplateButton(templateName, template, isCustom = false) {
     const templateButton = document.createElement('button');
     templateButton.innerHTML = `${template.icon} ${templateName}`;
     templateButton.style.cssText = `
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: ${isCustom ? 'linear-gradient(135deg, #f39c12, #e67e22)' : 'linear-gradient(135deg, #667eea, #764ba2)'};
       color: white;
       border: none;
       padding: 8px 16px;
@@ -2137,7 +2102,46 @@ function showMusicGenreModal() {
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s ease;
+      position: relative;
     `;
+
+    // Add delete button for custom templates
+    if (isCustom) {
+      const deleteBtn = document.createElement('span');
+      deleteBtn.innerHTML = '×';
+      deleteBtn.style.cssText = `
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      `;
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete template "${templateName}"?`)) {
+          deleteCustomTemplate(templateName);
+          templateButton.remove();
+        }
+      });
+      templateButton.addEventListener('mouseenter', () => {
+        deleteBtn.style.opacity = '1';
+      });
+      templateButton.addEventListener('mouseleave', () => {
+        deleteBtn.style.opacity = '0';
+      });
+      templateButton.appendChild(deleteBtn);
+    }
+
     templateButton.addEventListener('mouseenter', () => {
       templateButton.style.transform = 'scale(1.05)';
     });
@@ -2145,37 +2149,137 @@ function showMusicGenreModal() {
       templateButton.style.transform = 'scale(1)';
     });
     templateButton.addEventListener('click', () => {
-      // Helper function to get random subgenres from a family
-      function getRandomSubgenresFromFamily(familyName, count = 2) {
-        if (!musicFamilies[familyName]) {
-          // If it's not a family name, check if it's already a subgenre
-          for (const [family, data] of Object.entries(musicFamilies)) {
-            if (data.subgenres.includes(familyName)) {
-              return [familyName]; // Already a subgenre, return it as is
-            }
-          }
-          // If not found, return as is (might be a valid subgenre we don't know about)
-          return [familyName];
-        }
-
-        // Get random subgenres from the family
-        const subgenres = musicFamilies[familyName].subgenres;
-        const shuffled = [...subgenres].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, Math.min(count, subgenres.length));
-      }
-
       // Clear previous selections
       selectedGenres = [];
 
-      // Map template genres to random subgenres and add them
-      template.genres.forEach(genre => {
-        const subgenres = getRandomSubgenresFromFamily(genre, 2); // Get 2 random subgenres per family
-        subgenres.forEach(subgenre => {
+      // Check if this is a custom template with subgenres saved directly
+      if (template.isCustom && Array.isArray(template.genres)) {
+        // Custom template: use the saved subgenres directly
+        template.genres.forEach(subgenre => {
           if (!selectedGenres.includes(subgenre)) {
             selectedGenres.push(subgenre);
           }
         });
-      });
+      } else {
+        // Predefined template: convert families to random subgenres
+        function getRandomSubgenresFromFamily(familyName, count = 2) {
+          if (!musicFamilies[familyName]) {
+            // If it's not a family name, check if it's already a subgenre
+            for (const [family, data] of Object.entries(musicFamilies)) {
+              if (data.subgenres.includes(familyName)) {
+                return [familyName]; // Already a subgenre, return it as is
+              }
+            }
+            // If not found, return as is (might be a valid subgenre we don't know about)
+            return [familyName];
+          }
+
+          // Get random subgenres from the family
+          const subgenres = musicFamilies[familyName].subgenres;
+          const shuffled = [...subgenres].sort(() => 0.5 - Math.random());
+          return shuffled.slice(0, Math.min(count, subgenres.length));
+        }
+
+        // Map template genres to random subgenres and add them
+        template.genres.forEach(genre => {
+          const subgenres = getRandomSubgenresFromFamily(genre, 2); // Get 2 random subgenres per family
+          subgenres.forEach(subgenre => {
+            if (!selectedGenres.includes(subgenre)) {
+              selectedGenres.push(subgenre);
+            }
+          });
+        });
+      }
+
+      // Restore advanced filters if saved in template
+      if (template.filters) {
+        // Restore decade filter
+        if (template.filters.decade) {
+          selectedDecade = template.filters.decade;
+          const decadeBtn = Array.from(decadeButtons.querySelectorAll('button')).find(btn => {
+            const decade = CONFIG.DECADES.find(d => d.value === template.filters.decade);
+            return decade && btn.textContent.includes(decade.label.split(' ')[1]);
+          });
+          if (decadeBtn) {
+            decadeButtons.querySelectorAll('button').forEach(b => {
+              b.style.background = 'transparent';
+              b.style.color = '#999';
+              b.style.borderColor = '#555';
+            });
+            decadeBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            decadeBtn.style.color = 'white';
+            decadeBtn.style.borderColor = '#667eea';
+          }
+        }
+
+        // Restore mood filter
+        if (template.filters.mood) {
+          selectedMood = template.filters.mood;
+          const mood = CONFIG.MOODS.find(m => m.value === template.filters.mood);
+          if (mood) {
+            const moodBtn = Array.from(moodButtons.querySelectorAll('button')).find(btn =>
+              btn.textContent.includes(mood.label)
+            );
+            if (moodBtn) {
+              moodButtons.querySelectorAll('button').forEach(b => {
+                const originalMood = CONFIG.MOODS.find(m => b.textContent.includes(m.label));
+                b.style.background = 'transparent';
+                b.style.color = originalMood.color;
+                b.style.borderColor = originalMood.color;
+              });
+              moodBtn.style.background = mood.color;
+              moodBtn.style.color = 'white';
+              moodBtn.style.borderColor = mood.color;
+            }
+          }
+        }
+
+        // Restore duration filter
+        if (template.filters.duration) {
+          selectedDuration = template.filters.duration;
+          const duration = CONFIG.DURATIONS.find(d => d.value === template.filters.duration);
+          if (duration) {
+            const durationBtn = Array.from(durationButtons.querySelectorAll('button')).find(btn =>
+              btn.textContent.includes(duration.label.split(' ')[0])
+            );
+            if (durationBtn) {
+              durationButtons.querySelectorAll('button').forEach(b => {
+                b.style.background = 'transparent';
+                b.style.color = '#1db954';
+                b.style.borderColor = '#1db954';
+              });
+              durationBtn.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+              durationBtn.style.color = 'white';
+              durationBtn.style.borderColor = '#1db954';
+              // Adjust song count based on duration
+              if (duration.value === 'short') selectedSongCount = 5;
+              else if (duration.value === 'medium') selectedSongCount = 10;
+              else if (duration.value === 'long') selectedSongCount = 20;
+            }
+          }
+        }
+
+        // Restore country filter
+        if (template.filters.country !== undefined) {
+          selectedCountry = template.filters.country;
+          const country = CONFIG.COUNTRIES.find(c => c.value === template.filters.country);
+          if (country) {
+            const countryBtn = Array.from(countryButtons.querySelectorAll('button')).find(btn =>
+              btn.textContent.includes(country.label)
+            );
+            if (countryBtn) {
+              countryButtons.querySelectorAll('button').forEach(b => {
+                b.style.background = 'transparent';
+                b.style.color = '#667eea';
+                b.style.borderColor = '#667eea';
+              });
+              countryBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+              countryBtn.style.color = 'white';
+              countryBtn.style.borderColor = '#667eea';
+            }
+          }
+        }
+      }
 
       // Update the display
       updateSelectedDisplay();
@@ -2191,323 +2295,654 @@ function showMusicGenreModal() {
       // Scroll to selected display to show the user what was selected
       selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
-    templatesContainer.appendChild(templateButton);
+    return templateButton;
+  }
+
+  // Function to render all templates
+  function renderTemplates() {
+    templatesContainer.innerHTML = '';
+    const allTemplates = getAllTemplates();
+    const customTemplates = loadCustomTemplates();
+
+    // Render predefined templates
+    Object.keys(CONFIG.PLAYLIST_TEMPLATES).forEach(templateName => {
+      const template = CONFIG.PLAYLIST_TEMPLATES[templateName];
+      const button = createTemplateButton(templateName, template, false);
+      templatesContainer.appendChild(button);
+    });
+
+    // Render custom templates
+    Object.keys(customTemplates).forEach(templateName => {
+      const template = customTemplates[templateName];
+      const button = createTemplateButton(templateName, template, true);
+      templatesContainer.appendChild(button);
+    });
+  }
+
+  // Function to show emoji picker modal
+  function showEmojiPickerModal(iconInput) {
+    const emojiModal = document.createElement('div');
+    emojiModal.id = 'emoji-picker-modal';
+    emojiModal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10003;
+      backdrop-filter: blur(5px);
+    `;
+
+    const emojiContent = document.createElement('div');
+    emojiContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    const emojiTitle = document.createElement('h3');
+    emojiTitle.textContent = 'Choose an Emoji';
+    emojiTitle.style.cssText = `
+      color: #fff;
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    `;
+
+    // Popular emojis for music/playlists
+    const emojiCategories = {
+      'Music': ['🎵', '🎶', '🎧', '🎤', '🎸', '🎹', '🥁', '🎺', '🎷', '🎻', '🎪', '🎬'],
+      'Moods': ['😊', '😎', '🤘', '🔥', '💪', '🎉', '🎊', '💕', '🌊', '⚡', '🌙', '🌟'],
+      'Activities': ['🚗', '🏃', '💻', '📚', '🏋️', '🧘', '🎮', '🍕', '☕', '🍺', '🌮', '🍰'],
+      'Nature': ['🌴', '🌊', '⛰️', '🌅', '🌙', '⭐', '🌸', '🍃', '❄️', '🔥', '🌈', '🌍'],
+      'Objects': ['💿', '📻', '📱', '💻', '🎧', '🎤', '🎸', '🎹', '🥁', '🎺', '🎷', '🎻']
+    };
+
+    const emojiContainer = document.createElement('div');
+    emojiContainer.style.cssText = `
+      margin-bottom: 20px;
+    `;
+
+    Object.entries(emojiCategories).forEach(([category, emojis]) => {
+      const categoryTitle = document.createElement('div');
+      categoryTitle.textContent = category;
+      categoryTitle.style.cssText = `
+        color: #999;
+        font-size: 12px;
+        margin: 15px 0 8px 0;
+        text-transform: uppercase;
+        font-weight: bold;
+      `;
+      emojiContainer.appendChild(categoryTitle);
+
+      const emojiGrid = document.createElement('div');
+      emojiGrid.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+        margin-bottom: 15px;
+      `;
+
+      emojis.forEach(emoji => {
+        const emojiButton = document.createElement('button');
+        emojiButton.textContent = emoji;
+        emojiButton.style.cssText = `
+          background: #2a2a2a;
+          border: 2px solid #444;
+          border-radius: 10px;
+          font-size: 28px;
+          padding: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+        emojiButton.addEventListener('mouseenter', () => {
+          emojiButton.style.background = '#333';
+          emojiButton.style.borderColor = '#1db954';
+          emojiButton.style.transform = 'scale(1.1)';
+        });
+        emojiButton.addEventListener('mouseleave', () => {
+          emojiButton.style.background = '#2a2a2a';
+          emojiButton.style.borderColor = '#444';
+          emojiButton.style.transform = 'scale(1)';
+        });
+        emojiButton.addEventListener('click', () => {
+          iconInput.value = emoji;
+          emojiModal.remove();
+        });
+        emojiGrid.appendChild(emojiButton);
+      });
+
+      emojiContainer.appendChild(emojiGrid);
+    });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.cssText = `
+      width: 100%;
+      background: #666;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    `;
+    closeBtn.addEventListener('click', () => {
+      emojiModal.remove();
+    });
+
+    emojiContent.appendChild(emojiTitle);
+    emojiContent.appendChild(emojiContainer);
+    emojiContent.appendChild(closeBtn);
+    emojiModal.appendChild(emojiContent);
+    document.body.appendChild(emojiModal);
+
+    // Close on overlay click
+    emojiModal.addEventListener('click', (e) => {
+      if (e.target === emojiModal) {
+        emojiModal.remove();
+      }
+    });
+  }
+
+  // Function to show save template modal
+  function showSaveTemplateModal() {
+    if (selectedGenres.length === 0) {
+      alert('Please select at least one genre before saving a template.');
+      return;
+    }
+
+    // Capture current advanced filters values
+    // Use the variables from the scope of showMusicGenreModal
+    const currentFilters = {
+      decade: selectedDecade || null,
+      mood: selectedMood || null,
+      duration: selectedDuration || null,
+      country: selectedCountry || null
+    };
+
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'save-template-modal';
+    modalOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10002;
+      backdrop-filter: blur(5px);
+    `;
+
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = '💾 Save Template';
+    title.style.cssText = `
+      color: #fff;
+      font-size: 24px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    `;
+
+    // Template name input
+    const nameLabel = document.createElement('div');
+    nameLabel.textContent = 'Template Name:';
+    nameLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'e.g., My Rock Mix';
+    nameInput.style.cssText = `
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #444;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    `;
+    nameInput.focus();
+
+    // Icon selector
+    const iconLabel = document.createElement('div');
+    iconLabel.textContent = 'Icon (emoji):';
+    iconLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const iconInput = document.createElement('input');
+    iconInput.type = 'text';
+    iconInput.value = '🎵';
+    iconInput.maxLength = 2;
+    iconInput.placeholder = '🎵';
+    iconInput.readOnly = true;
+    iconInput.style.cssText = `
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #444;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      cursor: pointer;
+    `;
+    iconInput.addEventListener('click', () => {
+      showEmojiPickerModal(iconInput);
+    });
+
+    // Selected subgenres display
+    const subgenresLabel = document.createElement('div');
+    subgenresLabel.textContent = 'Selected Genres:';
+    subgenresLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const subgenresDisplay = document.createElement('div');
+    subgenresDisplay.style.cssText = `
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      min-height: 50px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    selectedGenres.forEach(subgenre => {
+      // Find which family this subgenre belongs to
+      let familyData = null;
+      for (const [familyName, data] of Object.entries(musicFamilies)) {
+        if (data.subgenres.includes(subgenre)) {
+          familyData = data;
+          break;
+        }
+      }
+
+      if (familyData) {
+        const subgenreBadge = document.createElement('div');
+        subgenreBadge.textContent = `${familyData.icon} ${subgenre}`;
+        subgenreBadge.style.cssText = `
+          background: ${familyData.color}20;
+          color: ${familyData.color};
+          padding: 8px 12px;
+          border-radius: 15px;
+          border: 1px solid ${familyData.color};
+          font-size: 13px;
+          font-weight: bold;
+        `;
+        subgenresDisplay.appendChild(subgenreBadge);
+      }
+    });
+
+    // Warning message for existing template
+    const warningMessage = document.createElement('div');
+    warningMessage.style.cssText = `
+      color: #f39c12;
+      font-size: 13px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f39c1220;
+      border-radius: 8px;
+      border: 1px solid #f39c12;
+      display: none;
+    `;
+    warningMessage.innerHTML = '⚠️ Un template avec ce nom existe déjà.<br>Voulez-vous l\'écraser ou créer un nouveau template ?';
+
+    // Buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.cssText = `
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    `;
+
+    // Cancel button
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.style.cssText = `
+      background: #666;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    cancelButton.addEventListener('click', () => {
+      modalOverlay.remove();
+    });
+
+    // Save new template button (hidden by default)
+    const saveNewButton = document.createElement('button');
+    saveNewButton.textContent = '💾 Save New Template';
+    saveNewButton.style.cssText = `
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: none;
+    `;
+
+    // Save current template button (hidden by default)
+    const saveCurrentButton = document.createElement('button');
+    saveCurrentButton.textContent = '💾 Save Current Template';
+    saveCurrentButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: none;
+    `;
+
+    // Save button (default, shown when no conflict)
+    const saveButton = document.createElement('button');
+    saveButton.textContent = '💾 Save Template';
+    saveButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+
+    // Function to save template
+    const performSave = (templateName, isNew = false) => {
+      const templateIcon = iconInput.value.trim() || '🎵';
+
+      if (!templateName) {
+        alert('Veuillez entrer un nom de template.');
+        return;
+      }
+
+      // Check if it's a predefined template (cannot overwrite)
+      if (CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        alert(`Le template "${templateName}" est un template prédéfini et ne peut pas être écrasé. Veuillez choisir un nom différent.`);
+        return;
+      }
+
+      // Save template with actual subgenres and advanced filters
+      const templateData = {
+        genres: selectedGenres, // Save the actual subgenres, not families
+        icon: templateIcon,
+        songCount: selectedSongCount || 5,
+        mood: 'Custom',
+        isCustom: true, // Flag to indicate this uses subgenres directly
+        filters: currentFilters // Save advanced filters
+      };
+
+      if (saveCustomTemplate(templateName, templateData)) {
+        // Refresh templates display
+        renderTemplates();
+        modalOverlay.remove();
+        alert(`Template "${templateName}" ${isNew ? 'sauvegardé comme nouveau' : 'mis à jour'} avec succès !`);
+      } else {
+        alert('Error saving template. Please try again.');
+      }
+    };
+
+    // Function to check if template exists and update UI
+    const checkTemplateExists = () => {
+      const templateName = nameInput.value.trim();
+
+      if (!templateName) {
+        // Empty name - show default save button
+        warningMessage.style.display = 'none';
+        saveButton.style.display = 'inline-block';
+        saveNewButton.style.display = 'none';
+        saveCurrentButton.style.display = 'none';
+        return;
+      }
+
+      const allTemplates = getAllTemplates();
+      const existingTemplate = allTemplates[templateName];
+
+      if (existingTemplate && !CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        // Template exists and is custom (can be overwritten)
+        warningMessage.style.display = 'block';
+        saveButton.style.display = 'none';
+        saveNewButton.style.display = 'inline-block';
+        saveCurrentButton.style.display = 'inline-block';
+
+        // Pre-fill the icon if it exists
+        if (existingTemplate.icon) {
+          iconInput.value = existingTemplate.icon;
+        }
+      } else if (CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        // Predefined template - show warning but don't allow overwrite
+        warningMessage.style.display = 'block';
+        warningMessage.innerHTML = '⚠️ Ce nom est utilisé par un template prédéfini.<br>Veuillez choisir un nom différent.';
+        warningMessage.style.color = '#e74c3c';
+        warningMessage.style.borderColor = '#e74c3c';
+        warningMessage.style.background = '#e74c3c20';
+        saveButton.style.display = 'none';
+        saveNewButton.style.display = 'inline-block';
+        saveCurrentButton.style.display = 'none';
+      } else {
+        // No conflict - show default save button
+        warningMessage.style.display = 'none';
+        warningMessage.innerHTML = '⚠️ Un template avec ce nom existe déjà.<br>Voulez-vous l\'écraser ou créer un nouveau template ?';
+        warningMessage.style.color = '#f39c12';
+        warningMessage.style.borderColor = '#f39c12';
+        warningMessage.style.background = '#f39c1220';
+        saveButton.style.display = 'inline-block';
+        saveNewButton.style.display = 'none';
+        saveCurrentButton.style.display = 'none';
+      }
+    };
+
+    // Check on initial load if there's a template that matches current selection
+    // This helps when user loads a template and then modifies it
+    const checkInitialTemplate = () => {
+      // Try to find a template that matches current genres
+      const allTemplates = getAllTemplates();
+      const customTemplates = loadCustomTemplates();
+
+      // Check if current selection matches any existing custom template
+      for (const [templateName, template] of Object.entries(customTemplates)) {
+        if (template.isCustom && Array.isArray(template.genres)) {
+          // Check if genres match (order doesn't matter)
+          const templateGenres = [...template.genres].sort().join(',');
+          const currentGenres = [...selectedGenres].sort().join(',');
+
+          if (templateGenres === currentGenres && templateGenres.length > 0) {
+            // Found a matching template - pre-fill and show options
+            nameInput.value = templateName;
+            if (template.icon) {
+              iconInput.value = template.icon;
+            }
+            checkTemplateExists();
+            break;
+          }
+        }
+      }
+    };
+
+    // Check immediately and on input changes
+    setTimeout(checkInitialTemplate, 100); // Small delay to ensure DOM is ready
+    nameInput.addEventListener('input', checkTemplateExists);
+    nameInput.addEventListener('keyup', checkTemplateExists);
+
+    // Save button click handler
+    saveButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      performSave(templateName, false);
+    });
+
+    // Save new template button (creates with different name)
+    saveNewButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      if (!templateName) {
+        alert('Veuillez entrer un nom de template.');
+        return;
+      }
+      // Suggest a new name
+      let newName = templateName;
+      let counter = 1;
+      const allTemplates = getAllTemplates();
+      while (allTemplates[newName] || CONFIG.PLAYLIST_TEMPLATES[newName]) {
+        newName = `${templateName} ${counter}`;
+        counter++;
+      }
+      nameInput.value = newName;
+      performSave(newName, true);
+    });
+
+    // Save current template button (overwrites existing)
+    saveCurrentButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      performSave(templateName, false);
+    });
+
+    buttonsContainer.appendChild(cancelButton);
+    buttonsContainer.appendChild(saveButton);
+    buttonsContainer.appendChild(saveNewButton);
+    buttonsContainer.appendChild(saveCurrentButton);
+
+    // Close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    `;
+    closeButton.addEventListener('click', () => {
+      modalOverlay.remove();
+    });
+
+    // Assemble modal
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(title);
+    modalContent.appendChild(nameLabel);
+    modalContent.appendChild(nameInput);
+    modalContent.appendChild(iconLabel);
+    modalContent.appendChild(iconInput);
+    modalContent.appendChild(subgenresLabel);
+    modalContent.appendChild(subgenresDisplay);
+    modalContent.appendChild(warningMessage);
+    modalContent.appendChild(buttonsContainer);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+  }
+
+  // Add "Save Template" button
+  const saveTemplateButton = document.createElement('button');
+  saveTemplateButton.innerHTML = '💾 Save Current Selection as Template';
+  saveTemplateButton.style.cssText = `
+    background: linear-gradient(135deg, #1db954, #1ed760);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    width: 100%;
+  `;
+  saveTemplateButton.addEventListener('mouseenter', () => {
+    saveTemplateButton.style.transform = 'scale(1.02)';
+    saveTemplateButton.style.boxShadow = '0 4px 15px rgba(29, 185, 84, 0.4)';
   });
+  saveTemplateButton.addEventListener('mouseleave', () => {
+    saveTemplateButton.style.transform = 'scale(1)';
+    saveTemplateButton.style.boxShadow = 'none';
+  });
+  saveTemplateButton.addEventListener('click', () => {
+    showSaveTemplateModal();
+  });
+
+  // Initial render of templates
+  renderTemplates();
 
   templatesSection.appendChild(templatesTitle);
   templatesSection.appendChild(templatesContainer);
+  templatesSection.appendChild(saveTemplateButton);
 
   // Add responsive styles
-  const responsiveStyles = document.createElement('style');
-  responsiveStyles.textContent = `
-    @media (max-width: 768px) {
-      #ai-playlist-modal .modal-content {
-        padding: 20px;
-        margin: 10px;
-        width: calc(100% - 20px);
-        max-height: 95vh;
-      }
-      
-      #ai-playlist-modal h2 {
-        font-size: 24px;
-        margin-bottom: 20px;
-      }
-      
-      #view-container {
-        width: 100% !important;
-        height: 400px !important;
-        max-width: 350px;
-      }
-      
-      .family-button {
-        width: 70px !important;
-        height: 70px !important;
-        font-size: 10px !important;
-      }
-      
-      .family-button div:first-child {
-        font-size: 20px !important;
-        margin-bottom: 3px !important;
-      }
-      
-      .family-button div:last-child {
-        font-size: 9px !important;
-        line-height: 1.0 !important;
-      }
-      
-      .subgenre-button {
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 10px !important;
-        padding: 2px !important;
-      }
-      
-      /* Grid layout for many subgenres */
-      .subgenre-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
-        gap: 12px !important;
-        padding: 15px !important;
-        max-height: 350px !important;
-      }
-      
-      .subgenre-grid-button {
-        height: 60px !important;
-        font-size: 11px !important;
-        padding: 5px !important;
-        border-radius: 12px !important;
-      }
-      
-      /* Search container mobile */
-      .search-container {
-        height: 45px !important;
-        padding: 0 15px !important;
-        border-radius: 22px !important;
-      }
-      
-      .search-container input {
-        font-size: 13px !important;
-      }
-      
-      #selected-genres-display {
-        padding: 15px !important;
-        margin-top: 20px !important;
-      }
-      
-      #selected-genres-display div {
-        font-size: 12px !important;
-        padding: 6px 12px !important;
-        margin: 3px !important;
-      }
-      
-      #selected-genres-display button {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 10px !important;
-        margin-left: 6px !important;
-      }
-      
-      #song-count-container {
-        padding: 15px !important;
-        margin: 15px 0 !important;
-      }
-      
-      #song-count-container div:first-child {
-        font-size: 14px !important;
-        margin-bottom: 10px !important;
-      }
-      
-      .song-count-btn {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 14px !important;
-      }
-      
-      button[style*="padding: 15px 30px"] {
-        padding: 12px 24px !important;
-        font-size: 14px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      #ai-playlist-modal .modal-content {
-        padding: 15px;
-        margin: 5px;
-        width: calc(100% - 10px);
-      }
-      
-      #view-container {
-        height: 300px !important;
-        max-width: 280px;
-      }
-      
-      .family-button {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 9px !important;
-      }
-      
-      .family-button div:first-child {
-        font-size: 16px !important;
-        margin-bottom: 2px !important;
-      }
-      
-      .family-button div:last-child {
-        font-size: 8px !important;
-        line-height: 1.0 !important;
-      }
-      
-      .subgenre-button {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 9px !important;
-      }
-      
-      #selected-genres-display div {
-        font-size: 11px !important;
-        padding: 4px 8px !important;
-      }
-      
-      #selected-genres-display button {
-        width: 14px !important;
-        height: 14px !important;
-        font-size: 9px !important;
-        margin-left: 4px !important;
-      }
-      
-      #song-count-container {
-        padding: 12px !important;
-        margin: 12px 0 !important;
-      }
-      
-      #song-count-container div:first-child {
-        font-size: 13px !important;
-        margin-bottom: 8px !important;
-      }
-      
-      .song-count-btn {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 12px !important;
-      }
-      
-      /* Grid layout for very small screens */
-      .subgenre-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-        gap: 8px !important;
-        padding: 10px !important;
-        max-height: 300px !important;
-      }
-      
-      .subgenre-grid-button {
-        height: 55px !important;
-        font-size: 10px !important;
-        padding: 4px !important;
-        border-radius: 10px !important;
-      }
-      
-      /* Search container for very small screens */
-      .search-container {
-        height: 40px !important;
-        padding: 0 12px !important;
-        border-radius: 20px !important;
-      }
-      
-      .search-container input {
-        font-size: 12px !important;
-      }
-      
-      .search-container div {
-        font-size: 14px !important;
-        margin-right: 8px !important;
-      }
-    }
-    
-    /* Notification responsive styles */
-    @media (max-width: 768px) {
-      .success-notification,
-      .error-notification {
-        top: 10px !important;
-        right: 10px !important;
-        left: 10px !important;
-        max-width: none !important;
-        padding: 15px !important;
-        font-size: 14px !important;
-      }
-      
-      .success-notification div:first-child,
-      .error-notification div:first-child {
-        font-size: 20px !important;
-        margin-right: 8px !important;
-      }
-      
-      .success-notification div:nth-child(2),
-      .error-notification div:nth-child(2) {
-        font-size: 16px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .success-notification,
-      .error-notification {
-        padding: 12px !important;
-        font-size: 13px !important;
-      }
-      
-      .success-notification div:first-child,
-      .error-notification div:first-child {
-        font-size: 18px !important;
-        margin-right: 6px !important;
-      }
-      
-      .success-notification div:nth-child(2),
-      .error-notification div:nth-child(2) {
-        font-size: 14px !important;
-      }
-    }
-    
-    /* Auth modal responsive styles */
-    @media (max-width: 768px) {
-      .auth-instructions-modal {
-        width: 90% !important;
-        max-width: none !important;
-        padding: 20px !important;
-        margin: 10px !important;
-        max-height: 90vh !important;
-        overflow-y: auto !important;
-      }
-      
-      .auth-instructions-modal h3 {
-        font-size: 20px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .auth-instructions-modal p {
-        font-size: 14px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .auth-instructions-modal input,
-      .auth-instructions-modal textarea {
-        font-size: 14px !important;
-        padding: 6px 10px !important;
-      }
-      
-      .auth-instructions-modal button {
-        padding: 8px 16px !important;
-        font-size: 14px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .auth-instructions-modal {
-        width: 95% !important;
-        padding: 15px !important;
-        margin: 5px !important;
-      }
-      
-      .auth-instructions-modal h3 {
-        font-size: 18px !important;
-        margin-bottom: 12px !important;
-      }
-      
-      .auth-instructions-modal p {
-        font-size: 13px !important;
-        margin-bottom: 12px !important;
-      }
-      
-      .auth-instructions-modal input,
-      .auth-instructions-modal textarea {
-        font-size: 13px !important;
-        padding: 5px 8px !important;
-      }
-      
-      .auth-instructions-modal button {
-        padding: 6px 12px !important;
-        font-size: 13px !important;
-      }
-    }
-  `;
-  document.head.appendChild(responsiveStyles);
+  // Responsive styles are now in styles.js
 
   // Navigation breadcrumb
   const breadcrumb = document.createElement('div');
@@ -2735,75 +3170,7 @@ function showMusicGenreModal() {
         backdrop-filter: blur(10px);
       `;
 
-      // Add custom scrollbar styling and animations
-      const scrollbarStyle = document.createElement('style');
-      scrollbarStyle.textContent = `
-        .subgenre-grid-container::-webkit-scrollbar {
-          width: 8px;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-track {
-          background: #333;
-          border-radius: 4px;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #666, #888);
-          border-radius: 4px;
-          border: 1px solid #444;
-          transition: all 0.3s ease;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #888, #aaa);
-          transform: scale(1.1);
-        }
-        
-        /* Smooth animations for grid items */
-        .subgenre-grid-button {
-          animation: fadeInUp 0.5s ease forwards;
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        
-        @keyframes fadeInUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        /* Staggered animation for grid items */
-        .subgenre-grid-button:nth-child(1) { animation-delay: 0.1s; }
-        .subgenre-grid-button:nth-child(2) { animation-delay: 0.15s; }
-        .subgenre-grid-button:nth-child(3) { animation-delay: 0.2s; }
-        .subgenre-grid-button:nth-child(4) { animation-delay: 0.25s; }
-        .subgenre-grid-button:nth-child(5) { animation-delay: 0.3s; }
-        .subgenre-grid-button:nth-child(6) { animation-delay: 0.35s; }
-        .subgenre-grid-button:nth-child(7) { animation-delay: 0.4s; }
-        .subgenre-grid-button:nth-child(8) { animation-delay: 0.45s; }
-        .subgenre-grid-button:nth-child(9) { animation-delay: 0.5s; }
-        .subgenre-grid-button:nth-child(10) { animation-delay: 0.55s; }
-        .subgenre-grid-button:nth-child(n+11) { animation-delay: 0.6s; }
-        
-        /* Search container focus animation */
-        .search-container:focus-within {
-          transform: scale(1.02);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-          border-color: #1db954;
-        }
-        
-        /* Smooth search filtering */
-        .subgenre-grid-button.hidden {
-          opacity: 0;
-          transform: scale(0.8);
-          transition: all 0.3s ease;
-        }
-        
-        .subgenre-grid-button.visible {
-          opacity: 1;
-          transform: scale(1);
-          transition: all 0.3s ease;
-        }
-      `;
-      document.head.appendChild(scrollbarStyle);
+      // Scrollbar and animation styles are now in styles.js
 
       subgenres.forEach((subgenre) => {
         const button = document.createElement('button');
@@ -3119,6 +3486,7 @@ function showMusicGenreModal() {
 
   // Advanced Filters Section
   const filtersSection = document.createElement('div');
+  filtersSection.id = 'filters-section';
   filtersSection.style.cssText = `
     margin: 20px 0;
     padding: 20px;
@@ -3479,16 +3847,7 @@ function showMusicGenreModal() {
         toggleButtonsState(true, true);
 
         // Add animation
-        useSelectedPlaylistButton.style.animation = 'pulse 1.5s infinite';
-        const pulseStyle = document.createElement('style');
-        pulseStyle.textContent = `
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-        `;
-        document.head.appendChild(pulseStyle);
+        useSelectedPlaylistButton.style.animation = 'pulse-scale 1.5s infinite';
 
         try {
           // Call the AI to generate songs (utilise le module API)
@@ -3551,16 +3910,7 @@ function showMusicGenreModal() {
       createButton.style.opacity = '0.7';
 
       // Ajouter une animation de pulsation
-      createButton.style.animation = 'pulse 1.5s infinite';
-      const pulseStyle = document.createElement('style');
-      pulseStyle.textContent = `
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-      `;
-      document.head.appendChild(pulseStyle);
+      createButton.style.animation = 'pulse-scale 1.5s infinite';
 
       try {
         // Appel au serveur AI pour générer la playlist (utilise le module API)
@@ -3816,84 +4166,7 @@ function showMusicGenreModal() {
     `;
 
     // Add responsive styles for results modal
-    const resultsResponsiveStyles = document.createElement('style');
-    resultsResponsiveStyles.textContent = `
-      @media (max-width: 768px) {
-        .results-modal-content {
-          padding: 20px !important;
-          margin: 10px !important;
-          width: calc(100% - 20px) !important;
-          max-height: 90vh !important;
-        }
-        
-        .results-modal-content h2 {
-          font-size: 24px !important;
-          margin-bottom: 15px !important;
-        }
-        
-        .results-modal-content p {
-          font-size: 14px !important;
-          margin-bottom: 20px !important;
-        }
-        
-        .song-item {
-          padding: 12px !important;
-          margin-bottom: 8px !important;
-        }
-        
-        .song-item div:first-child {
-          font-size: 16px !important;
-        }
-        
-        .song-item div:nth-child(2) {
-          font-size: 14px !important;
-        }
-        
-        .song-item div:nth-child(3) {
-          font-size: 12px !important;
-        }
-        
-        .action-buttons {
-          flex-direction: column !important;
-          gap: 10px !important;
-        }
-        
-        .action-buttons button {
-          width: 100% !important;
-          padding: 10px 20px !important;
-          font-size: 14px !important;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .results-modal-content {
-          padding: 15px !important;
-          margin: 5px !important;
-          width: calc(100% - 10px) !important;
-        }
-        
-        .results-modal-content h2 {
-          font-size: 20px !important;
-        }
-        
-        .song-item {
-          padding: 10px !important;
-        }
-        
-        .song-item div:first-child {
-          font-size: 14px !important;
-        }
-        
-        .song-item div:nth-child(2) {
-          font-size: 12px !important;
-        }
-        
-        .song-item div:nth-child(3) {
-          font-size: 11px !important;
-        }
-      }
-    `;
-    document.head.appendChild(resultsResponsiveStyles);
+    // Responsive styles are now in styles.js
 
     // Titre de la playlist
     const playlistTitle = document.createElement('h2');
