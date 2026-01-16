@@ -11,7 +11,6 @@ setupAuthMessageListener();
 // Global function to add songs to existing playlist via API
 async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
   try {
-    console.log('🎵 Adding songs to existing playlist:', playlistId);
 
     // Disable all relevant buttons during API call with loading indicators
     toggleButtonsState(true, true);
@@ -182,7 +181,6 @@ function watchForPageChangesWrapper() {
     // Check if our button already exists
     const existingButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (!existingButton) {
-      console.log('🔄 MutationObserver: Re-adding AI Playlist button...');
       addAIPlaylistButton();
     }
   });
@@ -202,7 +200,6 @@ function addChoosePlaylistButton() {
     // Check if Choose Playlist button already exists to avoid duplicates
     const existingChooseButton = document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
     if (existingChooseButton) {
-      console.log('Choose Playlist button already exists, skipping...');
       return;
     }
 
@@ -269,16 +266,13 @@ function addChoosePlaylistButton() {
         // Insert the button at the end of the action buttons
         actionButtonsContainer.appendChild(choosePlaylistButton);
 
-        console.log('✅ Choose Playlist button added successfully');
       } else {
-        console.log('⚠️ Action buttons container not found, retrying...');
         // Retry after a longer delay
         setTimeout(() => addChoosePlaylistButton(), 2000);
       }
     }, 1500);
 
   } catch (error) {
-    console.log('Error adding Choose Playlist button:', error);
   }
 }
 
@@ -307,7 +301,6 @@ function setupPlaylistChangeObserver() {
       // If we're on a different playlist, update the selected playlist automatically
       // BUT only if the user has already selected a playlist before
       if (currentPlaylistId !== newPlaylistId) {
-        console.log('Playlist changed from', currentPlaylistId, 'to', newPlaylistId);
         currentPlaylistId = newPlaylistId;
 
         // Only auto-save if user has previously selected a playlist
@@ -381,7 +374,6 @@ function setupPlaylistChangeObserver() {
     }, 500); // Wait 500ms to avoid spam
   });
 
-  console.log('Playlist change observer set up');
 }
 
 // Function to save current playlist
@@ -429,7 +421,6 @@ function saveCurrentPlaylist(showNotification = true) {
             !text.includes('Titre •') &&
             !text.includes('Playlist •')) {
             playlistName = text;
-            console.log('Found playlist name:', text, 'using selector:', selector);
             break;
           }
         }
@@ -520,14 +511,12 @@ function saveCurrentPlaylist(showNotification = true) {
         }, 4000);
       }
 
-      console.log('✅ Playlist saved:', playlistData);
     } else {
       if (showNotification) {
         alert('No playlist detected on this page.');
       }
     }
   } catch (error) {
-    console.error('Error saving playlist:', error);
     if (showNotification) {
       alert('Error saving playlist: ' + error.message);
     }
@@ -825,7 +814,6 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         selectedPlaylistData = JSON.parse(selectedPlaylist);
         playlistId = selectedPlaylistData.id; // Use it for the "Add to" button
       } catch (e) {
-        console.log('Error parsing selected playlist:', e);
       }
     }
   } else {
@@ -835,7 +823,6 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       try {
         selectedPlaylistData = JSON.parse(selectedPlaylist);
       } catch (e) {
-        console.log('Error parsing selected playlist:', e);
       }
     }
   }
@@ -1427,7 +1414,6 @@ async function addAIPlaylistButton() {
     // Check if AI Playlist button already exists to avoid duplicates
     const existingAIButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (existingAIButton) {
-      console.log('AI Playlist button already exists, skipping...');
       return;
     }
 
@@ -1435,7 +1421,6 @@ async function addAIPlaylistButton() {
     const existingButtons = document.querySelectorAll('button');
     for (let button of existingButtons) {
       if (button.textContent && button.textContent.includes('Create AI Playlist')) {
-        console.log('Create AI Playlist button already exists, skipping...');
         return;
       }
     }
@@ -1881,12 +1866,25 @@ const musicFamilies = {
   }
 };
 
+// Function to get genres based on mood (for templates)
+function getGenresForMood(mood) {
+  const moodToGenres = {
+    'Énergique': ['Rock', 'Electronic', 'Hip-Hop'],
+    'Concentré': ['Classical', 'Jazz', 'Ambient'],
+    'Festif': ['Pop', 'Electronic', 'Hip-Hop'],
+    'Détendu': ['Jazz', 'Folk', 'Ambient'],
+    'Aventureux': ['Rock', 'Folk', 'World Music']
+  };
+  
+  // Return genres for the mood, or default to a mix if mood not found
+  return moodToGenres[mood] || ['Pop', 'Rock', 'Electronic'];
+}
+
 // Music genre modal
 function showMusicGenreModal() {
   // Ensure the main AI Playlist button stays visible
   const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
   if (mainButton) {
-    console.log('🔒 Protecting main AI Playlist button during modal...');
     mainButton.style.pointerEvents = 'none'; // Temporarily disable to prevent conflicts
   }
 
@@ -2144,26 +2142,37 @@ function showMusicGenreModal() {
     templateButton.addEventListener('mouseleave', () => {
       templateButton.style.transform = 'scale(1)';
     });
-    templateButton.addEventListener('click', async () => {
-      templateButton.disabled = true;
-      templateButton.textContent = '🤖 Generating...';
-      toggleButtonsState(true, true);
-
-      try {
-        const playlistData = await window.generatePlaylist(template.genres, template.songCount, null);
-        if (!playlistData || !playlistData.playlist) {
-          throw new Error('Invalid server response format');
+    templateButton.addEventListener('click', () => {
+      // Templates only pre-select genres, nothing else
+      const templateFamilies = getGenresForMood(template.mood);
+      
+      // Clear current selection
+      selectedGenres = [];
+      
+      // For each family in the template, select a few representative subgenres
+      templateFamilies.forEach(familyName => {
+        const family = musicFamilies[familyName];
+        if (family && family.subgenres && family.subgenres.length > 0) {
+          // Select 2-3 subgenres from each family
+          const numToSelect = Math.min(3, Math.max(2, Math.floor(family.subgenres.length / 3)));
+          const selectedSubgenres = [];
+          
+          // Select evenly distributed subgenres
+          for (let i = 0; i < numToSelect && i < family.subgenres.length; i++) {
+            const index = Math.floor((i * family.subgenres.length) / numToSelect);
+            const subgenre = family.subgenres[index];
+            if (subgenre && !selectedSubgenres.includes(subgenre)) {
+              selectedSubgenres.push(subgenre);
+            }
+          }
+          
+          // Add to selectedGenres
+          selectedGenres.push(...selectedSubgenres);
         }
-
-        modalOverlay.remove();
-        reEnableMainAIButton();
-        showPlaylistResultsForAdding(playlistData, null);
-      } catch (error) {
-        alert('Error generating template playlist: ' + error.message);
-        templateButton.disabled = false;
-        templateButton.innerHTML = `${template.icon} ${templateName}`;
-        toggleButtonsState(false);
-      }
+      });
+      
+      // Update the visual display (that's it, nothing else)
+      updateSelectedDisplay();
     });
     templatesContainer.appendChild(templateButton);
   });
@@ -3271,7 +3280,6 @@ function showMusicGenreModal() {
     try {
       selectedPlaylistData = JSON.parse(selectedPlaylist);
     } catch (e) {
-      console.log('Error parsing selected playlist:', e);
     }
   }
 
@@ -4727,7 +4735,6 @@ function showMusicGenreModal() {
     // Restore the main AI Playlist button functionality
     const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (mainButton) {
-      console.log('🔓 Restoring main AI Playlist button functionality...');
       mainButton.style.pointerEvents = 'auto'; // Re-enable interactions
     }
   }
@@ -4772,12 +4779,10 @@ function showMusicGenreModal() {
 
 // Function to clean up duplicate buttons
 function cleanupDuplicateButtons() {
-  console.log('🧹 Cleaning up duplicate buttons...');
 
   // Remove duplicate AI Playlist buttons (by aria-label)
   const aiButtons = document.querySelectorAll('button[aria-label="AI Playlist"]');
   if (aiButtons.length > 1) {
-    console.log(`Found ${aiButtons.length} AI Playlist buttons, removing ${aiButtons.length - 1} duplicates...`);
     for (let i = 1; i < aiButtons.length; i++) {
       aiButtons[i].remove();
     }
@@ -4800,14 +4805,12 @@ function cleanupDuplicateButtons() {
 
   // Only remove duplicates of the same type
   if (createButtons.length > 1) {
-    console.log(`Found ${createButtons.length} Create AI Playlist buttons, removing ${createButtons.length - 1} duplicates...`);
     for (let i = 1; i < createButtons.length; i++) {
       createButtons[i].remove();
     }
   }
 
   if (addButtons.length > 1) {
-    console.log(`Found ${addButtons.length} Add to Current Playlist buttons, removing ${addButtons.length - 1} duplicates...`);
     for (let i = 1; i < addButtons.length; i++) {
       addButtons[i].remove();
     }
@@ -4816,7 +4819,6 @@ function cleanupDuplicateButtons() {
   // Remove duplicate Choose Playlist buttons
   const chooseButtons = document.querySelectorAll(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
   if (chooseButtons.length > 1) {
-    console.log(`Found ${chooseButtons.length} Choose Playlist buttons, removing ${chooseButtons.length - 1} duplicates...`);
     for (let i = 1; i < chooseButtons.length; i++) {
       chooseButtons[i].remove();
     }
@@ -4840,19 +4842,15 @@ function cleanupDuplicateButtons() {
 
   // Only restore if we're on a playlist page AND no Create button exists
   if (window.location.href.includes('/playlist/') && !mainAIButton && !hasCreateButton) {
-    console.log('⚠️ No Create AI Playlist button found, attempting to restore...');
     addAIPlaylistButton();
   } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
-    console.log('✅ Create AI Playlist button found, no restoration needed');
   }
 
   // Ensure main AI Playlist button is always enabled
   if (mainAIButton && mainAIButton.disabled) {
-    console.log('🔓 Re-enabling disabled main AI Playlist button...');
     reEnableMainAIButton();
   }
 
-  console.log('✅ Duplicate cleanup completed');
 }
 
 // Start the injection when the page loads

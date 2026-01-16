@@ -32,32 +32,22 @@ const CONFIG = {
   // Templates de playlists
   PLAYLIST_TEMPLATES: {
     'Workout': {
-      genres: ['Rock', 'Electronic', 'Hip-Hop'],
-      songCount: 15,
       mood: 'Énergique',
       icon: '💪'
     },
     'Study': {
-      genres: ['Classical', 'Jazz', 'Ambient'],
-      songCount: 20,
       mood: 'Concentré',
       icon: '📚'
     },
     'Party': {
-      genres: ['Pop', 'Electronic', 'Hip-Hop'],
-      songCount: 25,
       mood: 'Festif',
       icon: '🎉'
     },
     'Chill': {
-      genres: ['Jazz', 'Folk', 'Ambient'],
-      songCount: 12,
       mood: 'Détendu',
       icon: '😌'
     },
     'Road Trip': {
-      genres: ['Rock', 'Pop', 'Country'],
-      songCount: 30,
       mood: 'Aventureux',
       icon: '🚗'
     }

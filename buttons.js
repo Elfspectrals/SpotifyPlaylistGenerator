@@ -106,12 +106,10 @@ function toggleButtonsState(disabled = true, showLoading = true) {
 
 // Function to clean up duplicate buttons
 function cleanupDuplicateButtons() {
-  console.log('🧹 Cleaning up duplicate buttons...');
   
   // Remove duplicate AI Playlist buttons (by aria-label)
   const aiButtons = document.querySelectorAll('button[aria-label="AI Playlist"]');
   if (aiButtons.length > 1) {
-    console.log(`Found ${aiButtons.length} AI Playlist buttons, removing ${aiButtons.length - 1} duplicates...`);
     for (let i = 1; i < aiButtons.length; i++) {
       aiButtons[i].remove();
     }
@@ -134,14 +132,12 @@ function cleanupDuplicateButtons() {
   
   // Only remove duplicates of the same type
   if (createButtons.length > 1) {
-    console.log(`Found ${createButtons.length} Create AI Playlist buttons, removing ${createButtons.length - 1} duplicates...`);
     for (let i = 1; i < createButtons.length; i++) {
       createButtons[i].remove();
     }
   }
   
   if (addButtons.length > 1) {
-    console.log(`Found ${addButtons.length} Add to Current Playlist buttons, removing ${addButtons.length - 1} duplicates...`);
     for (let i = 1; i < addButtons.length; i++) {
       addButtons[i].remove();
     }
@@ -150,7 +146,6 @@ function cleanupDuplicateButtons() {
   // Remove duplicate Choose Playlist buttons
   const chooseButtons = document.querySelectorAll('button[aria-label="Choose Playlist"]');
   if (chooseButtons.length > 1) {
-    console.log(`Found ${chooseButtons.length} Choose Playlist buttons, removing ${chooseButtons.length - 1} duplicates...`);
     for (let i = 1; i < chooseButtons.length; i++) {
       chooseButtons[i].remove();
     }
@@ -174,21 +169,17 @@ function cleanupDuplicateButtons() {
   
   // Only restore if we're on a playlist page AND no Create button exists
   if (window.location.href.includes('/playlist/') && !mainAIButton && !hasCreateButton) {
-    console.log('⚠️ No Create AI Playlist button found, attempting to restore...');
     // Note: addAIPlaylistButton will be called from content.js
   } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
-    console.log('✅ Create AI Playlist button found, no restoration needed');
   }
   
   // Ensure main AI Playlist button is always enabled
   if (mainAIButton && mainAIButton.disabled) {
-    console.log('🔓 Re-enabling disabled main AI Playlist button...');
     if (typeof reEnableMainAIButton === 'function') {
       reEnableMainAIButton();
     }
   }
   
-  console.log('✅ Duplicate cleanup completed');
 }
 
 // Exposer les fonctions globalement pour utilisation dans content.js

@@ -35,9 +35,7 @@ function reEnableMainAIButton() {
   const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
   if (mainAIButton) {
     restoreButton(mainAIButton);
-    console.log('✅ Main AI Playlist button re-enabled');
   } else {
-    console.log('⚠️ Main AI Playlist button not found for re-enabling');
   }
 }
 
