@@ -111,7 +111,8 @@ const CONFIG = {
     AUTH_IN_PROGRESS: 'authInProgress',
     PENDING_PLAYLIST_DATA: 'pendingPlaylistData',
     PENDING_PLAYLIST_ID: 'pendingPlaylistId',
-    SELECTED_PLAYLIST: 'selectedPlaylist'
+    SELECTED_PLAYLIST: 'selectedPlaylist',
+    CUSTOM_TEMPLATES: 'customPlaylistTemplates'
   },
 
   // Sélecteurs DOM
