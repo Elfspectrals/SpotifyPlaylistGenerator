@@ -2146,25 +2146,96 @@ function showMusicGenreModal() {
     templateButton.addEventListener('mouseleave', () => {
       templateButton.style.transform = 'scale(1)';
     });
-    templateButton.addEventListener('click', async () => {
-      templateButton.disabled = true;
-      templateButton.textContent = '🤖 Generating...';
-      toggleButtonsState(true, true);
+    templateButton.addEventListener('click', () => {
+      // Get genres from template based on mood (for predefined) or use template.genres (for custom)
+      let selectedSubgenres = [];
+      
+      if (template.isCustom && template.genres && Array.isArray(template.genres)) {
+        // Custom template - genres are already subgenres, use them directly
+        // But select only 2-3 representative ones from each family
+        const familiesMap = new Map();
+        
+        // Group subgenres by family
+        template.genres.forEach(subgenre => {
+          for (const [family, data] of Object.entries(musicFamilies)) {
+            if (data.subgenres.includes(subgenre)) {
+              if (!familiesMap.has(family)) {
+                familiesMap.set(family, []);
+              }
+              familiesMap.get(family).push(subgenre);
+              break;
+            }
+          }
+        });
+        
+        // Select 2-3 subgenres from each family
+        familiesMap.forEach((subgenres, familyName) => {
+          const numToSelect = Math.min(3, Math.max(2, subgenres.length));
+          selectedSubgenres.push(...subgenres.slice(0, numToSelect));
+        });
+      } else if (template.mood) {
+        // Predefined template - get genre families from mood
+        const genreFamilies = getGenresForMood(template.mood);
+        
+        // Select 2-3 representative subgenres from each family
+        genreFamilies.forEach(familyName => {
+          const family = musicFamilies[familyName];
+          if (family && family.subgenres && family.subgenres.length > 0) {
+            // Select 2-3 subgenres (take first 2-3 from the list)
+            const numToSelect = Math.min(3, Math.max(2, Math.floor(family.subgenres.length / 3)));
+            const familySubgenres = family.subgenres.slice(0, numToSelect);
+            selectedSubgenres.push(...familySubgenres);
+          }
+        });
+      } else {
+        // Fallback: use default genres
+        const defaultFamilies = ['Pop', 'Rock', 'Electronic'];
+        defaultFamilies.forEach(familyName => {
+          const family = musicFamilies[familyName];
+          if (family && family.subgenres && family.subgenres.length > 0) {
+            const numToSelect = Math.min(3, Math.max(2, Math.floor(family.subgenres.length / 3)));
+            selectedSubgenres.push(...family.subgenres.slice(0, numToSelect));
+          }
+        });
+      }
 
-      try {
-        const playlistData = await window.generatePlaylist(template.genres, template.songCount, null);
-        if (!playlistData || !playlistData.playlist) {
-          throw new Error('Invalid server response format');
-        }
+      // Clear current selection
+      selectedGenres = [];
 
-        modalOverlay.remove();
-        reEnableMainAIButton();
-        showPlaylistResultsForAdding(playlistData, null);
-      } catch (error) {
-        alert('Error generating template playlist: ' + error.message);
-        templateButton.disabled = false;
-        templateButton.innerHTML = `${template.icon} ${templateName}`;
-        toggleButtonsState(false);
+      // Set new selection
+      selectedGenres.push(...selectedSubgenres);
+
+      // Update display
+      updateSelectedDisplay();
+
+      // Update visual state of subgenre buttons if we're viewing a family
+      if (currentFamily && musicFamilies[currentFamily]) {
+        const family = musicFamilies[currentFamily];
+        const subgenreButtons = viewContainer.querySelectorAll('.subgenre-button, .subgenre-grid-button');
+        subgenreButtons.forEach(button => {
+          const buttonText = button.textContent.trim();
+          const isSelected = selectedGenres.includes(buttonText);
+          
+          if (isSelected) {
+            // Update to selected state
+            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}dd)`;
+            button.style.border = '3px solid #fff';
+            if (button.style.transform) {
+              button.style.transform = button.style.transform.replace(/scale\([^)]+\)/, 'scale(1.05)');
+            } else {
+              button.style.transform = 'scale(1.05) translateY(-3px)';
+            }
+            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
+          } else {
+            // Update to unselected state
+            button.style.background = `linear-gradient(135deg, ${family.color}15, ${family.color}25)`;
+            button.style.border = `2px solid ${family.color}`;
+            if (button.style.transform) {
+              button.style.transform = button.style.transform.replace(/scale\([^)]+\)/, 'scale(1)');
+            }
+            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+          }
+        });
       }
     });
     
