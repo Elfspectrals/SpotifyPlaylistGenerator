@@ -41,7 +41,26 @@ async function generatePlaylist(selectedGenres, songCount, countryOrigin = null)
 async function getSpotifyAuthUrl() {
   const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.SPOTIFY_AUTH}`;
   const response = await fetch(url);
-  return response.json();
+  const data = await response.json();
+  
+  // Handle SpotAPI mode
+  if (data.mode === 'spotapi') {
+    if (data.requiresCredentials) {
+      // Need to set credentials - return setup URL
+      return { authUrl: data.setupUrl || data.authUrl };
+    } else {
+      // Credentials already set - return success (no OAuth needed)
+      return { 
+        success: true, 
+        mode: 'spotapi',
+        authUrl: null,
+        accessToken: 'spotapi-authenticated' // Dummy token for compatibility
+      };
+    }
+  }
+  
+  // OAuth mode (legacy)
+  return data;
 }
 
 // Échanger le code d'authentification contre un token
@@ -79,17 +98,20 @@ async function createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken 
   };
   
   try {
+    // For SpotAPI, accessToken can be 'spotapi-authenticated' or null
+    const tokenToSend = accessToken || 'spotapi-authenticated';
+    
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        accessToken, 
+        accessToken: tokenToSend, 
         playlistData: spotifyPlaylistData 
       })
     });
     
-    // If token expired, try to refresh it
-    if (!response.ok && refreshToken) {
+    // If token expired, try to refresh it (only for OAuth mode)
+    if (!response.ok && refreshToken && accessToken !== 'spotapi-authenticated') {
       try {
         const { accessToken: newAccessToken } = await refreshSpotifyToken(refreshToken);
         
@@ -133,18 +155,21 @@ async function addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, 
   };
   
   try {
+    // For SpotAPI, accessToken can be 'spotapi-authenticated' or null
+    const tokenToSend = accessToken || 'spotapi-authenticated';
+    
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        accessToken, 
+        accessToken: tokenToSend, 
         playlistId,
         playlistData: spotifyPlaylistData 
       })
     });
     
-    // If token expired, try to refresh it
-    if (!response.ok && refreshToken) {
+    // If token expired, try to refresh it (only for OAuth mode)
+    if (!response.ok && refreshToken && accessToken !== 'spotapi-authenticated') {
       try {
         const { accessToken: newAccessToken } = await refreshSpotifyToken(refreshToken);
         
