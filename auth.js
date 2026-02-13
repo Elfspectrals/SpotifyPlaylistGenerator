@@ -1,5 +1,42 @@
 // Module de gestion de l'authentification Spotify
 
+// BYO: get token from background (OAuth with user's Client ID). Returns { accessToken, refreshToken } or throws / returns needSettings.
+function getSpotifyAccessToken() {
+  return new Promise(function (resolve, reject) {
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+      reject(new Error('Extension context not available'));
+      return;
+    }
+    chrome.runtime.sendMessage({ type: 'getSpotifyToken' }, function (response) {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message || 'Failed to get token'));
+        return;
+      }
+      if (response && response.needSettings) {
+        if (typeof window !== 'undefined' && window.open) {
+          window.open(chrome.runtime.getURL('options.html'), '_blank');
+        }
+        reject(new Error('Please set your Spotify Client ID in extension settings (options).'));
+        return;
+      }
+      if (response && response.error) {
+        const errMsg = response.error;
+        const parts = errMsg.split('|REDIRECT_URI|');
+        const hint = parts.length > 1
+          ? ' Use this exact Redirect URI in your Spotify app: ' + parts[1]
+          : ' In Spotify Dashboard → Your app → Settings → Redirect URIs, add the exact URL from extension options (Copy button).';
+        reject(new Error(parts[0] + hint));
+        return;
+      }
+      if (response && response.accessToken) {
+        resolve({ accessToken: response.accessToken, refreshToken: response.refreshToken || null });
+        return;
+      }
+      reject(new Error('Invalid token response'));
+    });
+  });
+}
+
 // Function to handle auth callback
 async function handleAuthCallback(code) {
   try {
@@ -67,6 +104,7 @@ function setupAuthMessageListener() {
 }
 
 // Exposer les fonctions globalement pour utilisation dans content.js
+window.getSpotifyAccessToken = getSpotifyAccessToken;
 window.handleAuthCallback = handleAuthCallback;
 window.initAuthCallback = initAuthCallback;
 window.setupAuthMessageListener = setupAuthMessageListener;

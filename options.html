@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify AI Playlist Generator – Settings</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 24px;
+      max-width: 640px;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0 0 8px;
+      color: #fff;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    .section {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      font-size: 1rem;
+      margin: 0 0 12px;
+      color: #1db954;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #b0b0b0;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #282828;
+      color: #fff;
+      font-size: 14px;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #1db954;
+    }
+    .redirect-uri-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .redirect-uri-row input {
+      flex: 1;
+      min-width: 0;
+      font-family: ui-monospace, monospace;
+      word-break: break-all;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: #1db954;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #1ed760; }
+    .btn-secondary {
+      background: #333;
+      color: #e0e0e0;
+    }
+    .btn-secondary:hover { background: #444; }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+    .steps {
+      margin: 0;
+      padding-left: 20px;
+      color: #b0b0b0;
+      font-size: 0.9rem;
+    }
+    .steps li { margin-bottom: 8px; }
+    .steps strong { color: #e0e0e0; }
+    .redirect-note {
+      background: #252525;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #888;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status.success { background: #1a3d1a; color: #6f6; display: block; }
+    .status.error { background: #3d1a1a; color: #f66; display: block; }
+    .status.info { background: #2a2a3d; color: #aaf; display: block; }
+    a { color: #1db954; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Spotify AI Playlist Generator</h1>
+  <p class="subtitle">Bring your own Spotify app (Client ID) so the extension uses your own quota.</p>
+
+  <div class="section">
+    <h2>1. Your Client ID</h2>
+    <label for="client-id">Spotify App Client ID</label>
+    <input type="text" id="client-id" placeholder="Paste your Client ID from the Spotify Developer Dashboard" autocomplete="off">
+    <p class="redirect-note">No Client Secret needed — the extension uses PKCE (no secret stored).</p>
+  </div>
+
+  <div class="section">
+    <h2>2. Redirect URI (add this in your app)</h2>
+    <p style="margin: 0 0 8px; font-size: 0.9rem; color: #b0b0b0;">In your Spotify app settings, open <strong>Redirect URIs</strong> and add this <strong>exact</strong> URL:</p>
+    <div class="redirect-uri-row">
+      <input type="text" id="redirect-uri" readonly>
+      <button type="button" class="btn btn-secondary copy-btn" id="copy-redirect">Copy</button>
+    </div>
+    <p class="redirect-note">The full URL usually ends with <code>.chromiumapp.org/</code>. Use <strong>Copy</strong> to get the exact value, then in Spotify Developer Dashboard → Your app → Settings → Redirect URIs → Add, paste it and save.</p>
+    <p class="redirect-note" style="margin-top: 8px;">If you get <strong>"Authorization page could not be loaded"</strong>: copy the URL above again and in Spotify <strong>remove</strong> the old extension redirect URI, then <strong>Add</strong> this one (exact match required). Reloading the extension can change the URL.</p>
+  </div>
+
+  <div class="section">
+    <h2>3. Quick setup</h2>
+    <ol class="steps">
+      <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a> and log in.</li>
+      <li><strong>Create an app</strong> (or use an existing one).</li>
+      <li>Open your app → <strong>Settings</strong> → under <strong>Redirect URIs</strong>, click <strong>Add</strong> and paste the URL from step 2 above.</li>
+      <li>Save. Then copy your <strong>Client ID</strong> from the app overview and paste it in the field in section 1.</li>
+      <li>Click <strong>Save</strong> below.</li>
+    </ol>
+  </div>
+
+  <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+    <button type="button" class="btn btn-primary" id="save">Save</button>
+    <button type="button" class="btn btn-secondary" id="open-dashboard" title="Open Spotify Developer Dashboard">Open Dashboard</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

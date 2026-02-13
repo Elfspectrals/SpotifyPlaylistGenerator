@@ -1147,56 +1147,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       createPlaylistButton.disabled = true;
       createPlaylistButton.style.opacity = '0.7';
 
-      // Get auth URL and handle authentication (utilise le module API)
-      const { authUrl } = await window.getSpotifyAuthUrl();
-
-      // Store the filtered playlist data
-      sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(filteredPlaylistData));
-      sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
-
-      // Open auth window
-      const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-
-      // Listen for messages from the popup window
-      const messageHandler = (event) => {
-        if (event.data && event.data.success && event.data.accessToken) {
-          window.removeEventListener('message', messageHandler);
-
-          const { accessToken, refreshToken } = event.data;
-
-          // Create new playlist with filtered songs
-          createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
-
-          // Clean up
-          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
-          sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-
-          // Close the popup
-          if (authWindow && !authWindow.closed) {
-            authWindow.close();
-          }
-        } else if (event.data && event.data.success === false) {
-          window.removeEventListener('message', messageHandler);
-          alert('Authentication failed: ' + event.data.error);
-          if (authWindow && !authWindow.closed) {
-            authWindow.close();
-          }
-        }
-      };
-
-      window.addEventListener('message', messageHandler);
-
-      // Timeout after configured time
-      setTimeout(() => {
-        window.removeEventListener('message', messageHandler);
-        if (!authWindow.closed) {
-          authWindow.close();
-          alert('Authentication timed out. Please try again.');
-        }
-      }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+      const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+      createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
 
     } catch (error) {
-      alert('Error creating playlist: ' + error.message);
+      alert(error.message || 'Error creating playlist');
       createPlaylistButton.textContent = 'Create New Playlist';
       createPlaylistButton.disabled = false;
       createPlaylistButton.style.opacity = '1';
@@ -1244,58 +1199,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         addToPlaylistButton.disabled = true;
         addToPlaylistButton.style.opacity = '0.7';
 
-        // Get auth URL and handle authentication (utilise le module API)
-        const { authUrl } = await window.getSpotifyAuthUrl();
-
-        // Store the filtered playlist data and ID
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(filteredPlaylistData));
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
-
-        // Open auth window
-        const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-
-        // Listen for messages from the popup window
-        const messageHandler = (event) => {
-          if (event.data && event.data.success && event.data.accessToken) {
-            window.removeEventListener('message', messageHandler);
-
-            const { accessToken, refreshToken } = event.data;
-
-            // Add filtered songs to existing playlist
-            addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
-
-            // Clean up
-            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
-            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-            sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID);
-
-            // Close the popup
-            if (authWindow && !authWindow.closed) {
-              authWindow.close();
-            }
-          } else if (event.data && event.data.success === false) {
-            window.removeEventListener('message', messageHandler);
-            alert('Authentication failed: ' + event.data.error);
-            if (authWindow && !authWindow.closed) {
-              authWindow.close();
-            }
-          }
-        };
-
-        window.addEventListener('message', messageHandler);
-
-        // Timeout after configured time
-        setTimeout(() => {
-          window.removeEventListener('message', messageHandler);
-          if (!authWindow.closed) {
-            authWindow.close();
-            alert('Authentication timed out. Please try again.');
-          }
-        }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
+        const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+        addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
 
       } catch (error) {
-        alert('Error adding to playlist: ' + error.message);
+        alert(error.message || 'Error adding to playlist');
         addToPlaylistButton.textContent = selectedPlaylistName
           ? `Add to Playlist: ${selectedPlaylistName}`
           : 'Add to Current Playlist';
@@ -4499,15 +4407,6 @@ function showMusicGenreModal() {
         addToPlaylistButton.disabled = true;
         addToPlaylistButton.style.opacity = '0.7';
 
-        // Get auth URL and handle authentication
-        const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-        const { authUrl } = await authResponse.json();
-
-        // Store the current playlist data and ID
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA, JSON.stringify(playlistData));
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_ID, playlistId);
-        sessionStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS, 'true');
-
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -4585,76 +4484,26 @@ function showMusicGenreModal() {
 
         document.body.appendChild(authInstructions);
 
-        // Handle auth completion
+        // Handle auth completion (BYO: get token from extension, then add songs)
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
           try {
-            // Step 1: Get auth URL from server
-            const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-            if (!authResponse.ok) {
-              throw new Error('Failed to get auth URL');
-            }
-            const { authUrl } = await authResponse.json();
-
-            // Step 2: Open auth window
-            const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-
-            // Step 3: Listen for messages from the popup window
-            const messageHandler = (event) => {
-              if (event.data && event.data.success && event.data.accessToken) {
-                window.removeEventListener('message', messageHandler);
-
-                const { accessToken, refreshToken } = event.data;
-
-                // Remove instructions
-                document.getElementById('auth-instructions').remove();
-
-                // Add songs to existing playlist
-                addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-
-                // Clean up
-                sessionStorage.removeItem('authInProgress');
-                sessionStorage.removeItem('pendingPlaylistData');
-                sessionStorage.removeItem('pendingPlaylistId');
-
-                // Close the popup
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              } else if (event.data && event.data.success === false) {
-                window.removeEventListener('message', messageHandler);
-                alert('Authentication failed: ' + event.data.error);
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              }
-            };
-
-            window.addEventListener('message', messageHandler);
-
-            // Timeout after 5 minutes
-            setTimeout(() => {
-              window.removeEventListener('message', messageHandler);
-              if (!authWindow.closed) {
-                authWindow.close();
-                alert('Authentication timed out. Please try again.');
-              }
-            }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
-
-          } catch (error) {
-            alert('Authentication failed: ' + error.message);
+            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+            const instructionsEl = document.getElementById('auth-instructions');
+            if (instructionsEl) instructionsEl.remove();
+            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+          } catch (err) {
+            alert(err.message || 'Authentication failed');
           }
         });
 
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          document.getElementById('auth-instructions').remove();
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
-          sessionStorage.removeItem('pendingPlaylistId');
+          const instructionsEl = document.getElementById('auth-instructions');
+          if (instructionsEl) instructionsEl.remove();
         });
 
       } catch (error) {
-        alert('Error adding to playlist: ' + error.message);
+        alert(error.message || 'Error adding to playlist');
         addToPlaylistButton.textContent = 'Add to Current Playlist';
         addToPlaylistButton.disabled = false;
         addToPlaylistButton.style.opacity = '1';
@@ -4777,17 +4626,6 @@ function showMusicGenreModal() {
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
 
-        // Obtenir l'URL d'authentification
-        const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-        const { authUrl } = await authResponse.json();
-
-        // Use a simple approach - show the auth URL to the user
-
-
-        // Store the filtered playlist data in sessionStorage
-        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(filteredPlaylistData));
-        sessionStorage.setItem('authInProgress', 'true');
-
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -4875,87 +4713,32 @@ function showMusicGenreModal() {
 
         document.body.appendChild(authInstructions);
 
-        // Handle auth completion
+        // Handle auth completion (BYO: get token from extension, then create playlist)
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-
-          // Get the modified playlist name and description
           const playlistName = document.getElementById('playlist-name-input').value.trim() || filteredPlaylistData.playlist.name;
           const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || filteredPlaylistData.playlist.description;
-
-
           try {
-            // Step 1: Get auth URL from server
-            const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-            if (!authResponse.ok) {
-              throw new Error('Failed to get auth URL');
-            }
-            const { authUrl } = await authResponse.json();
-
-            // Step 2: Open auth window
-            const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-
-            // Step 3: Listen for messages from the popup window
-            const messageHandler = (event) => {
-
-              if (event.data && event.data.success && event.data.accessToken) {
-                window.removeEventListener('message', messageHandler);
-
-                const { accessToken, refreshToken } = event.data;
-
-                // Remove instructions
-                document.getElementById('auth-instructions').remove();
-
-                // Create modified playlist data with user's changes
-                const modifiedPlaylistData = {
-                  ...filteredPlaylistData,
-                  playlist: {
-                    ...filteredPlaylistData.playlist,
-                    name: playlistName,
-                    description: playlistDescription
-                  }
-                };
-
-                // Create playlist with fresh token
-                createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
-
-                // Clean up
-                sessionStorage.removeItem('authInProgress');
-                sessionStorage.removeItem('pendingPlaylistData');
-
-                // Close the popup
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              } else if (event.data && event.data.success === false) {
-                window.removeEventListener('message', messageHandler);
-                alert('Authentication failed: ' + event.data.error);
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
+            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+            const instructionsEl = document.getElementById('auth-instructions');
+            if (instructionsEl) instructionsEl.remove();
+            const modifiedPlaylistData = {
+              ...filteredPlaylistData,
+              playlist: {
+                ...filteredPlaylistData.playlist,
+                name: playlistName,
+                description: playlistDescription
               }
             };
-
-            window.addEventListener('message', messageHandler);
-
-            // Timeout after 5 minutes
-            setTimeout(() => {
-              window.removeEventListener('message', messageHandler);
-              if (!authWindow.closed) {
-                authWindow.close();
-                alert('Authentication timed out. Please try again.');
-              }
-            }, CONFIG.TIMEOUTS.AUTH_TIMEOUT);
-
-          } catch (error) {
-            alert('Authentication failed: ' + error.message);
+            createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
+          } catch (err) {
+            alert(err.message || 'Authentication failed');
           }
         });
 
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          document.getElementById('auth-instructions').remove();
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
+          const instructionsEl = document.getElementById('auth-instructions');
+          if (instructionsEl) instructionsEl.remove();
         });
 
       } catch (error) {
