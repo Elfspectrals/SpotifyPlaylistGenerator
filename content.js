@@ -1,291 +1,23 @@
 // Spotify AI Generator Playlist Extender
+// Point d'entrée principal - utilise les modules config, styles, utils, api, buttons, auth
 
-// Add global styles for disabled buttons and loading indicators
-const disabledButtonStyles = document.createElement('style');
-disabledButtonStyles.textContent = `
-  .button-disabled {
-    opacity: 0.3 !important;
-    background: #333 !important;
-    color: #999 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    box-shadow: none !important;
-    pointer-events: none !important;
-    border: 1px solid #555 !important;
-    filter: grayscale(100%) !important;
-  }
-  
-  .button-disabled:hover {
-    background: #333 !important;
-    color: #999 !important;
-    transform: none !important;
-    box-shadow: none !important;
-    cursor: not-allowed !important;
-    filter: grayscale(100%) !important;
-  }
-  
-  .button-disabled:active {
-    transform: none !important;
-    box-shadow: none !important;
-    background: #333 !important;
-    color: #999 !important;
-  }
-  
-  .button-disabled * {
-    color: #999 !important;
-  }
+// Injecter les styles globaux (depuis styles.js)
+injectGlobalStyles();
 
-  /* Loading spinner styles */
-  .loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ffffff40;
-    border-radius: 50%;
-    border-top-color: #ffffff;
-    animation: spin 1s ease-in-out infinite;
-    margin-right: 8px;
-  }
-
-  .loading-spinner-small {
-    width: 12px;
-    height: 12px;
-    border-width: 1.5px;
-    margin-right: 6px;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Loading button styles */
-  .button-loading {
-    position: relative;
-    opacity: 0.8 !important;
-    cursor: not-allowed !important;
-  }
-
-  .button-loading:hover {
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Pulse animation for loading states */
-  @keyframes pulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.6; }
-  }
-
-  .button-pulse {
-    animation: pulse 1.5s infinite;
-  }
-`;
-document.head.appendChild(disabledButtonStyles);
-
-// Utility function to show specific loading messages
-function showLoadingMessage(button, message) {
-  if (!button.dataset.originalText) {
-    button.dataset.originalText = button.textContent;
-  }
-  
-  const spinner = document.createElement('span');
-  spinner.className = 'loading-spinner';
-  button.innerHTML = '';
-  button.appendChild(spinner);
-  button.appendChild(document.createTextNode(' ' + message));
-  button.classList.add('button-loading', 'button-pulse');
-}
-
-// Utility function to restore button to original state
-function restoreButton(button) {
-  if (button.dataset.originalText) {
-    button.textContent = button.dataset.originalText;
-    delete button.dataset.originalText;
-  }
-  button.classList.remove('button-loading', 'button-pulse');
-  button.disabled = false;
-  button.style.opacity = '1';
-  button.style.cursor = 'pointer';
-  button.style.transform = '';
-  button.style.boxShadow = '';
-  button.style.filter = 'none';
-  button.style.border = '';
-}
-
-// Utility function to re-enable the main AI Playlist button
-function reEnableMainAIButton() {
-  const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
-  if (mainAIButton) {
-    restoreButton(mainAIButton);
-    console.log('✅ Main AI Playlist button re-enabled');
-  } else {
-    console.log('⚠️ Main AI Playlist button not found for re-enabling');
-  }
-}
-
-// Utility function to disable/enable all relevant buttons with loading indicators
-function toggleButtonsState(disabled = true, showLoading = true) {
-  const allButtons = document.querySelectorAll('button');
-  allButtons.forEach(button => {
-    if (button.textContent && (
-      button.textContent.includes('Add to Current Playlist') ||
-      button.textContent.includes('Create AI Playlist') ||
-      button.textContent.includes('Use Selected Playlist') ||
-      button.textContent.includes('Generate') ||
-      button.textContent.includes('Connecting to Spotify') ||
-      button.textContent.includes('AI Generation') ||
-      button.textContent.includes('🤖 AI Generation') ||
-      button.textContent.includes('🤖 Generating') ||
-      button.textContent.includes('AI Playlist')
-    )) {
-      button.disabled = disabled;
-      
-      if (disabled) {
-        // Store original text for restoration
-        if (!button.dataset.originalText) {
-          button.dataset.originalText = button.textContent;
-        }
-        
-        // Add loading indicator if requested
-        if (showLoading) {
-          const spinner = document.createElement('span');
-          spinner.className = 'loading-spinner';
-          button.innerHTML = '';
-          button.appendChild(spinner);
-          
-          // Add appropriate loading text based on button type
-          if (button.dataset.originalText.includes('Add to Current Playlist')) {
-            button.appendChild(document.createTextNode(' Adding to Playlist...'));
-          } else if (button.dataset.originalText.includes('Create AI Playlist')) {
-            button.appendChild(document.createTextNode(' Creating Playlist...'));
-          } else if (button.dataset.originalText.includes('Use Selected Playlist')) {
-            button.appendChild(document.createTextNode(' Generating...'));
-          } else if (button.dataset.originalText.includes('Generate')) {
-            button.appendChild(document.createTextNode(' Generating...'));
-          } else {
-            button.appendChild(document.createTextNode(' Loading...'));
-          }
-          
-          // Add loading classes
-          button.classList.add('button-loading', 'button-pulse');
-        } else {
-          // Style pour boutons désactivés - plus visible
-          button.style.opacity = '0.3';
-          button.style.background = '#333';
-          button.style.color = '#999';
-          button.style.cursor = 'not-allowed';
-          button.style.transform = 'none';
-          button.style.boxShadow = 'none';
-          button.style.border = '1px solid #555';
-          button.style.filter = 'grayscale(100%)';
-          
-          // Ajouter une classe CSS pour le style désactivé
-          button.classList.add('button-disabled');
-        }
-      } else {
-        // Restore original text
-        if (button.dataset.originalText) {
-          button.textContent = button.dataset.originalText;
-          delete button.dataset.originalText;
-        }
-        
-        // Remove loading classes
-        button.classList.remove('button-loading', 'button-pulse');
-        
-        // Restaurer le style normal
-        button.style.opacity = '1';
-        button.style.cursor = 'pointer';
-        button.style.transform = '';
-        button.style.boxShadow = '';
-        button.style.filter = 'none';
-        button.style.border = '';
-        
-        // Restaurer les couleurs originales selon le type de bouton
-        if (button.textContent.includes('Create AI Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Add to Current Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Use Selected Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          button.style.color = 'white';
-        } else if (button.textContent.includes('Generate') || button.textContent.includes('AI Generation')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-          button.style.color = 'white';
-        }
-        
-        // Supprimer la classe désactivée
-        button.classList.remove('button-disabled');
-      }
-    }
-  });
-}
+// Initialiser l'authentification (depuis auth.js)
+initAuthCallback();
+setupAuthMessageListener();
 
 // Global function to add songs to existing playlist via API
 async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
   try {
-    console.log('🎵 Adding songs to existing playlist:', playlistId);
-    
+
     // Disable all relevant buttons during API call with loading indicators
     toggleButtonsState(true, true);
-    
-    // Format data for Spotify
-    const spotifyPlaylistData = {
-      name: playlistData.playlist.name || 'AI Generated Playlist',
-      description: playlistData.playlist.description || 'Generated by AI',
-      songs: (playlistData.playlist.songs || []).map(song => ({
-        title: song.title,
-        artist: song.artist
-      }))
-    };
-    
-    let addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        accessToken, 
-        playlistId,
-        playlistData: spotifyPlaylistData 
-      })
-    });
-    
-    // If token expired, try to refresh it
-    if (!addResponse.ok && refreshToken) {
-      const errorText = await addResponse.text();
-      
-      try {
-        const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        
-        if (refreshResponse.ok) {
-          const { accessToken: newAccessToken } = await refreshResponse.json();
-          
-          // Retry with new token
-          addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              accessToken: newAccessToken, 
-              playlistId,
-              playlistData: spotifyPlaylistData 
-            })
-          });
-        }
-      } catch (refreshError) {
-      }
-    }
-    
-    if (!addResponse.ok) {
-      const errorText = await addResponse.text();
-      throw new Error(`Spotify addition failed: ${addResponse.status} - ${errorText}`);
-    }
-    
-    const result = await addResponse.json();
-    
+
+    // Utiliser la fonction du module API
+    const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
+
     // Show success notification
     const notification = document.createElement('div');
     notification.className = 'success-notification';
@@ -301,7 +33,7 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
       z-index: 10002;
       max-width: 400px;
     `;
-    
+
     notification.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
         <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -325,16 +57,16 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
         font-size: 14px;
       ">Close</button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-close after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
         notification.remove();
       }
     }, 5000);
-    
+
     // Close the results modal after successful addition
     setTimeout(() => {
       const resultsModal = document.getElementById('playlist-results-modal');
@@ -342,112 +74,21 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
         resultsModal.parentNode.removeChild(resultsModal);
       }
     }, 2000);
-    
+
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-    
+
   } catch (error) {
     alert('Error adding songs to playlist: ' + error.message);
-    
+
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-  }
-}
-
-// Check if we're returning from Spotify auth
-
-if (sessionStorage.getItem('authInProgress') === 'true') {
-  // Check if we have auth parameters in the URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const error = urlParams.get('error');
-  
-  if (code) {
-    handleAuthCallback(code);
-  } else if (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error);
-  } else {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-  }
-}
-
-// Function to handle auth callback
-async function handleAuthCallback(code) {
-  try {
-    const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    if (!tokenResponse.ok) {
-      throw new Error('Token exchange failed');
-    }
-    
-    const { accessToken } = await tokenResponse.json();
-    
-    // Get the pending playlist data
-    const pendingPlaylistData = JSON.parse(sessionStorage.getItem('pendingPlaylistData'));
-    if (!pendingPlaylistData) {
-      throw new Error('No pending playlist data found');
-    }
-    
-    await createSpotifyPlaylist(accessToken, pendingPlaylistData);
-    
-    // Clean up
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    
-  } catch (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error.message);
-  }
-}
-
-// Listen for messages from auth window (fallback)
-window.addEventListener('message', async (event) => {
-  
-  if (event.data && event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
-    const { accessToken, playlistData } = event.data;
-    await createSpotifyPlaylist(accessToken, playlistData);
-  }
-});
-
-// Function to exchange code for token
-async function exchangeCodeForToken(code, playlistData) {
-  try {
-    const tokenResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    if (!tokenResponse.ok) {
-      throw new Error('Token exchange failed');
-    }
-    
-    const { accessToken, refreshToken } = await tokenResponse.json();
-    
-    // Store auth data for the popup close handler
-    sessionStorage.setItem('spotifyAuthData', JSON.stringify({ accessToken, refreshToken, playlistData }));
-    
-    // Also create the playlist immediately
-    await createSpotifyPlaylist(accessToken, playlistData, refreshToken);
-    
-  } catch (error) {
-    sessionStorage.removeItem('authInProgress');
-    sessionStorage.removeItem('pendingPlaylistData');
-    alert('Authentication failed: ' + error.message);
   }
 }
 
@@ -456,62 +97,10 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
   try {
     // Disable all relevant buttons during API call with loading indicators
     toggleButtonsState(true, true);
-    
-    // Format data for Spotify
-    const spotifyPlaylistData = {
-      name: playlistData.playlist.name || 'AI Generated Playlist',
-      description: playlistData.playlist.description || 'Generated by AI',
-      songs: (playlistData.playlist.songs || []).map(song => ({
-        title: song.title,
-        artist: song.artist
-      }))
-    };
-    
-    
-    let createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        accessToken, 
-        playlistData: spotifyPlaylistData 
-      })
-    });
-    
-    // If token expired, try to refresh it
-    if (!createResponse.ok && refreshToken) {
-      const errorText = await createResponse.text();
-      
-      try {
-        const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        
-        if (refreshResponse.ok) {
-          const { accessToken: newAccessToken } = await refreshResponse.json();
-          
-          // Retry with new token
-          createResponse = await fetch('https://gemini.niperiusland.fr:4005/create-spotify-playlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              accessToken: newAccessToken, 
-              playlistData: spotifyPlaylistData 
-            })
-          });
-        }
-      } catch (refreshError) {
-      }
-    }
-    
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      throw new Error(`Spotify creation failed: ${createResponse.status} - ${errorText}`);
-    }
-    
-    const result = await createResponse.json();
-    
+
+    // Utiliser la fonction du module API (appelée via window pour éviter conflit de nom)
+    const result = await window.createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken);
+
     // Show success notification
     const notification = document.createElement('div');
     notification.className = 'success-notification';
@@ -527,7 +116,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
       z-index: 10002;
       max-width: 400px;
     `;
-    
+
     notification.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
         <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -551,16 +140,16 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         font-size: 14px;
       ">Close</button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-close after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
         notification.remove();
       }
     }, 5000);
-    
+
     // Close the results modal after successful creation
     setTimeout(() => {
       const resultsModal = document.getElementById('playlist-results-modal');
@@ -568,94 +157,33 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
         resultsModal.parentNode.removeChild(resultsModal);
       }
     }, 2000); // Close after 2 seconds to let user see the success notification
-    
+
     // Re-enable all buttons after successful operation
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
-    
+
   } catch (error) {
     alert('Error creating playlist: ' + error.message);
-    
+
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
-    
+
     // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
   }
 }
 
-// Wait for the page to load
-function waitForElement(selector, timeout = 10000) {
-  return new Promise((resolve, reject) => {
-    const element = document.querySelector(selector);
-    if (element) {
-      resolve(element);
-      return;
-    }
-
-    const observer = new MutationObserver((mutations, obs) => {
-      const element = document.querySelector(selector);
-      if (element) {
-        obs.disconnect();
-        resolve(element);
-      }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    setTimeout(() => {
-      observer.disconnect();
-      reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-    }, timeout);
-  });
-}
-
 // Watch for page changes and retry adding the button
-function watchForPageChanges() {
-  const observer = new MutationObserver((mutations) => {
-    let shouldRetry = false;
-    
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        // Check if any new buttons were added, but ignore modal elements
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Ignore modal elements to prevent conflicts
-            if (node.id && (node.id.includes('modal') || node.id.includes('ai-playlist'))) {
-              return; // Skip modal elements
-            }
-            
-            if (node.tagName === 'BUTTON' || node.querySelector && node.querySelector('button')) {
-              shouldRetry = true;
-            }
-          }
-        });
-      }
-    });
-    
-    if (shouldRetry) {
-      setTimeout(() => {
-        // Check if our button already exists
-        const existingButton = document.querySelector('button[aria-label="AI Playlist"]');
-        if (!existingButton) {
-          console.log('🔄 MutationObserver: Re-adding AI Playlist button...');
-          addAIPlaylistButton();
-        }
-      }, 1000);
+function watchForPageChangesWrapper() {
+  return watchForPageChanges(() => {
+    // Check if our button already exists
+    const existingButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
+    if (!existingButton) {
+      addAIPlaylistButton();
     }
   });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  return observer;
 }
 
 // Function to add "Choose Playlist" button
@@ -664,35 +192,34 @@ function addChoosePlaylistButton() {
     // Check if we're on a playlist page
     const currentUrl = window.location.href;
     const isPlaylistPage = currentUrl.includes('/playlist/');
-    
+
     if (!isPlaylistPage) {
       return; // Only add the button on playlist pages
     }
-    
+
     // Check if Choose Playlist button already exists to avoid duplicates
-    const existingChooseButton = document.querySelector('button[aria-label="Choose Playlist"]');
+    const existingChooseButton = document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
     if (existingChooseButton) {
-      console.log('Choose Playlist button already exists, skipping...');
       return;
     }
-    
+
     // Set up observer to watch for playlist changes
     setupPlaylistChangeObserver();
-    
+
     // Wait a bit for the page to load
     setTimeout(() => {
       // Look for the action buttons container (where the play, shuffle, download buttons are)
-      const actionButtonsContainer = document.querySelector('[data-testid="action-bar-row"]') || 
-                                   document.querySelector('.main-actionBar-ActionBarRow') ||
-                                   document.querySelector('[role="toolbar"]');
-      
+      const actionButtonsContainer = document.querySelector('[data-testid="action-bar-row"]') ||
+        document.querySelector('.main-actionBar-ActionBarRow') ||
+        document.querySelector('[role="toolbar"]');
+
       if (actionButtonsContainer) {
         // Check if our button already exists
         const existingButton = actionButtonsContainer.querySelector('[aria-label="Choose Playlist"]');
         if (existingButton) {
           return; // Button already exists
         }
-        
+
         // Create the "Choose Playlist" button
         const choosePlaylistButton = document.createElement('button');
         choosePlaylistButton.setAttribute('aria-label', 'Choose Playlist');
@@ -712,43 +239,40 @@ function addChoosePlaylistButton() {
           margin-left: 8px;
           box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         `;
-        
+
         // Add the icon (checkmark or plus icon)
         choosePlaylistButton.innerHTML = `
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
         `;
-        
+
         // Add hover effects
         choosePlaylistButton.addEventListener('mouseenter', () => {
           choosePlaylistButton.style.transform = 'scale(1.1)';
           choosePlaylistButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
         });
-        
+
         choosePlaylistButton.addEventListener('mouseleave', () => {
           choosePlaylistButton.style.transform = 'scale(1)';
           choosePlaylistButton.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
         });
-        
+
         // Add click handler
         choosePlaylistButton.addEventListener('click', () => {
           saveCurrentPlaylist();
         });
-        
+
         // Insert the button at the end of the action buttons
         actionButtonsContainer.appendChild(choosePlaylistButton);
-        
-        console.log('✅ Choose Playlist button added successfully');
+
       } else {
-        console.log('⚠️ Action buttons container not found, retrying...');
         // Retry after a longer delay
         setTimeout(() => addChoosePlaylistButton(), 2000);
       }
     }, 1500);
-    
+
   } catch (error) {
-    console.log('Error adding Choose Playlist button:', error);
   }
 }
 
@@ -757,29 +281,28 @@ function setupPlaylistChangeObserver() {
   let currentPlaylistId = null;
   let saveTimeout = null;
   let buttonTimeout = null;
-  
+
   // Get current playlist ID
   const currentUrl = window.location.href;
   const playlistMatch = currentUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
   if (playlistMatch) {
     currentPlaylistId = playlistMatch[1];
   }
-  
+
   // Observer to watch for URL changes and page content changes
   const observer = new MutationObserver((mutations) => {
     // Check if URL has changed
     const newUrl = window.location.href;
     const newPlaylistMatch = newUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
-    
+
     if (newPlaylistMatch) {
       const newPlaylistId = newPlaylistMatch[1];
-      
+
       // If we're on a different playlist, update the selected playlist automatically
       // BUT only if the user has already selected a playlist before
       if (currentPlaylistId !== newPlaylistId) {
-        console.log('Playlist changed from', currentPlaylistId, 'to', newPlaylistId);
         currentPlaylistId = newPlaylistId;
-        
+
         // Only auto-save if user has previously selected a playlist
         const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
         if (hasSelectedPlaylist) {
@@ -793,12 +316,12 @@ function setupPlaylistChangeObserver() {
         }
       }
     }
-    
+
     // Also watch for changes in the action buttons area (with debounce)
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         // Check if our button was removed and needs to be re-added
-        const existingButton = document.querySelector('[aria-label="Choose Playlist"]');
+        const existingButton = document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
         if (!existingButton && window.location.href.includes('/playlist/')) {
           // Clear existing timeout and set new one (debounce)
           if (buttonTimeout) {
@@ -806,7 +329,7 @@ function setupPlaylistChangeObserver() {
           }
           buttonTimeout = setTimeout(() => {
             // Double-check that button still doesn't exist before adding
-            const stillNoButton = !document.querySelector('[aria-label="Choose Playlist"]');
+            const stillNoButton = !document.querySelector(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
             if (stillNoButton) {
               addChoosePlaylistButton();
             }
@@ -815,13 +338,13 @@ function setupPlaylistChangeObserver() {
       }
     });
   });
-  
+
   // Start observing
   observer.observe(document.body, {
     childList: true,
     subtree: true
   });
-  
+
   // Also listen for popstate events (back/forward navigation) with debounce
   let popstateTimeout = null;
   window.addEventListener('popstate', () => {
@@ -834,7 +357,7 @@ function setupPlaylistChangeObserver() {
         const newPlaylistMatch = window.location.href.match(/\/playlist\/([a-zA-Z0-9]+)/);
         if (newPlaylistMatch && newPlaylistMatch[1] !== currentPlaylistId) {
           currentPlaylistId = newPlaylistMatch[1];
-          
+
           // Only auto-save if user has previously selected a playlist
           const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
           if (hasSelectedPlaylist) {
@@ -850,8 +373,7 @@ function setupPlaylistChangeObserver() {
       }
     }, 500); // Wait 500ms to avoid spam
   });
-  
-  console.log('Playlist change observer set up');
+
 }
 
 // Function to save current playlist
@@ -859,13 +381,13 @@ function saveCurrentPlaylist(showNotification = true) {
   try {
     const currentUrl = window.location.href;
     const playlistMatch = currentUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
-    
+
     if (playlistMatch) {
       const playlistId = playlistMatch[1];
-      
+
       // Get playlist name from the page - try multiple selectors for better reliability
       let playlistName = 'Selected Playlist';
-      
+
       // Try different selectors to find the playlist name, prioritizing the main title
       const nameSelectors = [
         // Try to find the main playlist title in the header area first
@@ -886,25 +408,24 @@ function saveCurrentPlaylist(showNotification = true) {
         '.main-entityHeader .encore-text-body-small',
         '.encore-text-body-small'
       ];
-      
+
       for (const selector of nameSelectors) {
         const element = document.querySelector(selector);
         if (element && element.textContent && element.textContent.trim()) {
           const text = element.textContent.trim();
           // Make sure it's not just "Bibliothèque" or other navigation text
           // Also avoid generic names like "Titre • [name]"
-          if (text !== 'Bibliothèque' && 
-              text !== 'Playlists' && 
-              text.length > 3 &&
-              !text.includes('Titre •') &&
-              !text.includes('Playlist •')) {
+          if (text !== 'Bibliothèque' &&
+            text !== 'Playlists' &&
+            text.length > 3 &&
+            !text.includes('Titre •') &&
+            !text.includes('Playlist •')) {
             playlistName = text;
-            console.log('Found playlist name:', text, 'using selector:', selector);
             break;
           }
         }
       }
-      
+
       // If we still haven't found a good name, try to get it from the page title or URL
       if (playlistName === 'Selected Playlist' || playlistName === 'Bibliothèque') {
         // Try to get from page title
@@ -916,7 +437,7 @@ function saveCurrentPlaylist(showNotification = true) {
           }
         }
       }
-      
+
       // Save to localStorage
       const playlistData = {
         id: playlistId,
@@ -924,9 +445,21 @@ function saveCurrentPlaylist(showNotification = true) {
         url: currentUrl,
         savedAt: new Date().toISOString()
       };
-      
+
       localStorage.setItem('selectedPlaylist', JSON.stringify(playlistData));
-      
+
+      // Refresh the modal if it's open to update the button text
+      const existingModal = document.getElementById('ai-playlist-modal');
+      if (existingModal) {
+        // Close and reopen the modal to refresh the button
+        existingModal.remove();
+        reEnableMainAIButton();
+        // Reopen the modal after a short delay
+        setTimeout(() => {
+          showMusicGenreModal();
+        }, 300);
+      }
+
       // Only show notification if explicitly requested
       if (showNotification) {
         // Show success notification
@@ -945,7 +478,7 @@ function saveCurrentPlaylist(showNotification = true) {
           max-width: 400px;
           animation: slideIn 0.3s ease;
         `;
-        
+
         notification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">✅</div>
@@ -967,9 +500,9 @@ function saveCurrentPlaylist(showNotification = true) {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-close after 4 seconds
         setTimeout(() => {
           if (notification.parentElement) {
@@ -977,15 +510,13 @@ function saveCurrentPlaylist(showNotification = true) {
           }
         }, 4000);
       }
-      
-      console.log('✅ Playlist saved:', playlistData);
+
     } else {
       if (showNotification) {
         alert('No playlist detected on this page.');
       }
     }
   } catch (error) {
-    console.error('Error saving playlist:', error);
     if (showNotification) {
       alert('Error saving playlist: ' + error.message);
     }
@@ -1051,7 +582,7 @@ function showChoosePlaylistModal() {
     margin-bottom: 30px;
     border: 1px solid #444;
   `;
-  
+
   playlistInfo.innerHTML = `
     <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
       🎵 Current Playlist
@@ -1074,7 +605,7 @@ function showChoosePlaylistModal() {
     border: 1px solid #444;
     text-align: center;
   `;
-  
+
   const songCountLabel = document.createElement('div');
   songCountLabel.textContent = 'Number of Songs to Add';
   songCountLabel.style.cssText = `
@@ -1083,7 +614,7 @@ function showChoosePlaylistModal() {
     font-weight: bold;
     margin-bottom: 15px;
   `;
-  
+
   const songCountSelector = document.createElement('div');
   songCountSelector.style.cssText = `
     display: flex;
@@ -1092,11 +623,11 @@ function showChoosePlaylistModal() {
     gap: 10px;
     flex-wrap: wrap;
   `;
-  
+
   // Create song count options
-  const songCounts = [3, 5, 8, 10, 15];
-  let selectedSongCount = 5;
-  
+  const songCounts = CONFIG.DEFAULTS.SONG_COUNT_OPTIONS;
+  let selectedSongCount = CONFIG.DEFAULTS.SONG_COUNT;
+
   songCounts.forEach(count => {
     const button = document.createElement('button');
     button.textContent = count.toString();
@@ -1115,24 +646,24 @@ function showChoosePlaylistModal() {
       align-items: center;
       justify-content: center;
     `;
-    
+
     button.addEventListener('click', () => {
       // Remove selection from all buttons
       songCountSelector.querySelectorAll('button').forEach(btn => {
         btn.style.background = 'transparent';
         btn.style.color = '#667eea';
       });
-      
+
       // Select current button
       button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
       button.style.color = 'white';
-      
+
       selectedSongCount = count;
     });
-    
+
     songCountSelector.appendChild(button);
   });
-  
+
   songCountContainer.appendChild(songCountLabel);
   songCountContainer.appendChild(songCountSelector);
 
@@ -1179,13 +710,13 @@ function showChoosePlaylistModal() {
       generateButton.textContent = '🤖 Generating...';
       generateButton.disabled = true;
       generateButton.style.opacity = '0.7';
-      
+
       // Generate playlist with random genres for variety
       const randomGenres = [
-        'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical', 
+        'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical',
         'Metal', 'Folk', 'R&B', 'Blues', 'Reggae', 'World Music'
       ];
-      
+
       // Select 2-3 random genres
       const selectedGenres = [];
       const numGenres = Math.floor(Math.random() * 2) + 2; // 2 or 3 genres
@@ -1195,37 +726,20 @@ function showChoosePlaylistModal() {
           selectedGenres.push(randomGenre);
         }
       }
-      
-      // Call the AI to generate songs
-      const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          selectedGenres: selectedGenres,
-          songCount: selectedSongCount
-        }),
-        mode: 'cors',
-        credentials: 'omit'
-      });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+      // Call the AI to generate songs (utilise le module API)
+      const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
-      const playlistData = await response.json();
-      
       if (!playlistData || !playlistData.playlist) {
         throw new Error('Invalid server response format');
       }
-      
+
       // Close the modal
       modalOverlay.remove();
-      
+
       // Show the results and add to playlist
       showPlaylistResultsForAdding(playlistData, playlistId);
-      
+
     } catch (error) {
       alert('Error generating songs: ' + error.message);
       generateButton.textContent = 'Generate & Add Songs';
@@ -1267,7 +781,7 @@ function showChoosePlaylistModal() {
   // Assemble modal
   actionButtons.appendChild(cancelButton);
   actionButtons.appendChild(generateButton);
-  
+
   modalContent.appendChild(closeButton);
   modalContent.appendChild(title);
   modalContent.appendChild(playlistInfo);
@@ -1282,14 +796,37 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Close all existing modals
   const existingModal = document.getElementById('ai-playlist-modal');
   const existingResultsModal = document.getElementById('playlist-results-modal');
-  
+
   if (existingModal) {
     existingModal.remove();
   }
   if (existingResultsModal) {
     existingResultsModal.remove();
   }
-  
+
+  // Check if there's a selected playlist in localStorage (for display purposes)
+  // But don't force playlistId - we want to show both options
+  let selectedPlaylistData = null;
+  if (!playlistId) {
+    const selectedPlaylist = localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PLAYLIST);
+    if (selectedPlaylist) {
+      try {
+        selectedPlaylistData = JSON.parse(selectedPlaylist);
+        playlistId = selectedPlaylistData.id; // Use it for the "Add to" button
+      } catch (e) {
+      }
+    }
+  } else {
+    // If playlistId is provided, also get the name
+    const selectedPlaylist = localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_PLAYLIST);
+    if (selectedPlaylist) {
+      try {
+        selectedPlaylistData = JSON.parse(selectedPlaylist);
+      } catch (e) {
+      }
+    }
+  }
+
   // Create a new modal for results
   const resultsModal = document.createElement('div');
   resultsModal.id = 'playlist-results-modal';
@@ -1322,85 +859,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     border: 1px solid #333;
   `;
 
-  // Add responsive styles for results modal
-  const resultsResponsiveStyles = document.createElement('style');
-  resultsResponsiveStyles.textContent = `
-    @media (max-width: 768px) {
-      .results-modal-content {
-        padding: 20px !important;
-        margin: 10px !important;
-        width: calc(100% - 20px) !important;
-        max-height: 90vh !important;
-      }
-      
-      .results-modal-content h2 {
-        font-size: 24px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .results-modal-content p {
-        font-size: 14px !important;
-        margin-bottom: 20px !important;
-      }
-      
-      .song-item {
-        padding: 12px !important;
-        margin-bottom: 8px !important;
-      }
-      
-      .song-item div:first-child {
-        font-size: 16px !important;
-      }
-      
-      .song-item div:nth-child(2) {
-        font-size: 14px !important;
-      }
-      
-      .song-item div:nth-child(3) {
-        font-size: 12px !important;
-      }
-      
-      .action-buttons {
-        flex-direction: column !important;
-        gap: 10px !important;
-      }
-      
-      .action-buttons button {
-        width: 100% !important;
-        padding: 10px 20px !important;
-        font-size: 14px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .results-modal-content {
-        padding: 15px !important;
-        margin: 5px !important;
-        width: calc(100% - 10px) !important;
-      }
-      
-      .results-modal-content h2 {
-        font-size: 20px !important;
-      }
-      
-      .song-item {
-        padding: 10px !important;
-      }
-      
-      .song-item div:first-child {
-        font-size: 14px !important;
-      }
-      
-      .song-item div:nth-child(2) {
-        font-size: 12px !important;
-      }
-      
-      .song-item div:nth-child(3) {
-        font-size: 11px !important;
-      }
-    }
-  `;
-  document.head.appendChild(resultsResponsiveStyles);
+  // Responsive styles are now in styles.js
 
   // Titre de la playlist
   const playlistTitle = document.createElement('h2');
@@ -1429,47 +888,160 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     margin-bottom: 30px;
   `;
 
+  // Track selected songs (all selected by default)
+  const selectedSongs = new Set(playlistData.playlist.songs.map((_, index) => index));
+
+  // Select All / Deselect All controls
+  const selectAllContainer = document.createElement('div');
+  selectAllContainer.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 10px;
+  `;
+
+  const selectAllLabel = document.createElement('label');
+  selectAllLabel.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  `;
+
+  const selectAllCheckbox = document.createElement('input');
+  selectAllCheckbox.type = 'checkbox';
+  selectAllCheckbox.checked = true;
+  selectAllCheckbox.style.cssText = `
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+  `;
+
+  const selectedCount = document.createElement('span');
+  selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+  selectedCount.style.cssText = `
+    color: #667eea;
+    font-size: 14px;
+    font-weight: bold;
+  `;
+
+  selectAllLabel.appendChild(selectAllCheckbox);
+  selectAllLabel.appendChild(document.createTextNode('Select All'));
+  selectAllContainer.appendChild(selectAllLabel);
+  selectAllContainer.appendChild(selectedCount);
+
+  // Select All / Deselect All functionality
+  selectAllCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    selectedSongs.clear();
+
+    if (isChecked) {
+      playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
+    }
+
+    // Update all checkboxes
+    songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
+      checkbox.checked = isChecked;
+      const songIndex = parseInt(checkbox.getAttribute('data-song-index'));
+      const songItem = checkbox.closest('.song-item');
+      if (isChecked) {
+        songItem.style.opacity = '1';
+        songItem.style.background = '';
+      } else {
+        songItem.style.opacity = '0.5';
+        songItem.style.background = '#2a2a2a';
+      }
+    });
+
+    selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+  });
+
   playlistData.playlist.songs.forEach((song, index) => {
     const songItem = document.createElement('div');
     songItem.className = 'song-item';
     songItem.style.cssText = `
-      background: #2a2a2a;
-      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
       padding: 15px;
       margin-bottom: 10px;
-      border-left: 4px solid #1db954;
-      transition: all 0.3s ease;
+      background: #2a2a2a;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
     `;
 
-    songItem.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    checkbox.setAttribute('data-song-index', index);
+    checkbox.style.cssText = `
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+      flex-shrink: 0;
+    `;
+
+    checkbox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      if (isChecked) {
+        selectedSongs.add(index);
+        songItem.style.opacity = '1';
+        songItem.style.background = '#2a2a2a';
+      } else {
+        selectedSongs.delete(index);
+        songItem.style.opacity = '0.5';
+        songItem.style.background = '#1a1a1a';
+      }
+
+      // Update select all checkbox
+      selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
+      selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    });
+
+    const songContent = document.createElement('div');
+    songContent.style.cssText = 'flex: 1;';
+    songContent.innerHTML = `
+      <div class="song-item-container">
+        <div class="song-item-content">
+          <div class="song-title">
             ${song.title}
           </div>
-          <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
-            ${song.artist} (${song.year})
+          <div class="song-artist">
+            ${song.artist}${song.year ? ` (${song.year})` : ''}
           </div>
-          <div style="color: #999; font-size: 14px;">
-            ${song.genre} • ${song.description}
+          ${song.album ? `
+          <div class="song-album">
+            📀 ${song.album}
           </div>
+          ` : ''}
+          ${song.genre || song.description ? `
+          <div class="song-genre">
+            ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
+          </div>
+          ` : ''}
+          ${song.duration ? `
+          <div class="song-duration">
+            ⏱️ ${song.duration}
+          </div>
+          ` : ''}
         </div>
-        <div style="color: #666; font-size: 14px;">
+        <div class="song-number">
           #${index + 1}
         </div>
       </div>
     `;
 
-    songItem.addEventListener('mouseenter', () => {
-      songItem.style.background = '#333';
-      songItem.style.transform = 'translateX(5px)';
-    });
-
-    songItem.addEventListener('mouseleave', () => {
-      songItem.style.background = '#2a2a2a';
-      songItem.style.transform = 'translateX(0)';
-    });
-
+    songItem.appendChild(checkbox);
+    songItem.appendChild(songContent);
     songsList.appendChild(songItem);
   });
 
@@ -1524,104 +1096,139 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   `;
 
   copyButton.addEventListener('click', () => {
-    const playlistText = `${playlistData.playlist.name}\n\n${playlistData.playlist.songs.map((song, index) => 
-      `${index + 1}. ${song.title} - ${song.artist} (${song.year})`
-    ).join('\n')}`;
-    
+    const selectedSongsList = playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index));
+    const playlistText = `${playlistData.playlist.name}\n\n${selectedSongsList.map((song, index) => {
+      let line = `${index + 1}. ${song.title} - ${song.artist}`;
+      if (song.year) line += ` (${song.year})`;
+      if (song.album) line += ` [${song.album}]`;
+      if (song.duration) line += ` - ${song.duration}`;
+      return line;
+    }).join('\n')}`;
+
     navigator.clipboard.writeText(playlistText).then(() => {
-      alert('Playlist copied to clipboard!');
+      alert('Selected songs copied to clipboard!');
     }).catch(() => {
       alert('Copy error');
     });
   });
 
-  // Add to Current Playlist button
-  const addToPlaylistButton = document.createElement('button');
-  addToPlaylistButton.textContent = 'Add to Current Playlist';
-  addToPlaylistButton.style.cssText = `
-    background: linear-gradient(135deg, #1db954, #1ed760);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  `;
+  // Create New Playlist button (always show - user can always create a new playlist)
+  const createPlaylistButton = document.createElement('button');
+  createPlaylistButton.textContent = 'Create New Playlist';
+  createPlaylistButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
 
-  addToPlaylistButton.addEventListener('click', async () => {
+  createPlaylistButton.addEventListener('click', async () => {
     try {
-      addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
-      addToPlaylistButton.disabled = true;
-      addToPlaylistButton.style.opacity = '0.7';
-      
-      // Get auth URL and handle authentication
-      const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-      const { authUrl } = await authResponse.json();
-      
-      // Store the current playlist data and ID
-      sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
-      sessionStorage.setItem('pendingPlaylistId', playlistId);
-      sessionStorage.setItem('authInProgress', 'true');
-      
-      // Open auth window
-      const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-      
-      // Listen for messages from the popup window
-      const messageHandler = (event) => {
-        if (event.data && event.data.success && event.data.accessToken) {
-          window.removeEventListener('message', messageHandler);
-          
-          const { accessToken, refreshToken } = event.data;
-          
-          // Add songs to existing playlist
-          addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-          
-          // Clean up
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
-          sessionStorage.removeItem('pendingPlaylistId');
-          
-          // Close the popup
-          if (authWindow && !authWindow.closed) {
-            authWindow.close();
-          }
-        } else if (event.data && event.data.success === false) {
-          window.removeEventListener('message', messageHandler);
-          alert('Authentication failed: ' + event.data.error);
-          if (authWindow && !authWindow.closed) {
-            authWindow.close();
-          }
+      // Filter songs based on selection
+      if (selectedSongs.size === 0) {
+        alert('Please select at least one song to add to the playlist.');
+        return;
+      }
+
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
         }
       };
-      
-      window.addEventListener('message', messageHandler);
-      
-      // Timeout after 5 minutes
-      setTimeout(() => {
-        window.removeEventListener('message', messageHandler);
-        if (!authWindow.closed) {
-          authWindow.close();
-          alert('Authentication timed out. Please try again.');
-        }
-      }, 300000);
-      
+
+      createPlaylistButton.textContent = '🔐 Connecting to Spotify...';
+      createPlaylistButton.disabled = true;
+      createPlaylistButton.style.opacity = '0.7';
+
+      const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+      createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
+
     } catch (error) {
-      alert('Error adding to playlist: ' + error.message);
-      addToPlaylistButton.textContent = 'Add to Current Playlist';
-      addToPlaylistButton.disabled = false;
-      addToPlaylistButton.style.opacity = '1';
+      alert(error.message || 'Error creating playlist');
+      createPlaylistButton.textContent = 'Create New Playlist';
+      createPlaylistButton.disabled = false;
+      createPlaylistButton.style.opacity = '1';
     }
   });
+
+  // Add to Current Playlist button (show when playlistId is provided or selected playlist exists)
+  let addToPlaylistButton = null;
+  let selectedPlaylistName = null;
+
+  if (playlistId && selectedPlaylistData) {
+    selectedPlaylistName = selectedPlaylistData.name;
+
+    addToPlaylistButton = document.createElement('button');
+    addToPlaylistButton.textContent = `Add to Playlist: ${selectedPlaylistName}`;
+    addToPlaylistButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    `;
+
+    addToPlaylistButton.addEventListener('click', async () => {
+      try {
+        // Filter songs based on selection
+        if (selectedSongs.size === 0) {
+          alert('Please select at least one song to add to the playlist.');
+          return;
+        }
+
+        const filteredPlaylistData = {
+          ...playlistData,
+          playlist: {
+            ...playlistData.playlist,
+            songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+          }
+        };
+
+        addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
+        addToPlaylistButton.disabled = true;
+        addToPlaylistButton.style.opacity = '0.7';
+
+        const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+        addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
+
+      } catch (error) {
+        alert(error.message || 'Error adding to playlist');
+        addToPlaylistButton.textContent = selectedPlaylistName
+          ? `Add to Playlist: ${selectedPlaylistName}`
+          : 'Add to Current Playlist';
+        addToPlaylistButton.disabled = false;
+        addToPlaylistButton.style.opacity = '1';
+      }
+    });
+  }
 
   // Assemble results modal
   resultsContent.appendChild(playlistTitle);
   resultsContent.appendChild(playlistDesc);
+  resultsContent.appendChild(selectAllContainer);
   resultsContent.appendChild(songsList);
   actionButtons.appendChild(closeButton);
   actionButtons.appendChild(copyButton);
-  actionButtons.appendChild(addToPlaylistButton);
+
+  // Always show Create New Playlist button
+  actionButtons.appendChild(createPlaylistButton);
+
+  // Show Add to Playlist button if a playlist is selected
+  if (addToPlaylistButton) {
+    actionButtons.appendChild(addToPlaylistButton);
+  }
+
   resultsContent.appendChild(actionButtons);
   resultsModal.appendChild(resultsContent);
   document.body.appendChild(resultsModal);
@@ -1630,35 +1237,33 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 // Create and inject the AI Playlist button
 async function addAIPlaylistButton() {
   try {
-    
+
     // Wait a moment for the page to fully load
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise(resolve => setTimeout(resolve, CONFIG.TIMEOUTS.PAGE_LOAD_DELAY));
+
     // Check if AI Playlist button already exists to avoid duplicates
-    const existingAIButton = document.querySelector('button[aria-label="AI Playlist"]');
+    const existingAIButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (existingAIButton) {
-      console.log('AI Playlist button already exists, skipping...');
       return;
     }
-    
+
     // Also check for buttons with the exact text content - but only check for Create buttons
     const existingButtons = document.querySelectorAll('button');
     for (let button of existingButtons) {
       if (button.textContent && button.textContent.includes('Create AI Playlist')) {
-        console.log('Create AI Playlist button already exists, skipping...');
         return;
       }
     }
-    
+
     // Add the "Choose Playlist" button for existing playlists
     addChoosePlaylistButton();
-    
+
     // First, let's debug what buttons are available
     const allButtons = document.querySelectorAll('button');
-    
+
     allButtons.forEach((button, index) => {
     });
-    
+
     // Try multiple selectors for the Create button
     const possibleSelectors = [
       'button[aria-label="Create"]',
@@ -1672,10 +1277,10 @@ async function addAIPlaylistButton() {
       '[data-testid*="create"]',
       '[data-testid*="playlist"]'
     ];
-    
+
     let createButton = null;
     let usedSelector = '';
-    
+
     for (const selector of possibleSelectors) {
       try {
         createButton = document.querySelector(selector);
@@ -1686,47 +1291,47 @@ async function addAIPlaylistButton() {
       } catch (e) {
       }
     }
-    
+
     // If still not found, try to find any button with "create" in text or aria-label
     if (!createButton) {
       for (const button of allButtons) {
         const text = button.textContent?.toLowerCase() || '';
         const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
         const title = button.getAttribute('title')?.toLowerCase() || '';
-        
-        if (text.includes('create') || text.includes('créer') || 
-            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
-            title.includes('create') || title.includes('créer')) {
+
+        if (text.includes('create') || text.includes('créer') ||
+          ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+          title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search';
           break;
         }
       }
     }
-    
+
     // If still not found, wait a bit and try again (page might still be loading)
     if (!createButton) {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       const allButtonsRetry = document.querySelectorAll('button');
-      
+
       for (const button of allButtonsRetry) {
         const text = button.textContent?.toLowerCase() || '';
         const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
         const title = button.getAttribute('title')?.toLowerCase() || '';
-        
-        if (text.includes('create') || text.includes('créer') || 
-            ariaLabel.includes('create') || ariaLabel.includes('créer') ||
-            title.includes('create') || title.includes('créer')) {
+
+        if (text.includes('create') || text.includes('créer') ||
+          ariaLabel.includes('create') || ariaLabel.includes('créer') ||
+          title.includes('create') || title.includes('créer')) {
           createButton = button;
           usedSelector = 'text/aria-label search (retry)';
           break;
         }
       }
     }
-    
+
     if (!createButton) {
-      
+
       // Try to find any suitable container for our button
       const possibleContainers = [
         'nav[role="navigation"]',
@@ -1736,7 +1341,7 @@ async function addAIPlaylistButton() {
         'nav',
         '.main-navBar-navBar'
       ];
-      
+
       let buttonContainer = null;
       for (const selector of possibleContainers) {
         const container = document.querySelector(selector);
@@ -1745,12 +1350,12 @@ async function addAIPlaylistButton() {
           break;
         }
       }
-      
+
       if (!buttonContainer) {
         // Last resort: use the body or a main container
         buttonContainer = document.querySelector('main') || document.body;
       }
-      
+
       // Create the AI Playlist button without reference to Create button
       const aiPlaylistButton = document.createElement('button');
       aiPlaylistButton.type = 'button';
@@ -1774,7 +1379,7 @@ async function addAIPlaylistButton() {
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
       `;
-      
+
       // Add the plus icon
       const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       iconSvg.setAttribute('data-encore-id', 'icon');
@@ -1783,43 +1388,43 @@ async function addAIPlaylistButton() {
       iconSvg.setAttribute('class', 'e-91000-icon e-91000-baseline yoyv1_1LPucwCXYDe5AN');
       iconSvg.setAttribute('viewBox', '0 0 16 16');
       iconSvg.style.cssText = '--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);';
-      
+
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', 'M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75');
       iconSvg.appendChild(path);
-      
+
       // Add the text span
       const textSpan = document.createElement('span');
       textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
       textSpan.setAttribute('data-encore-id', 'tet');
       textSpan.textContent = 'AI Playlist';
-      
+
       // Add click handler
       aiPlaylistButton.addEventListener('click', () => {
         showMusicGenreModal();
       });
-      
+
       // Assemble the button
       aiPlaylistButton.appendChild(iconSvg);
       aiPlaylistButton.appendChild(textSpan);
-      
+
       // Insert the button
       buttonContainer.appendChild(aiPlaylistButton);
-      
+
       return;
     }
-    
-    
+
+
     // Find the parent container that holds the buttons
     const buttonContainer = createButton.parentElement;
-    
+
     // Create the AI Playlist button
     const aiPlaylistButton = document.createElement('button');
     aiPlaylistButton.type = 'button';
     aiPlaylistButton.className = 'UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
     aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
     aiPlaylistButton.style.marginLeft = '8px';
-    
+
     // Add the plus icon (same as Create button)
     const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     iconSvg.setAttribute('data-encore-id', 'icon');
@@ -1828,29 +1433,29 @@ async function addAIPlaylistButton() {
     iconSvg.setAttribute('class', 'e-91000-icon e-91000-baseline yoyv1_1LPucwCXYDe5AN');
     iconSvg.setAttribute('viewBox', '0 0 16 16');
     iconSvg.style.cssText = '--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);';
-    
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', 'M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75');
     iconSvg.appendChild(path);
-    
+
     // Add the text span
     const textSpan = document.createElement('span');
     textSpan.className = 'e-91000-text encore-text-body-small-bold encore-internal-color-text-base';
     textSpan.setAttribute('data-encore-id', 'tet');
     textSpan.textContent = 'AI Playlist';
-    
+
     // Add click handler
     aiPlaylistButton.addEventListener('click', () => {
       showMusicGenreModal();
     });
-    
+
     // Assemble the button
     aiPlaylistButton.appendChild(iconSvg);
     aiPlaylistButton.appendChild(textSpan);
-    
+
     // Insert the button after the Create button
     buttonContainer.insertBefore(aiPlaylistButton, createButton.nextSibling);
-    
+
   } catch (error) {
   }
 }
@@ -1861,7 +1466,7 @@ const musicFamilies = {
     icon: '🎸',
     color: '#ff6b6b',
     subgenres: [
-      'Classic Rock', 'Alternative Rock', 'Indie Rock', 'Punk Rock', 
+      'Classic Rock', 'Alternative Rock', 'Indie Rock', 'Punk Rock',
       'Grunge', 'Progressive Rock', 'Psychedelic Rock', 'Hard Rock',
       'Soft Rock', 'Folk Rock', 'Blues Rock', 'Glam Rock',
       'Post-Rock', 'Math Rock', 'Shoegaze', 'Noise Rock', 'Garage Rock',
@@ -2091,15 +1696,28 @@ const musicFamilies = {
   }
 };
 
+// Function to get genres based on mood (for templates)
+function getGenresForMood(mood) {
+  const moodToGenres = {
+    'Énergique': ['Rock', 'Electronic', 'Hip-Hop'],
+    'Concentré': ['Classical', 'Jazz', 'Ambient'],
+    'Festif': ['Pop', 'Electronic', 'Hip-Hop'],
+    'Détendu': ['Jazz', 'Folk', 'Ambient'],
+    'Aventureux': ['Rock', 'Folk', 'World Music']
+  };
+  
+  // Return genres for the mood, or default to a mix if mood not found
+  return moodToGenres[mood] || ['Pop', 'Rock', 'Electronic'];
+}
+
 // Music genre modal
 function showMusicGenreModal() {
   // Ensure the main AI Playlist button stays visible
-  const mainButton = document.querySelector('button[aria-label="AI Playlist"]');
+  const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
   if (mainButton) {
-    console.log('🔒 Protecting main AI Playlist button during modal...');
     mainButton.style.pointerEvents = 'none'; // Temporarily disable to prevent conflicts
   }
-  
+
   // Create modal overlay
   const modalOverlay = document.createElement('div');
   modalOverlay.id = 'ai-playlist-modal';
@@ -2139,10 +1757,423 @@ function showMusicGenreModal() {
   title.style.cssText = `
     color: #fff;
     font-size: 28px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     font-weight: bold;
   `;
-  
+
+  // Quick Actions Container (Random, Discovery, Templates)
+  const quickActionsContainer = document.createElement('div');
+  quickActionsContainer.style.cssText = `
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  `;
+
+  // Random Button Container
+  const randomContainer = document.createElement('div');
+  randomContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  `;
+
+  // Random Button
+  const randomButton = document.createElement('button');
+  randomButton.textContent = '🎲 Random Playlist';
+  randomButton.title = 'Generate a playlist with random popular genres (Rock, Pop, Electronic, etc.)';
+  randomButton.style.cssText = `
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  `;
+
+  // Random Description
+  const randomDesc = document.createElement('div');
+  randomDesc.textContent = 'Popular genres';
+  randomDesc.style.cssText = `
+    color: #999;
+    font-size: 11px;
+    text-align: center;
+    max-width: 150px;
+  `;
+  randomButton.addEventListener('mouseenter', () => {
+    randomButton.style.transform = 'scale(1.05)';
+    randomButton.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+  });
+  randomButton.addEventListener('mouseleave', () => {
+    randomButton.style.transform = 'scale(1)';
+    randomButton.style.boxShadow = 'none';
+  });
+  randomButton.addEventListener('click', () => {
+    // Clear previous selections
+    selectedGenres = [];
+
+    // Get random genres from all available subgenres
+    const allSubgenres = [];
+    Object.values(musicFamilies).forEach(family => {
+      allSubgenres.push(...family.subgenres);
+    });
+
+    const numGenres = Math.floor(Math.random() * 2) + 2; // 2-3 genres
+    const randomGenres = [];
+    for (let i = 0; i < numGenres; i++) {
+      const randomGenre = allSubgenres[Math.floor(Math.random() * allSubgenres.length)];
+      if (!randomGenres.includes(randomGenre)) {
+        randomGenres.push(randomGenre);
+      }
+    }
+
+    // Add selected genres to the array
+    selectedGenres.push(...randomGenres);
+
+    // Update the display
+    updateSelectedDisplay();
+
+    // Reset to main family view to show all selections
+    currentFamily = null;
+    createFamilyButtons();
+
+    // Scroll to selected display to show the user what was selected
+    selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  // Discovery Button Container
+  const discoveryContainer = document.createElement('div');
+  discoveryContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  `;
+
+  // Discovery Button
+  const discoveryButton = document.createElement('button');
+  discoveryButton.textContent = '🔍 Discovery Mode';
+  discoveryButton.title = 'Explore rare and niche genres (Post-Rock, Shoegaze, Krautrock, etc.)';
+  discoveryButton.style.cssText = `
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  `;
+
+  // Discovery Description
+  const discoveryDesc = document.createElement('div');
+  discoveryDesc.textContent = 'Rare & niche genres';
+  discoveryDesc.style.cssText = `
+    color: #999;
+    font-size: 11px;
+    text-align: center;
+    max-width: 150px;
+  `;
+  discoveryButton.addEventListener('mouseenter', () => {
+    discoveryButton.style.transform = 'scale(1.05)';
+    discoveryButton.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.4)';
+  });
+  discoveryButton.addEventListener('mouseleave', () => {
+    discoveryButton.style.transform = 'scale(1)';
+    discoveryButton.style.boxShadow = 'none';
+  });
+  discoveryButton.addEventListener('click', () => {
+    // Clear previous selections
+    selectedGenres = [];
+
+    // Get random genres from discovery genres
+    const numGenres = Math.floor(Math.random() * 2) + 2; // 2-3 genres rares
+    const discoveryGenres = [];
+    for (let i = 0; i < numGenres; i++) {
+      const randomGenre = CONFIG.DISCOVERY_GENRES[Math.floor(Math.random() * CONFIG.DISCOVERY_GENRES.length)];
+      if (!discoveryGenres.includes(randomGenre)) {
+        discoveryGenres.push(randomGenre);
+      }
+    }
+
+    // Add selected genres to the array
+    selectedGenres.push(...discoveryGenres);
+
+    // Update the display
+    updateSelectedDisplay();
+
+    // Reset to main family view to show all selections
+    currentFamily = null;
+    createFamilyButtons();
+
+    // Scroll to selected display to show the user what was selected
+    selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  randomContainer.appendChild(randomButton);
+  randomContainer.appendChild(randomDesc);
+  discoveryContainer.appendChild(discoveryButton);
+  discoveryContainer.appendChild(discoveryDesc);
+
+  quickActionsContainer.appendChild(randomContainer);
+  quickActionsContainer.appendChild(discoveryContainer);
+
+  // Templates Section
+  const templatesSection = document.createElement('div');
+  templatesSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 15px;
+    border: 1px solid #444;
+  `;
+  const templatesTitle = document.createElement('div');
+  templatesTitle.textContent = '📋 Quick Templates';
+  templatesTitle.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  `;
+  const templatesContainer = document.createElement('div');
+  templatesContainer.style.cssText = `
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  `;
+
+  // Function to load custom templates from localStorage
+  function loadCustomTemplates() {
+    try {
+      const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Error loading custom templates:', e);
+      return {};
+    }
+  }
+
+  // Function to save custom template to localStorage
+  function saveCustomTemplate(templateName, templateData) {
+    try {
+      const customTemplates = loadCustomTemplates();
+      customTemplates[templateName] = templateData;
+      localStorage.setItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(customTemplates));
+      return true;
+    } catch (e) {
+      console.error('Error saving custom template:', e);
+      return false;
+    }
+  }
+
+  // Function to delete custom template
+  function deleteCustomTemplate(templateName) {
+    try {
+      const customTemplates = loadCustomTemplates();
+      delete customTemplates[templateName];
+      localStorage.setItem(CONFIG.STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(customTemplates));
+      return true;
+    } catch (e) {
+      console.error('Error deleting custom template:', e);
+      return false;
+    }
+  }
+
+  // Function to get all templates (predefined + custom)
+  function getAllTemplates() {
+    const customTemplates = loadCustomTemplates();
+    return { ...CONFIG.PLAYLIST_TEMPLATES, ...customTemplates };
+  }
+
+  // Function to create template button
+  function createTemplateButton(templateName, template, isCustom = false) {
+    const templateButton = document.createElement('button');
+    templateButton.innerHTML = `${template.icon} ${templateName}`;
+    templateButton.style.cssText = `
+      background: ${isCustom ? 'linear-gradient(135deg, #f39c12, #e67e22)' : 'linear-gradient(135deg, #667eea, #764ba2)'};
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    `;
+
+    // Add delete button for custom templates
+    if (isCustom) {
+      const deleteBtn = document.createElement('span');
+      deleteBtn.innerHTML = '×';
+      deleteBtn.style.cssText = `
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      `;
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete template "${templateName}"?`)) {
+          deleteCustomTemplate(templateName);
+          templateButton.remove();
+        }
+      });
+      templateButton.addEventListener('mouseenter', () => {
+        deleteBtn.style.opacity = '1';
+      });
+      templateButton.addEventListener('mouseleave', () => {
+        deleteBtn.style.opacity = '0';
+      });
+      templateButton.appendChild(deleteBtn);
+    }
+
+    templateButton.addEventListener('mouseenter', () => {
+      templateButton.style.transform = 'scale(1.05)';
+    });
+    templateButton.addEventListener('mouseleave', () => {
+      templateButton.style.transform = 'scale(1)';
+    });
+    templateButton.addEventListener('click', () => {
+      // Get genres from template based on mood (for predefined) or use template.genres (for custom)
+      let selectedSubgenres = [];
+      
+      if (template.isCustom && template.genres && Array.isArray(template.genres)) {
+        // Custom template - genres are already subgenres, use them directly
+        // But select only 2-3 representative ones from each family
+        const familiesMap = new Map();
+        
+        // Group subgenres by family
+        template.genres.forEach(subgenre => {
+          for (const [family, data] of Object.entries(musicFamilies)) {
+            if (data.subgenres.includes(subgenre)) {
+              if (!familiesMap.has(family)) {
+                familiesMap.set(family, []);
+              }
+              familiesMap.get(family).push(subgenre);
+              break;
+            }
+          }
+        });
+        
+        // Select 2-3 subgenres from each family
+        familiesMap.forEach((subgenres, familyName) => {
+          const numToSelect = Math.min(3, Math.max(2, subgenres.length));
+          selectedSubgenres.push(...subgenres.slice(0, numToSelect));
+        });
+      } else if (template.mood) {
+        // Predefined template - get genre families from mood
+        const genreFamilies = getGenresForMood(template.mood);
+        
+        // Select 2-3 representative subgenres from each family
+        genreFamilies.forEach(familyName => {
+          const family = musicFamilies[familyName];
+          if (family && family.subgenres && family.subgenres.length > 0) {
+            // Select 2-3 subgenres (take first 2-3 from the list)
+            const numToSelect = Math.min(3, Math.max(2, Math.floor(family.subgenres.length / 3)));
+            const familySubgenres = family.subgenres.slice(0, numToSelect);
+            selectedSubgenres.push(...familySubgenres);
+          }
+        });
+      } else {
+        // Fallback: use default genres
+        const defaultFamilies = ['Pop', 'Rock', 'Electronic'];
+        defaultFamilies.forEach(familyName => {
+          const family = musicFamilies[familyName];
+          if (family && family.subgenres && family.subgenres.length > 0) {
+            const numToSelect = Math.min(3, Math.max(2, Math.floor(family.subgenres.length / 3)));
+            selectedSubgenres.push(...family.subgenres.slice(0, numToSelect));
+          }
+        });
+      }
+
+      // Clear current selection
+      selectedGenres = [];
+
+      // Set new selection
+      selectedGenres.push(...selectedSubgenres);
+
+      // Update display
+      updateSelectedDisplay();
+
+      // Update visual state of subgenre buttons if we're viewing a family
+      if (currentFamily && musicFamilies[currentFamily]) {
+        const family = musicFamilies[currentFamily];
+        const subgenreButtons = viewContainer.querySelectorAll('.subgenre-button, .subgenre-grid-button');
+        subgenreButtons.forEach(button => {
+          const buttonText = button.textContent.trim();
+          const isSelected = selectedGenres.includes(buttonText);
+          
+          if (isSelected) {
+            // Update to selected state
+            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}dd)`;
+            button.style.border = '3px solid #fff';
+            if (button.style.transform) {
+              button.style.transform = button.style.transform.replace(/scale\([^)]+\)/, 'scale(1.05)');
+            } else {
+              button.style.transform = 'scale(1.05) translateY(-3px)';
+            }
+            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
+          } else {
+            // Update to unselected state
+            button.style.background = `linear-gradient(135deg, ${family.color}15, ${family.color}25)`;
+            button.style.border = `2px solid ${family.color}`;
+            if (button.style.transform) {
+              button.style.transform = button.style.transform.replace(/scale\([^)]+\)/, 'scale(1)');
+            }
+            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+          }
+        });
+      }
+    });
+    
+    return templateButton;
+  }
+
+  // Function to render all templates
+  function renderTemplates() {
+    templatesContainer.innerHTML = '';
+    const allTemplates = getAllTemplates();
+    const customTemplates = loadCustomTemplates();
+
+    // Render predefined templates
+    Object.keys(CONFIG.PLAYLIST_TEMPLATES).forEach(templateName => {
+      const template = CONFIG.PLAYLIST_TEMPLATES[templateName];
+      const button = createTemplateButton(templateName, template, false);
+      templatesContainer.appendChild(button);
+    });
+
+    // Render custom templates
+    Object.keys(customTemplates).forEach(templateName => {
+      const template = customTemplates[templateName];
+      const button = createTemplateButton(templateName, template, true);
+      templatesContainer.appendChild(button);
+    });
+  }
+
+  templatesSection.appendChild(templatesTitle);
+  templatesSection.appendChild(templatesContainer);
+
   // Add responsive styles
   const responsiveStyles = document.createElement('style');
   responsiveStyles.textContent = `
@@ -2187,71 +2218,6 @@ function showMusicGenreModal() {
         font-size: 10px !important;
         padding: 2px !important;
       }
-      
-      /* Grid layout for many subgenres */
-      .subgenre-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
-        gap: 12px !important;
-        padding: 15px !important;
-        max-height: 350px !important;
-      }
-      
-      .subgenre-grid-button {
-        height: 60px !important;
-        font-size: 11px !important;
-        padding: 5px !important;
-        border-radius: 12px !important;
-      }
-      
-      /* Search container mobile */
-      .search-container {
-        height: 45px !important;
-        padding: 0 15px !important;
-        border-radius: 22px !important;
-      }
-      
-      .search-container input {
-        font-size: 13px !important;
-      }
-      
-      #selected-genres-display {
-        padding: 15px !important;
-        margin-top: 20px !important;
-      }
-      
-      #selected-genres-display div {
-        font-size: 12px !important;
-        padding: 6px 12px !important;
-        margin: 3px !important;
-      }
-      
-      #selected-genres-display button {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 10px !important;
-        margin-left: 6px !important;
-      }
-      
-      #song-count-container {
-        padding: 15px !important;
-        margin: 15px 0 !important;
-      }
-      
-      #song-count-container div:first-child {
-        font-size: 14px !important;
-        margin-bottom: 10px !important;
-      }
-      
-      .song-count-btn {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 14px !important;
-      }
-      
-      button[style*="padding: 15px 30px"] {
-        padding: 12px 24px !important;
-        font-size: 14px !important;
-      }
     }
     
     @media (max-width: 480px) {
@@ -2287,173 +2253,634 @@ function showMusicGenreModal() {
         height: 50px !important;
         font-size: 9px !important;
       }
-      
-      #selected-genres-display div {
-        font-size: 11px !important;
-        padding: 4px 8px !important;
-      }
-      
-      #selected-genres-display button {
-        width: 14px !important;
-        height: 14px !important;
-        font-size: 9px !important;
-        margin-left: 4px !important;
-      }
-      
-      #song-count-container {
-        padding: 12px !important;
-        margin: 12px 0 !important;
-      }
-      
-      #song-count-container div:first-child {
-        font-size: 13px !important;
-        margin-bottom: 8px !important;
-      }
-      
-      .song-count-btn {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 12px !important;
-      }
-      
-      /* Grid layout for very small screens */
-      .subgenre-grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-        gap: 8px !important;
-        padding: 10px !important;
-        max-height: 300px !important;
-      }
-      
-      .subgenre-grid-button {
-        height: 55px !important;
-        font-size: 10px !important;
-        padding: 4px !important;
-        border-radius: 10px !important;
-      }
-      
-      /* Search container for very small screens */
-      .search-container {
-        height: 40px !important;
-        padding: 0 12px !important;
-        border-radius: 20px !important;
-      }
-      
-      .search-container input {
-        font-size: 12px !important;
-      }
-      
-      .search-container div {
-        font-size: 14px !important;
-        margin-right: 8px !important;
-      }
-    }
-    
-    /* Notification responsive styles */
-    @media (max-width: 768px) {
-      .success-notification,
-      .error-notification {
-        top: 10px !important;
-        right: 10px !important;
-        left: 10px !important;
-        max-width: none !important;
-        padding: 15px !important;
-        font-size: 14px !important;
-      }
-      
-      .success-notification div:first-child,
-      .error-notification div:first-child {
-        font-size: 20px !important;
-        margin-right: 8px !important;
-      }
-      
-      .success-notification div:nth-child(2),
-      .error-notification div:nth-child(2) {
-        font-size: 16px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .success-notification,
-      .error-notification {
-        padding: 12px !important;
-        font-size: 13px !important;
-      }
-      
-      .success-notification div:first-child,
-      .error-notification div:first-child {
-        font-size: 18px !important;
-        margin-right: 6px !important;
-      }
-      
-      .success-notification div:nth-child(2),
-      .error-notification div:nth-child(2) {
-        font-size: 14px !important;
-      }
-    }
-    
-    /* Auth modal responsive styles */
-    @media (max-width: 768px) {
-      .auth-instructions-modal {
-        width: 90% !important;
-        max-width: none !important;
-        padding: 20px !important;
-        margin: 10px !important;
-        max-height: 90vh !important;
-        overflow-y: auto !important;
-      }
-      
-      .auth-instructions-modal h3 {
-        font-size: 20px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .auth-instructions-modal p {
-        font-size: 14px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      .auth-instructions-modal input,
-      .auth-instructions-modal textarea {
-        font-size: 14px !important;
-        padding: 6px 10px !important;
-      }
-      
-      .auth-instructions-modal button {
-        padding: 8px 16px !important;
-        font-size: 14px !important;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .auth-instructions-modal {
-        width: 95% !important;
-        padding: 15px !important;
-        margin: 5px !important;
-      }
-      
-      .auth-instructions-modal h3 {
-        font-size: 18px !important;
-        margin-bottom: 12px !important;
-      }
-      
-      .auth-instructions-modal p {
-        font-size: 13px !important;
-        margin-bottom: 12px !important;
-      }
-      
-      .auth-instructions-modal input,
-      .auth-instructions-modal textarea {
-        font-size: 13px !important;
-        padding: 5px 8px !important;
-      }
-      
-      .auth-instructions-modal button {
-        padding: 6px 12px !important;
-        font-size: 13px !important;
-      }
     }
   `;
   document.head.appendChild(responsiveStyles);
+
+  // Function to show emoji picker modal
+  function showEmojiPickerModal(iconInput) {
+    const emojiModal = document.createElement('div');
+    emojiModal.id = 'emoji-picker-modal';
+    emojiModal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10003;
+      backdrop-filter: blur(5px);
+    `;
+
+    const emojiContent = document.createElement('div');
+    emojiContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    const emojiTitle = document.createElement('h3');
+    emojiTitle.textContent = 'Choose an Emoji';
+    emojiTitle.style.cssText = `
+      color: #fff;
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    `;
+
+    // Popular emojis for music/playlists
+    const emojiCategories = {
+      'Music': ['🎵', '🎶', '🎧', '🎤', '🎸', '🎹', '🥁', '🎺', '🎷', '🎻', '🎪', '🎬'],
+      'Moods': ['😊', '😎', '🤘', '🔥', '💪', '🎉', '🎊', '💕', '🌊', '⚡', '🌙', '🌟'],
+      'Activities': ['🚗', '🏃', '💻', '📚', '🏋️', '🧘', '🎮', '🍕', '☕', '🍺', '🌮', '🍰'],
+      'Nature': ['🌴', '🌊', '⛰️', '🌅', '🌙', '⭐', '🌸', '🍃', '❄️', '🔥', '🌈', '🌍'],
+      'Objects': ['💿', '📻', '📱', '💻', '🎧', '🎤', '🎸', '🎹', '🥁', '🎺', '🎷', '🎻']
+    };
+
+    const emojiContainer = document.createElement('div');
+    emojiContainer.style.cssText = `
+      margin-bottom: 20px;
+    `;
+
+    Object.entries(emojiCategories).forEach(([category, emojis]) => {
+      const categoryTitle = document.createElement('div');
+      categoryTitle.textContent = category;
+      categoryTitle.style.cssText = `
+        color: #999;
+        font-size: 12px;
+        margin: 15px 0 8px 0;
+        text-transform: uppercase;
+        font-weight: bold;
+      `;
+      emojiContainer.appendChild(categoryTitle);
+
+      const emojiGrid = document.createElement('div');
+      emojiGrid.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+        margin-bottom: 15px;
+      `;
+
+      emojis.forEach(emoji => {
+        const emojiButton = document.createElement('button');
+        emojiButton.textContent = emoji;
+        emojiButton.style.cssText = `
+          background: #2a2a2a;
+          border: 2px solid #444;
+          border-radius: 10px;
+          font-size: 28px;
+          padding: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+        emojiButton.addEventListener('mouseenter', () => {
+          emojiButton.style.background = '#333';
+          emojiButton.style.borderColor = '#1db954';
+          emojiButton.style.transform = 'scale(1.1)';
+        });
+        emojiButton.addEventListener('mouseleave', () => {
+          emojiButton.style.background = '#2a2a2a';
+          emojiButton.style.borderColor = '#444';
+          emojiButton.style.transform = 'scale(1)';
+        });
+        emojiButton.addEventListener('click', () => {
+          iconInput.value = emoji;
+          emojiModal.remove();
+        });
+        emojiGrid.appendChild(emojiButton);
+      });
+
+      emojiContainer.appendChild(emojiGrid);
+    });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.cssText = `
+      width: 100%;
+      background: #666;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    `;
+    closeBtn.addEventListener('click', () => {
+      emojiModal.remove();
+    });
+
+    emojiContent.appendChild(emojiTitle);
+    emojiContent.appendChild(emojiContainer);
+    emojiContent.appendChild(closeBtn);
+    emojiModal.appendChild(emojiContent);
+    document.body.appendChild(emojiModal);
+
+    // Close on overlay click
+    emojiModal.addEventListener('click', (e) => {
+      if (e.target === emojiModal) {
+        emojiModal.remove();
+      }
+    });
+  }
+
+  // Function to show save template modal
+  function showSaveTemplateModal() {
+    if (selectedGenres.length === 0) {
+      alert('Please select at least one genre before saving a template.');
+      return;
+    }
+
+    // Capture current advanced filters values
+    // Use the variables from the scope of showMusicGenreModal
+    const currentFilters = {
+      decade: selectedDecade || null,
+      mood: selectedMood || null,
+      duration: selectedDuration || null,
+      country: selectedCountry || null
+    };
+
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'save-template-modal';
+    modalOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10002;
+      backdrop-filter: blur(5px);
+    `;
+
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = '💾 Save Template';
+    title.style.cssText = `
+      color: #fff;
+      font-size: 24px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    `;
+
+    // Template name input
+    const nameLabel = document.createElement('div');
+    nameLabel.textContent = 'Template Name:';
+    nameLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'e.g., My Rock Mix';
+    nameInput.style.cssText = `
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #444;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    `;
+    nameInput.focus();
+
+    // Icon selector
+    const iconLabel = document.createElement('div');
+    iconLabel.textContent = 'Icon (emoji):';
+    iconLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const iconInput = document.createElement('input');
+    iconInput.type = 'text';
+    iconInput.value = '🎵';
+    iconInput.maxLength = 2;
+    iconInput.placeholder = '🎵';
+    iconInput.readOnly = true;
+    iconInput.style.cssText = `
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #444;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      cursor: pointer;
+    `;
+    iconInput.addEventListener('click', () => {
+      showEmojiPickerModal(iconInput);
+    });
+
+    // Selected subgenres display
+    const subgenresLabel = document.createElement('div');
+    subgenresLabel.textContent = 'Selected Genres:';
+    subgenresLabel.style.cssText = `
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-align: left;
+    `;
+
+    const subgenresDisplay = document.createElement('div');
+    subgenresDisplay.style.cssText = `
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      min-height: 50px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    selectedGenres.forEach(subgenre => {
+      // Find which family this subgenre belongs to
+      let familyData = null;
+      for (const [familyName, data] of Object.entries(musicFamilies)) {
+        if (data.subgenres.includes(subgenre)) {
+          familyData = data;
+          break;
+        }
+      }
+
+      if (familyData) {
+        const subgenreBadge = document.createElement('div');
+        subgenreBadge.textContent = `${familyData.icon} ${subgenre}`;
+        subgenreBadge.style.cssText = `
+          background: ${familyData.color}20;
+          color: ${familyData.color};
+          padding: 8px 12px;
+          border-radius: 15px;
+          border: 1px solid ${familyData.color};
+          font-size: 13px;
+          font-weight: bold;
+        `;
+        subgenresDisplay.appendChild(subgenreBadge);
+      }
+    });
+
+    // Warning message for existing template
+    const warningMessage = document.createElement('div');
+    warningMessage.style.cssText = `
+      color: #f39c12;
+      font-size: 13px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f39c1220;
+      border-radius: 8px;
+      border: 1px solid #f39c12;
+      display: none;
+    `;
+    warningMessage.innerHTML = '⚠️ Un template avec ce nom existe déjà.<br>Voulez-vous l\'écraser ou créer un nouveau template ?';
+
+    // Buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.cssText = `
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    `;
+
+    // Cancel button
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.style.cssText = `
+      background: #666;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    cancelButton.addEventListener('click', () => {
+      modalOverlay.remove();
+    });
+
+    // Save new template button (hidden by default)
+    const saveNewButton = document.createElement('button');
+    saveNewButton.textContent = '💾 Save New Template';
+    saveNewButton.style.cssText = `
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: none;
+    `;
+
+    // Save current template button (hidden by default)
+    const saveCurrentButton = document.createElement('button');
+    saveCurrentButton.textContent = '💾 Save Current Template';
+    saveCurrentButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: none;
+    `;
+
+    // Save button (default, shown when no conflict)
+    const saveButton = document.createElement('button');
+    saveButton.textContent = '💾 Save Template';
+    saveButton.style.cssText = `
+      background: linear-gradient(135deg, #1db954, #1ed760);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+
+    // Function to save template
+    const performSave = (templateName, isNew = false) => {
+      const templateIcon = iconInput.value.trim() || '🎵';
+
+      if (!templateName) {
+        alert('Veuillez entrer un nom de template.');
+        return;
+      }
+
+      // Check if it's a predefined template (cannot overwrite)
+      if (CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        alert(`Le template "${templateName}" est un template prédéfini et ne peut pas être écrasé. Veuillez choisir un nom différent.`);
+        return;
+      }
+
+      // Save template with actual subgenres and advanced filters
+      const templateData = {
+        genres: selectedGenres, // Save the actual subgenres, not families
+        icon: templateIcon,
+        songCount: selectedSongCount || 5,
+        mood: 'Custom',
+        isCustom: true, // Flag to indicate this uses subgenres directly
+        filters: currentFilters // Save advanced filters
+      };
+
+      if (saveCustomTemplate(templateName, templateData)) {
+        // Refresh templates display
+        renderTemplates();
+        modalOverlay.remove();
+        alert(`Template "${templateName}" ${isNew ? 'sauvegardé comme nouveau' : 'mis à jour'} avec succès !`);
+      } else {
+        alert('Error saving template. Please try again.');
+      }
+    };
+
+    // Function to check if template exists and update UI
+    const checkTemplateExists = () => {
+      const templateName = nameInput.value.trim();
+
+      if (!templateName) {
+        // Empty name - show default save button
+        warningMessage.style.display = 'none';
+        saveButton.style.display = 'inline-block';
+        saveNewButton.style.display = 'none';
+        saveCurrentButton.style.display = 'none';
+        return;
+      }
+
+      const allTemplates = getAllTemplates();
+      const existingTemplate = allTemplates[templateName];
+
+      if (existingTemplate && !CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        // Template exists and is custom (can be overwritten)
+        warningMessage.style.display = 'block';
+        saveButton.style.display = 'none';
+        saveNewButton.style.display = 'inline-block';
+        saveCurrentButton.style.display = 'inline-block';
+
+        // Pre-fill the icon if it exists
+        if (existingTemplate.icon) {
+          iconInput.value = existingTemplate.icon;
+        }
+      } else if (CONFIG.PLAYLIST_TEMPLATES[templateName]) {
+        // Predefined template - show warning but don't allow overwrite
+        warningMessage.style.display = 'block';
+        warningMessage.innerHTML = '⚠️ Ce nom est utilisé par un template prédéfini.<br>Veuillez choisir un nom différent.';
+        warningMessage.style.color = '#e74c3c';
+        warningMessage.style.borderColor = '#e74c3c';
+        warningMessage.style.background = '#e74c3c20';
+        saveButton.style.display = 'none';
+        saveNewButton.style.display = 'inline-block';
+        saveCurrentButton.style.display = 'none';
+      } else {
+        // No conflict - show default save button
+        warningMessage.style.display = 'none';
+        warningMessage.innerHTML = '⚠️ Un template avec ce nom existe déjà.<br>Voulez-vous l\'écraser ou créer un nouveau template ?';
+        warningMessage.style.color = '#f39c12';
+        warningMessage.style.borderColor = '#f39c12';
+        warningMessage.style.background = '#f39c1220';
+        saveButton.style.display = 'inline-block';
+        saveNewButton.style.display = 'none';
+        saveCurrentButton.style.display = 'none';
+      }
+    };
+
+    // Check on initial load if there's a template that matches current selection
+    // This helps when user loads a template and then modifies it
+    const checkInitialTemplate = () => {
+      // Try to find a template that matches current genres
+      const allTemplates = getAllTemplates();
+      const customTemplates = loadCustomTemplates();
+
+      // Check if current selection matches any existing custom template
+      for (const [templateName, template] of Object.entries(customTemplates)) {
+        if (template.isCustom && Array.isArray(template.genres)) {
+          // Check if genres match (order doesn't matter)
+          const templateGenres = [...template.genres].sort().join(',');
+          const currentGenres = [...selectedGenres].sort().join(',');
+
+          if (templateGenres === currentGenres && templateGenres.length > 0) {
+            // Found a matching template - pre-fill and show options
+            nameInput.value = templateName;
+            if (template.icon) {
+              iconInput.value = template.icon;
+            }
+            checkTemplateExists();
+            break;
+          }
+        }
+      }
+    };
+
+    // Check immediately and on input changes
+    setTimeout(checkInitialTemplate, 100); // Small delay to ensure DOM is ready
+    nameInput.addEventListener('input', checkTemplateExists);
+    nameInput.addEventListener('keyup', checkTemplateExists);
+
+    // Save button click handler
+    saveButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      performSave(templateName, false);
+    });
+
+    // Save new template button (creates with different name)
+    saveNewButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      if (!templateName) {
+        alert('Veuillez entrer un nom de template.');
+        return;
+      }
+      // Suggest a new name
+      let newName = templateName;
+      let counter = 1;
+      const allTemplates = getAllTemplates();
+      while (allTemplates[newName] || CONFIG.PLAYLIST_TEMPLATES[newName]) {
+        newName = `${templateName} ${counter}`;
+        counter++;
+      }
+      nameInput.value = newName;
+      performSave(newName, true);
+    });
+
+    // Save current template button (overwrites existing)
+    saveCurrentButton.addEventListener('click', () => {
+      const templateName = nameInput.value.trim();
+      performSave(templateName, false);
+    });
+
+    buttonsContainer.appendChild(cancelButton);
+    buttonsContainer.appendChild(saveButton);
+    buttonsContainer.appendChild(saveNewButton);
+    buttonsContainer.appendChild(saveCurrentButton);
+
+    // Close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    `;
+    closeButton.addEventListener('click', () => {
+      modalOverlay.remove();
+    });
+
+    // Assemble modal
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(title);
+    modalContent.appendChild(nameLabel);
+    modalContent.appendChild(nameInput);
+    modalContent.appendChild(iconLabel);
+    modalContent.appendChild(iconInput);
+    modalContent.appendChild(subgenresLabel);
+    modalContent.appendChild(subgenresDisplay);
+    modalContent.appendChild(warningMessage);
+    modalContent.appendChild(buttonsContainer);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+  }
+
+  // Add "Save Template" button
+  const saveTemplateButton = document.createElement('button');
+  saveTemplateButton.innerHTML = '💾 Save Current Selection as Template';
+  saveTemplateButton.style.cssText = `
+    background: linear-gradient(135deg, #1db954, #1ed760);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    width: 100%;
+  `;
+  saveTemplateButton.addEventListener('mouseenter', () => {
+    saveTemplateButton.style.transform = 'scale(1.02)';
+    saveTemplateButton.style.boxShadow = '0 4px 15px rgba(29, 185, 84, 0.4)';
+  });
+  saveTemplateButton.addEventListener('mouseleave', () => {
+    saveTemplateButton.style.transform = 'scale(1)';
+    saveTemplateButton.style.boxShadow = 'none';
+  });
+  saveTemplateButton.addEventListener('click', () => {
+    showSaveTemplateModal();
+  });
+
+  // Initial render of templates
+  renderTemplates();
+
+  templatesSection.appendChild(templatesTitle);
+  templatesSection.appendChild(templatesContainer);
+  templatesSection.appendChild(saveTemplateButton);
+
+  // Add responsive styles
+  // Responsive styles are now in styles.js
 
   // Navigation breadcrumb
   const breadcrumb = document.createElement('div');
@@ -2487,7 +2914,7 @@ function showMusicGenreModal() {
     viewContainer.innerHTML = '';
     const families = Object.keys(musicFamilies);
     const angleStep = 360 / families.length;
-    
+
     families.forEach((familyName, index) => {
       const family = musicFamilies[familyName];
       const button = document.createElement('button');
@@ -2496,14 +2923,14 @@ function showMusicGenreModal() {
         <div style="font-size: 28px; margin-bottom: 5px;">${family.icon}</div>
         <div style="font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1;">${familyName}</div>
       `;
-      
+
       const angle = index * angleStep;
       // Responsive radius based on screen size
       const screenWidth = window.innerWidth;
       const radius = screenWidth <= 480 ? 120 : screenWidth <= 768 ? 150 : 200;
       const x = Math.cos(angle * Math.PI / 180) * radius;
       const y = Math.sin(angle * Math.PI / 180) * radius;
-      
+
       button.style.cssText = `
         position: absolute;
         width: 90px;
@@ -2572,13 +2999,13 @@ function showMusicGenreModal() {
     currentFamily = familyName;
     const family = musicFamilies[familyName];
     viewContainer.innerHTML = '';
-    
+
     // Update breadcrumb
     breadcrumb.innerHTML = `Main Categories > <span style="color: ${family.color}">${familyName}</span>`;
-    
+
     // Get subgenres first
     const subgenres = family.subgenres;
-    
+
     // Add search functionality for large subgenre lists
     if (subgenres.length > 20) {
       const searchContainer = document.createElement('div');
@@ -2599,7 +3026,7 @@ function showMusicGenreModal() {
         backdrop-filter: blur(10px);
         transition: all 0.3s ease;
       `;
-      
+
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.placeholder = `Search ${familyName} subgenres...`;
@@ -2612,7 +3039,7 @@ function showMusicGenreModal() {
         outline: none;
         padding: 0 10px;
       `;
-      
+
       const searchIcon = document.createElement('div');
       searchIcon.innerHTML = '🔍';
       searchIcon.style.cssText = `
@@ -2620,15 +3047,15 @@ function showMusicGenreModal() {
         margin-right: 10px;
         opacity: 0.7;
       `;
-      
+
       searchContainer.appendChild(searchIcon);
       searchContainer.appendChild(searchInput);
       viewContainer.appendChild(searchContainer);
-      
+
       // Store reference to search input for filtering
       window.currentSearchInput = searchInput;
     }
-    
+
     // Back button
     const backButton = document.createElement('button');
     backButton.innerHTML = '← Back';
@@ -2653,7 +3080,7 @@ function showMusicGenreModal() {
     viewContainer.appendChild(backButton);
 
     // Create subgenre buttons with improved layout
-    
+
     // If there are too many subgenres, use a grid layout instead of circular
     if (subgenres.length > 20) {
       // Create a scrollable grid container with improved styling
@@ -2680,90 +3107,25 @@ function showMusicGenreModal() {
         scrollbar-color: #666 #333;
         backdrop-filter: blur(10px);
       `;
-      
-      // Add custom scrollbar styling and animations
-      const scrollbarStyle = document.createElement('style');
-      scrollbarStyle.textContent = `
-        .subgenre-grid-container::-webkit-scrollbar {
-          width: 8px;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-track {
-          background: #333;
-          border-radius: 4px;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #666, #888);
-          border-radius: 4px;
-          border: 1px solid #444;
-          transition: all 0.3s ease;
-        }
-        .subgenre-grid-container::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #888, #aaa);
-          transform: scale(1.1);
-        }
-        
-        /* Smooth animations for grid items */
-        .subgenre-grid-button {
-          animation: fadeInUp 0.5s ease forwards;
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        
-        @keyframes fadeInUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        /* Staggered animation for grid items */
-        .subgenre-grid-button:nth-child(1) { animation-delay: 0.1s; }
-        .subgenre-grid-button:nth-child(2) { animation-delay: 0.15s; }
-        .subgenre-grid-button:nth-child(3) { animation-delay: 0.2s; }
-        .subgenre-grid-button:nth-child(4) { animation-delay: 0.25s; }
-        .subgenre-grid-button:nth-child(5) { animation-delay: 0.3s; }
-        .subgenre-grid-button:nth-child(6) { animation-delay: 0.35s; }
-        .subgenre-grid-button:nth-child(7) { animation-delay: 0.4s; }
-        .subgenre-grid-button:nth-child(8) { animation-delay: 0.45s; }
-        .subgenre-grid-button:nth-child(9) { animation-delay: 0.5s; }
-        .subgenre-grid-button:nth-child(10) { animation-delay: 0.55s; }
-        .subgenre-grid-button:nth-child(n+11) { animation-delay: 0.6s; }
-        
-        /* Search container focus animation */
-        .search-container:focus-within {
-          transform: scale(1.02);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-          border-color: #1db954;
-        }
-        
-        /* Smooth search filtering */
-        .subgenre-grid-button.hidden {
-          opacity: 0;
-          transform: scale(0.8);
-          transition: all 0.3s ease;
-        }
-        
-        .subgenre-grid-button.visible {
-          opacity: 1;
-          transform: scale(1);
-          transition: all 0.3s ease;
-        }
-      `;
-      document.head.appendChild(scrollbarStyle);
-      
+
+      // Scrollbar and animation styles are now in styles.js
+
       subgenres.forEach((subgenre) => {
         const button = document.createElement('button');
         button.className = 'subgenre-button subgenre-grid-button';
         button.innerHTML = `
           <div style="font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;">${subgenre}</div>
         `;
-        
+
+        // Check if this subgenre is already selected
+        const isAlreadySelected = selectedGenres.includes(subgenre);
+
         button.style.cssText = `
           width: 100%;
           height: 70px;
           border-radius: 15px;
-          border: 2px solid ${family.color};
-          background: linear-gradient(135deg, ${family.color}15, ${family.color}25);
+          border: ${isAlreadySelected ? '3px solid #fff' : `2px solid ${family.color}`};
+          background: ${isAlreadySelected ? `linear-gradient(135deg, ${family.color}, ${family.color}dd)` : `linear-gradient(135deg, ${family.color}15, ${family.color}25)`};
           color: #fff;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2776,13 +3138,14 @@ function showMusicGenreModal() {
           padding: 8px;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: ${isAlreadySelected ? `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)` : '0 4px 12px rgba(0, 0, 0, 0.2)'};
+          transform: ${isAlreadySelected ? 'scale(1.05) translateY(-3px)' : 'scale(1) translateY(0)'};
         `;
-        
+
         button.addEventListener('click', () => {
           // Toggle selection
           const isSelected = selectedGenres.includes(subgenre);
-          
+
           if (isSelected) {
             // Remove from selection
             selectedGenres = selectedGenres.filter(g => g !== subgenre);
@@ -2800,10 +3163,10 @@ function showMusicGenreModal() {
             button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
             button.style.color = '#fff';
           }
-          
+
           updateSelectedDisplay();
         });
-        
+
         button.addEventListener('mouseenter', () => {
           if (!selectedGenres.includes(subgenre)) {
             button.style.transform = 'scale(1.08) translateY(-2px)';
@@ -2812,7 +3175,7 @@ function showMusicGenreModal() {
             button.style.border = `2px solid ${family.color}cc`;
           }
         });
-        
+
         button.addEventListener('mouseleave', () => {
           if (!selectedGenres.includes(subgenre)) {
             button.style.transform = 'scale(1) translateY(0)';
@@ -2821,18 +3184,18 @@ function showMusicGenreModal() {
             button.style.border = `2px solid ${family.color}`;
           }
         });
-        
+
         gridContainer.appendChild(button);
       });
-      
+
       viewContainer.appendChild(gridContainer);
-      
+
       // Add search functionality after grid is created
       if (window.currentSearchInput) {
         window.currentSearchInput.addEventListener('input', (e) => {
           const searchTerm = e.target.value.toLowerCase();
           const buttons = gridContainer.querySelectorAll('.subgenre-grid-button');
-          
+
           buttons.forEach(button => {
             const subgenreText = button.textContent.toLowerCase();
             if (subgenreText.includes(searchTerm)) {
@@ -2854,79 +3217,89 @@ function showMusicGenreModal() {
     } else {
       // Use circular layout for smaller numbers of subgenres
       const angleStep = 360 / subgenres.length;
-      
+
       subgenres.forEach((subgenre, index) => {
-      const button = document.createElement('button');
-      button.className = 'subgenre-button';
-      button.innerHTML = `
+        const button = document.createElement('button');
+        button.className = 'subgenre-button';
+        button.innerHTML = `
         <div style="font-size: 14px; font-weight: bold;">${subgenre}</div>
       `;
-      
-      const angle = index * angleStep;
-      // Responsive radius for subgenres
-      const screenWidth = window.innerWidth;
-      const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
-      const x = Math.cos(angle * Math.PI / 180) * radius;
-      const y = Math.sin(angle * Math.PI / 180) * radius;
-      
-      button.style.cssText = `
+
+        const angle = index * angleStep;
+        // Responsive radius for subgenres
+        const screenWidth = window.innerWidth;
+        const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
+        const x = Math.cos(angle * Math.PI / 180) * radius;
+        const y = Math.sin(angle * Math.PI / 180) * radius;
+
+        // Check if this subgenre is already selected
+        const isAlreadySelected = selectedGenres.includes(subgenre);
+
+        button.style.cssText = `
         position: absolute;
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        border: 2px solid ${family.color};
-        background: linear-gradient(135deg, ${family.color}20, ${family.color}40);
+        border: ${isAlreadySelected ? '3px solid #fff' : `2px solid ${family.color}`};
+        background: ${isAlreadySelected ? `linear-gradient(135deg, ${family.color}, ${family.color}cc)` : `linear-gradient(135deg, ${family.color}20, ${family.color}40)`};
         color: #fff;
         cursor: pointer;
         transition: all 0.3s ease;
-        transform: translate(${x}px, ${y}px);
+        transform: translate(${x}px, ${y}px) ${isAlreadySelected ? 'scale(1.05)' : 'scale(1)'};
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        box-shadow: ${isAlreadySelected ? `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)` : '0 4px 15px rgba(0, 0, 0, 0.3)'};
         font-size: 12px;
         text-align: center;
         padding: 5px;
       `;
 
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
-        button.style.boxShadow = `0 8px 25px ${family.color}50`;
+        button.addEventListener('mouseenter', () => {
+          if (!isAlreadySelected) {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
+            button.style.boxShadow = `0 8px 25px ${family.color}50`;
+          }
+        });
+
+        button.addEventListener('mouseleave', () => {
+          if (!isAlreadySelected) {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+            button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
+          } else {
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
+          }
+        });
+
+        button.addEventListener('click', () => {
+          // Toggle selection
+          const isSelected = selectedGenres.includes(subgenre);
+
+          if (isSelected) {
+            // Remove from selection
+            selectedGenres = selectedGenres.filter(g => g !== subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
+            button.style.border = `2px solid ${family.color}`;
+            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+          } else {
+            // Add to selection
+            selectedGenres.push(subgenre);
+            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}cc)`;
+            button.style.border = `2px solid #fff`;
+            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+          }
+
+          updateSelectedDisplay();
+        });
+
+        viewContainer.appendChild(button);
       });
 
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-        button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-      });
-
-      button.addEventListener('click', () => {
-        // Toggle selection
-        const isSelected = selectedGenres.includes(subgenre);
-        
-        if (isSelected) {
-          // Remove from selection
-          selectedGenres = selectedGenres.filter(g => g !== subgenre);
-          button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
-          button.style.border = `2px solid ${family.color}`;
-          button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-        } else {
-          // Add to selection
-          selectedGenres.push(subgenre);
-          button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}cc)`;
-          button.style.border = `2px solid #fff`;
-          button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
-        }
-        
-        updateSelectedDisplay();
-      });
-
-      viewContainer.appendChild(button);
-    });
-
-    // Center family icon
-    const centerCircle = document.createElement('div');
-    centerCircle.style.cssText = `
+      // Center family icon
+      const centerCircle = document.createElement('div');
+      centerCircle.style.cssText = `
       position: absolute;
       width: 100px;
       height: 100px;
@@ -2940,8 +3313,8 @@ function showMusicGenreModal() {
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       z-index: 10;
     `;
-    centerCircle.innerHTML = family.icon;
-    viewContainer.appendChild(centerCircle);
+      centerCircle.innerHTML = family.icon;
+      viewContainer.appendChild(centerCircle);
     }
   }
 
@@ -2962,7 +3335,7 @@ function showMusicGenreModal() {
 
   // Song count logic
   let selectedSongCount = 5; // Default song count
-  
+
   // Create song count selector
   const songCountContainer = document.createElement('div');
   songCountContainer.id = 'song-count-container';
@@ -2974,7 +3347,7 @@ function showMusicGenreModal() {
     border: 1px solid #444;
     text-align: center;
   `;
-  
+
   const songCountLabel = document.createElement('div');
   songCountLabel.textContent = 'Number of Songs';
   songCountLabel.style.cssText = `
@@ -2983,7 +3356,7 @@ function showMusicGenreModal() {
     font-weight: bold;
     margin-bottom: 15px;
   `;
-  
+
   const songCountSelector = document.createElement('div');
   songCountSelector.style.cssText = `
     display: flex;
@@ -2992,7 +3365,7 @@ function showMusicGenreModal() {
     gap: 10px;
     flex-wrap: wrap;
   `;
-  
+
   // Create song count options
   const songCounts = [3, 5, 8, 10, 15, 20];
   songCounts.forEach(count => {
@@ -3014,40 +3387,228 @@ function showMusicGenreModal() {
       align-items: center;
       justify-content: center;
     `;
-    
+
     button.addEventListener('click', () => {
       // Remove selection from all buttons
       songCountSelector.querySelectorAll('.song-count-btn').forEach(btn => {
         btn.style.background = 'transparent';
         btn.style.color = '#1db954';
       });
-      
+
       // Select current button
       button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
       button.style.color = 'white';
-      
+
       selectedSongCount = count;
     });
-    
+
     button.addEventListener('mouseenter', () => {
       if (button.style.background === 'transparent') {
         button.style.background = '#1db95420';
         button.style.color = '#1db954';
       }
     });
-    
+
     button.addEventListener('mouseleave', () => {
       if (button.style.background.includes('20')) {
         button.style.background = 'transparent';
         button.style.color = '#1db954';
       }
     });
-    
+
     songCountSelector.appendChild(button);
   });
-  
+
   songCountContainer.appendChild(songCountLabel);
   songCountContainer.appendChild(songCountSelector);
+
+  // Advanced Filters Section
+  const filtersSection = document.createElement('div');
+  filtersSection.id = 'filters-section';
+  filtersSection.style.cssText = `
+    margin: 20px 0;
+    padding: 20px;
+    background: #2a2a2a;
+    border-radius: 15px;
+    border: 1px solid #444;
+  `;
+
+  const filtersTitle = document.createElement('div');
+  filtersTitle.textContent = '🎛️ Advanced Filters (Optional)';
+  filtersTitle.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  `;
+
+  // Track selected filters
+  let selectedDecade = null;
+  let selectedMood = null;
+  let selectedDuration = null;
+  let selectedCountry = null;
+
+  // Decade Filter
+  const decadeContainer = document.createElement('div');
+  decadeContainer.style.cssText = `margin-bottom: 15px;`;
+  const decadeLabel = document.createElement('div');
+  decadeLabel.textContent = '📅 Decade:';
+  decadeLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const decadeButtons = document.createElement('div');
+  decadeButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.DECADES.forEach(decade => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${decade.icon} ${decade.label.split(' ')[1]}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #555;
+      background: transparent;
+      color: #999;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      decadeButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#999';
+        b.style.borderColor = '#555';
+      });
+      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#667eea';
+      selectedDecade = decade.value;
+    });
+    decadeButtons.appendChild(btn);
+  });
+  decadeContainer.appendChild(decadeLabel);
+  decadeContainer.appendChild(decadeButtons);
+
+  // Mood Filter
+  const moodContainer = document.createElement('div');
+  moodContainer.style.cssText = `margin-bottom: 15px;`;
+  const moodLabel = document.createElement('div');
+  moodLabel.textContent = '😊 Mood:';
+  moodLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const moodButtons = document.createElement('div');
+  moodButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.MOODS.forEach(mood => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${mood.icon} ${mood.label}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid ${mood.color};
+      background: transparent;
+      color: ${mood.color};
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      moodButtons.querySelectorAll('button').forEach(b => {
+        const originalMood = CONFIG.MOODS.find(m => b.textContent.includes(m.label));
+        b.style.background = 'transparent';
+        b.style.color = originalMood.color;
+        b.style.borderColor = originalMood.color;
+      });
+      btn.style.background = mood.color;
+      btn.style.color = 'white';
+      btn.style.borderColor = mood.color;
+      selectedMood = mood.value;
+    });
+    moodButtons.appendChild(btn);
+  });
+  moodContainer.appendChild(moodLabel);
+  moodContainer.appendChild(moodButtons);
+
+  // Duration Filter
+  const durationContainer = document.createElement('div');
+  const durationLabel = document.createElement('div');
+  durationLabel.textContent = '⏱️ Duration:';
+  durationLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const durationButtons = document.createElement('div');
+  durationButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.DURATIONS.forEach(duration => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${duration.icon} ${duration.label.split(' ')[0]}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #1db954;
+      background: transparent;
+      color: #1db954;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      durationButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#1db954';
+        b.style.borderColor = '#1db954';
+      });
+      btn.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#1db954';
+      selectedDuration = duration.value;
+      // Adjust song count based on duration
+      if (duration.value === 'short') selectedSongCount = 5;
+      else if (duration.value === 'medium') selectedSongCount = 10;
+      else if (duration.value === 'long') selectedSongCount = 20;
+    });
+    durationButtons.appendChild(btn);
+  });
+  durationContainer.appendChild(durationLabel);
+  durationContainer.appendChild(durationButtons);
+
+  // Country Origin Filter
+  const countryContainer = document.createElement('div');
+  countryContainer.style.cssText = `margin-bottom: 15px;`;
+  const countryLabel = document.createElement('div');
+  countryLabel.textContent = '🌍 Country Origin:';
+  countryLabel.style.cssText = `color: #999; font-size: 14px; margin-bottom: 8px;`;
+  const countryButtons = document.createElement('div');
+  countryButtons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+
+  CONFIG.COUNTRIES.forEach(country => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `${country.icon} ${country.label}`;
+    btn.style.cssText = `
+      padding: 6px 12px;
+      border-radius: 15px;
+      border: 2px solid #667eea;
+      background: ${country.value === null ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent'};
+      color: ${country.value === null ? 'white' : '#667eea'};
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    btn.addEventListener('click', () => {
+      countryButtons.querySelectorAll('button').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#667eea';
+        b.style.borderColor = '#667eea';
+      });
+      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#667eea';
+      selectedCountry = country.value;
+    });
+    countryButtons.appendChild(btn);
+  });
+  countryContainer.appendChild(countryLabel);
+  countryContainer.appendChild(countryButtons);
+
+  filtersSection.appendChild(filtersTitle);
+  filtersSection.appendChild(decadeContainer);
+  filtersSection.appendChild(moodContainer);
+  filtersSection.appendChild(durationContainer);
+  filtersSection.appendChild(countryContainer);
 
   // Check if there's a selected playlist
   const selectedPlaylist = localStorage.getItem('selectedPlaylist');
@@ -3056,9 +3617,112 @@ function showMusicGenreModal() {
     try {
       selectedPlaylistData = JSON.parse(selectedPlaylist);
     } catch (e) {
-      console.log('Error parsing selected playlist:', e);
     }
   }
+
+  // Choose Playlist button (always visible)
+  const choosePlaylistButton = document.createElement('button');
+  choosePlaylistButton.textContent = selectedPlaylistData
+    ? `📋 Change Selected Playlist (${selectedPlaylistData.name})`
+    : '📋 Choose Playlist to Add Songs';
+  choosePlaylistButton.style.cssText = `
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+  `;
+
+  choosePlaylistButton.addEventListener('mouseenter', () => {
+    choosePlaylistButton.style.transform = 'scale(1.05)';
+    choosePlaylistButton.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+  });
+
+  choosePlaylistButton.addEventListener('mouseleave', () => {
+    choosePlaylistButton.style.transform = 'scale(1)';
+    choosePlaylistButton.style.boxShadow = 'none';
+  });
+
+  choosePlaylistButton.addEventListener('click', () => {
+    // Close the current modal
+    const modal = document.getElementById('ai-playlist-modal');
+    if (modal && modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+    reEnableMainAIButton();
+
+    // Show instructions to select a playlist
+    const instructionModal = document.createElement('div');
+    instructionModal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10001;
+      backdrop-filter: blur(5px);
+    `;
+
+    const instructionContent = document.createElement('div');
+    instructionContent.style.cssText = `
+      background: #1a1a1a;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    `;
+
+    instructionContent.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
+      <h2 style="color: #667eea; font-size: 24px; margin-bottom: 20px; font-weight: bold;">
+        Choose a Playlist
+      </h2>
+      <p style="color: #fff; font-size: 16px; margin-bottom: 30px; line-height: 1.6;">
+        To add AI-generated songs to a playlist:<br><br>
+        1. Navigate to the playlist you want to use<br>
+        2. Click the <strong style="color: #667eea;">✓ Choose Playlist</strong> button on that playlist page<br>
+        3. Then open the AI Playlist Generator again
+      </p>
+      <button id="close-instruction-modal" style="
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      ">Got it!</button>
+    `;
+
+    instructionModal.appendChild(instructionContent);
+    document.body.appendChild(instructionModal);
+
+    // Close button handler
+    document.getElementById('close-instruction-modal').addEventListener('click', () => {
+      instructionModal.remove();
+    });
+
+    // Close on overlay click
+    instructionModal.addEventListener('click', (e) => {
+      if (e.target === instructionModal) {
+        instructionModal.remove();
+      }
+    });
+  });
 
   // Create button
   const createButton = document.createElement('button');
@@ -3118,45 +3782,18 @@ function showMusicGenreModal() {
         // Show loading state
         useSelectedPlaylistButton.textContent = '🤖 AI Generation...';
         toggleButtonsState(true, true);
-        
+
         // Add animation
-        useSelectedPlaylistButton.style.animation = 'pulse 1.5s infinite';
-        const pulseStyle = document.createElement('style');
-        pulseStyle.textContent = `
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-        `;
-        document.head.appendChild(pulseStyle);
-        
+        useSelectedPlaylistButton.style.animation = 'pulse-scale 1.5s infinite';
+
         try {
-          // Call the AI to generate songs
-          const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              selectedGenres: selectedGenres,
-              songCount: selectedSongCount
-            }),
-            mode: 'cors',
-            credentials: 'omit'
-          });
+          // Call the AI to generate songs (utilise le module API)
+          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
-          }
-
-          const playlistData = await response.json();
-          
           if (!playlistData || !playlistData.playlist) {
             throw new Error('Invalid server response format');
           }
-          
+
           // Close the modal
           const modal = document.getElementById('ai-playlist-modal');
           if (modal && modal.parentNode) {
@@ -3164,13 +3801,13 @@ function showMusicGenreModal() {
           }
           // Re-enable the main AI Playlist button when modal closes
           reEnableMainAIButton();
-          
+
           // Show the results and add to selected playlist
           showPlaylistResultsForAdding(playlistData, selectedPlaylistData.id);
-          
+
         } catch (error) {
           if (error.message.includes('Failed to fetch')) {
-            alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
+            alert(`Server connection error. Please check that the server is running on ${CONFIG.API_BASE_URL}`);
           } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
             alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
           } else {
@@ -3203,52 +3840,25 @@ function showMusicGenreModal() {
 
   createButton.addEventListener('click', async () => {
     if (selectedGenres.length > 0) {
-      
+
       // Afficher un loader avec animation
       createButton.textContent = '🤖 AI Generation...';
       createButton.disabled = true;
       createButton.style.opacity = '0.7';
-      
+
       // Ajouter une animation de pulsation
-      createButton.style.animation = 'pulse 1.5s infinite';
-      const pulseStyle = document.createElement('style');
-      pulseStyle.textContent = `
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-      `;
-      document.head.appendChild(pulseStyle);
-      
+      createButton.style.animation = 'pulse-scale 1.5s infinite';
+
       try {
-        // Appel au serveur AI pour générer la playlist
-        const response = await fetch('https://gemini.niperiusland.fr:4005/generate-playlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            selectedGenres: selectedGenres,
-            songCount: selectedSongCount
-          }),
-          mode: 'cors',
-          credentials: 'omit'
-        });
+        // Appel au serveur AI pour générer la playlist (utilise le module API)
+        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Server error: ${response.status} - ${errorText}`);
-        }
-
-        const playlistData = await response.json();
-        
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
           throw new Error('Invalid server response format');
         }
-        
-        
+
+
         // S'assurer que la structure de données est correcte pour Spotify
         const spotifyPlaylistData = {
           name: playlistData.playlist.name || 'AI Generated Playlist',
@@ -3258,11 +3868,11 @@ function showMusicGenreModal() {
             artist: song.artist
           }))
         };
-        
-        
+
+
         // Afficher les résultats
         showPlaylistResults(playlistData);
-        
+
       } catch (error) {
         if (error.message.includes('Failed to fetch')) {
           alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
@@ -3290,7 +3900,7 @@ function showMusicGenreModal() {
     if (!currentFamily) {
       return; // We're on the main family view, no subgenre buttons to update
     }
-    
+
     // Find the subgenre button in the current view
     const subgenreButtons = viewContainer.querySelectorAll('.subgenre-button');
     subgenreButtons.forEach(button => {
@@ -3298,7 +3908,7 @@ function showMusicGenreModal() {
       if (buttonText === genreToRemove) {
         // Reset the button to unselected state
         const isSelected = selectedGenres.includes(genreToRemove);
-        
+
         if (!isSelected) {
           // Find the family data for this genre
           let familyData = null;
@@ -3308,7 +3918,7 @@ function showMusicGenreModal() {
               break;
             }
           }
-          
+
           if (familyData) {
             // Reset to unselected state
             button.style.background = `linear-gradient(135deg, ${familyData.color}20, ${familyData.color}40)`;
@@ -3335,7 +3945,7 @@ function showMusicGenreModal() {
         // Find which family this genre belongs to
         let familyData = null;
         let familyName = '';
-        
+
         for (const [family, data] of Object.entries(musicFamilies)) {
           if (data.subgenres.includes(genre)) {
             familyData = data;
@@ -3343,7 +3953,7 @@ function showMusicGenreModal() {
             break;
           }
         }
-        
+
         if (familyData) {
           return `
             <div style="
@@ -3413,14 +4023,14 @@ function showMusicGenreModal() {
           `;
         }
       }).join('');
-      
+
       selectedDisplay.innerHTML = `
         <div style="color: #fff; margin-bottom: 10px; font-weight: bold;">
           Selected Styles (${selectedGenres.length}):
         </div>
         <div>${genreElements}</div>
       `;
-      
+
       // Add event listeners to remove buttons
       selectedDisplay.querySelectorAll('.remove-genre-btn').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -3428,17 +4038,17 @@ function showMusicGenreModal() {
           e.stopPropagation();
           const genreToRemove = button.getAttribute('data-genre');
           selectedGenres = selectedGenres.filter(genre => genre !== genreToRemove);
-          
+
           // Update the visual state of the subgenre button in the circle
           updateSubgenreButtonVisualState(genreToRemove);
-          
+
           updateSelectedDisplay();
         });
       });
-      
+
       createButton.style.opacity = '1';
       createButton.style.pointerEvents = 'auto';
-      
+
       // Also enable the Use Selected Playlist button if it exists
       if (useSelectedPlaylistButton) {
         useSelectedPlaylistButton.style.opacity = '1';
@@ -3452,14 +4062,14 @@ function showMusicGenreModal() {
     // Close all existing modals
     const existingModal = document.getElementById('ai-playlist-modal');
     const existingResultsModal = document.getElementById('playlist-results-modal');
-    
+
     if (existingModal) {
       existingModal.remove();
     }
     if (existingResultsModal) {
       existingResultsModal.remove();
     }
-    
+
     // Create a new modal for results
     const resultsModal = document.createElement('div');
     resultsModal.id = 'playlist-results-modal';
@@ -3493,84 +4103,7 @@ function showMusicGenreModal() {
     `;
 
     // Add responsive styles for results modal
-    const resultsResponsiveStyles = document.createElement('style');
-    resultsResponsiveStyles.textContent = `
-      @media (max-width: 768px) {
-        .results-modal-content {
-          padding: 20px !important;
-          margin: 10px !important;
-          width: calc(100% - 20px) !important;
-          max-height: 90vh !important;
-        }
-        
-        .results-modal-content h2 {
-          font-size: 24px !important;
-          margin-bottom: 15px !important;
-        }
-        
-        .results-modal-content p {
-          font-size: 14px !important;
-          margin-bottom: 20px !important;
-        }
-        
-        .song-item {
-          padding: 12px !important;
-          margin-bottom: 8px !important;
-        }
-        
-        .song-item div:first-child {
-          font-size: 16px !important;
-        }
-        
-        .song-item div:nth-child(2) {
-          font-size: 14px !important;
-        }
-        
-        .song-item div:nth-child(3) {
-          font-size: 12px !important;
-        }
-        
-        .action-buttons {
-          flex-direction: column !important;
-          gap: 10px !important;
-        }
-        
-        .action-buttons button {
-          width: 100% !important;
-          padding: 10px 20px !important;
-          font-size: 14px !important;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .results-modal-content {
-          padding: 15px !important;
-          margin: 5px !important;
-          width: calc(100% - 10px) !important;
-        }
-        
-        .results-modal-content h2 {
-          font-size: 20px !important;
-        }
-        
-        .song-item {
-          padding: 10px !important;
-        }
-        
-        .song-item div:first-child {
-          font-size: 14px !important;
-        }
-        
-        .song-item div:nth-child(2) {
-          font-size: 12px !important;
-        }
-        
-        .song-item div:nth-child(3) {
-          font-size: 11px !important;
-        }
-      }
-    `;
-    document.head.appendChild(resultsResponsiveStyles);
+    // Responsive styles are now in styles.js
 
     // Titre de la playlist
     const playlistTitle = document.createElement('h2');
@@ -3599,47 +4132,160 @@ function showMusicGenreModal() {
       margin-bottom: 30px;
     `;
 
+    // Track selected songs (all selected by default)
+    const selectedSongs = new Set(playlistData.playlist.songs.map((_, index) => index));
+
+    // Select All / Deselect All controls
+    const selectAllContainer = document.createElement('div');
+    selectAllContainer.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #2a2a2a;
+      border-radius: 10px;
+    `;
+
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    `;
+
+    const selectAllCheckbox = document.createElement('input');
+    selectAllCheckbox.type = 'checkbox';
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.style.cssText = `
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #667eea;
+    `;
+
+    const selectedCount = document.createElement('span');
+    selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    selectedCount.style.cssText = `
+      color: #667eea;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    selectAllLabel.appendChild(selectAllCheckbox);
+    selectAllLabel.appendChild(document.createTextNode('Select All'));
+    selectAllContainer.appendChild(selectAllLabel);
+    selectAllContainer.appendChild(selectedCount);
+
+    // Select All / Deselect All functionality
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      selectedSongs.clear();
+
+      if (isChecked) {
+        playlistData.playlist.songs.forEach((_, index) => selectedSongs.add(index));
+      }
+
+      // Update all checkboxes
+      songsList.querySelectorAll('input[type="checkbox"][data-song-index]').forEach(checkbox => {
+        checkbox.checked = isChecked;
+        const songIndex = parseInt(checkbox.getAttribute('data-song-index'));
+        const songItem = checkbox.closest('.song-item');
+        if (isChecked) {
+          songItem.style.opacity = '1';
+          songItem.style.background = '';
+        } else {
+          songItem.style.opacity = '0.5';
+          songItem.style.background = '#2a2a2a';
+        }
+      });
+
+      selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+    });
+
     playlistData.playlist.songs.forEach((song, index) => {
       const songItem = document.createElement('div');
       songItem.className = 'song-item';
       songItem.style.cssText = `
-        background: #2a2a2a;
-        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
         padding: 15px;
         margin-bottom: 10px;
-        border-left: 4px solid #1db954;
-        transition: all 0.3s ease;
+        background: #2a2a2a;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
       `;
 
-      songItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 5px;">
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+      checkbox.setAttribute('data-song-index', index);
+      checkbox.style.cssText = `
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+        flex-shrink: 0;
+      `;
+
+      checkbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        if (isChecked) {
+          selectedSongs.add(index);
+          songItem.style.opacity = '1';
+          songItem.style.background = '#2a2a2a';
+        } else {
+          selectedSongs.delete(index);
+          songItem.style.opacity = '0.5';
+          songItem.style.background = '#1a1a1a';
+        }
+
+        // Update select all checkbox
+        selectAllCheckbox.checked = selectedSongs.size === playlistData.playlist.songs.length;
+        selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
+      });
+
+      const songContent = document.createElement('div');
+      songContent.style.cssText = 'flex: 1;';
+      songContent.innerHTML = `
+        <div class="song-item-container">
+          <div class="song-item-content">
+            <div class="song-title">
               ${song.title}
             </div>
-            <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
-              ${song.artist} (${song.year})
+            <div class="song-artist">
+              ${song.artist}${song.year ? ` (${song.year})` : ''}
             </div>
-            <div style="color: #999; font-size: 14px;">
-              ${song.genre} • ${song.description}
+            ${song.album ? `
+            <div class="song-album">
+              📀 ${song.album}
             </div>
+            ` : ''}
+            ${song.genre || song.description ? `
+            <div class="song-genre">
+              ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
+            </div>
+            ` : ''}
+            ${song.duration ? `
+            <div class="song-duration">
+              ⏱️ ${song.duration}
+            </div>
+            ` : ''}
           </div>
-          <div style="color: #666; font-size: 14px;">
+          <div class="song-number">
             #${index + 1}
           </div>
         </div>
       `;
 
-      songItem.addEventListener('mouseenter', () => {
-        songItem.style.background = '#333';
-        songItem.style.transform = 'translateX(5px)';
-      });
-
-      songItem.addEventListener('mouseleave', () => {
-        songItem.style.background = '#2a2a2a';
-        songItem.style.transform = 'translateX(0)';
-      });
-
+      songItem.appendChild(checkbox);
+      songItem.appendChild(songContent);
       songsList.appendChild(songItem);
     });
 
@@ -3720,7 +4366,14 @@ function showMusicGenreModal() {
     });
 
     copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(playlistData, null, 2))
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+        }
+      };
+      navigator.clipboard.writeText(JSON.stringify(filteredPlaylistData, null, 2))
         .then(() => {
           copyButton.textContent = 'Copié!';
           setTimeout(() => {
@@ -3732,7 +4385,7 @@ function showMusicGenreModal() {
         });
     });
 
-    
+
     // Function to get current playlist ID from URL
     function getCurrentPlaylistId() {
       const currentUrl = window.location.href;
@@ -3744,7 +4397,7 @@ function showMusicGenreModal() {
     async function addToExistingPlaylist(playlistData) {
       try {
         const playlistId = getCurrentPlaylistId();
-        
+
         if (!playlistId) {
           alert('No playlist detected. Please make sure you are on a Spotify playlist page.');
           return;
@@ -3754,15 +4407,6 @@ function showMusicGenreModal() {
         addToPlaylistButton.disabled = true;
         addToPlaylistButton.style.opacity = '0.7';
 
-        // Get auth URL and handle authentication
-        const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-        const { authUrl } = await authResponse.json();
-        
-        // Store the current playlist data and ID
-        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
-        sessionStorage.setItem('pendingPlaylistId', playlistId);
-        sessionStorage.setItem('authInProgress', 'true');
-        
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -3782,7 +4426,7 @@ function showMusicGenreModal() {
           max-width: 500px;
           text-align: center;
         `;
-        
+
         authInstructions.innerHTML = `
           <h3 style="margin-bottom: 20px; color: #667eea;">🎵 Add to Current Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to add AI-generated songs to your current playlist!</p>
@@ -3837,79 +4481,29 @@ function showMusicGenreModal() {
             ">Cancel</button>
           </div>
         `;
-        
+
         document.body.appendChild(authInstructions);
-        
-        // Handle auth completion
+
+        // Handle auth completion (BYO: get token from extension, then add songs)
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
           try {
-            // Step 1: Get auth URL from server
-            const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-            if (!authResponse.ok) {
-              throw new Error('Failed to get auth URL');
-            }
-            const { authUrl } = await authResponse.json();
-            
-            // Step 2: Open auth window
-            const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-            
-            // Step 3: Listen for messages from the popup window
-            const messageHandler = (event) => {
-              if (event.data && event.data.success && event.data.accessToken) {
-                window.removeEventListener('message', messageHandler);
-                
-                const { accessToken, refreshToken } = event.data;
-                
-                // Remove instructions
-                document.getElementById('auth-instructions').remove();
-                
-                // Add songs to existing playlist
-                addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-                
-                // Clean up
-                sessionStorage.removeItem('authInProgress');
-                sessionStorage.removeItem('pendingPlaylistData');
-                sessionStorage.removeItem('pendingPlaylistId');
-                
-                // Close the popup
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              } else if (event.data && event.data.success === false) {
-                window.removeEventListener('message', messageHandler);
-                alert('Authentication failed: ' + event.data.error);
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              }
-            };
-            
-            window.addEventListener('message', messageHandler);
-            
-            // Timeout after 5 minutes
-            setTimeout(() => {
-              window.removeEventListener('message', messageHandler);
-              if (!authWindow.closed) {
-                authWindow.close();
-                alert('Authentication timed out. Please try again.');
-              }
-            }, 300000);
-            
-          } catch (error) {
-            alert('Authentication failed: ' + error.message);
+            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+            const instructionsEl = document.getElementById('auth-instructions');
+            if (instructionsEl) instructionsEl.remove();
+            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+          } catch (err) {
+            alert(err.message || 'Authentication failed');
           }
         });
-        
+
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          document.getElementById('auth-instructions').remove();
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
-          sessionStorage.removeItem('pendingPlaylistId');
+          const instructionsEl = document.getElementById('auth-instructions');
+          if (instructionsEl) instructionsEl.remove();
         });
-        
+
       } catch (error) {
-        alert('Error adding to playlist: ' + error.message);
+        alert(error.message || 'Error adding to playlist');
         addToPlaylistButton.textContent = 'Add to Current Playlist';
         addToPlaylistButton.disabled = false;
         addToPlaylistButton.style.opacity = '1';
@@ -3928,53 +4522,10 @@ function showMusicGenreModal() {
             artist: song.artist
           }))
         };
-        
-        let addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            accessToken, 
-            playlistId,
-            playlistData: spotifyPlaylistData 
-          })
-        });
-        
-        // If token expired, try to refresh it
-        if (!addResponse.ok && refreshToken) {
-          const errorText = await addResponse.text();
-          
-          try {
-            const refreshResponse = await fetch('https://gemini.niperiusland.fr:4005/refresh-spotify-token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken })
-            });
-            
-            if (refreshResponse.ok) {
-              const { accessToken: newAccessToken } = await refreshResponse.json();
-              
-              // Retry with new token
-              addResponse = await fetch('https://gemini.niperiusland.fr:4005/add-to-spotify-playlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  accessToken: newAccessToken, 
-                  playlistId,
-                  playlistData: spotifyPlaylistData 
-                })
-              });
-            }
-          } catch (refreshError) {
-          }
-        }
-        
-        if (!addResponse.ok) {
-          const errorText = await addResponse.text();
-          throw new Error(`Spotify addition failed: ${addResponse.status} - ${errorText}`);
-        }
-        
-        const result = await addResponse.json();
-        
+
+        // Utiliser la fonction du module API
+        const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
+
         // Show success notification
         const notification = document.createElement('div');
         notification.className = 'success-notification';
@@ -3990,7 +4541,7 @@ function showMusicGenreModal() {
           z-index: 10002;
           max-width: 400px;
         `;
-        
+
         notification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">🎵</div>
@@ -4014,16 +4565,16 @@ function showMusicGenreModal() {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-close after 5 seconds
         setTimeout(() => {
           if (notification.parentElement) {
             notification.remove();
           }
         }, 5000);
-        
+
         // Close the results modal after successful addition
         setTimeout(() => {
           const resultsModal = document.getElementById('playlist-results-modal');
@@ -4031,7 +4582,7 @@ function showMusicGenreModal() {
             resultsModal.parentNode.removeChild(resultsModal);
           }
         }, 2000);
-        
+
       } catch (error) {
         alert('Error adding songs to playlist: ' + error.message);
       }
@@ -4039,26 +4590,42 @@ function showMusicGenreModal() {
 
     // Add event listener for add to playlist button
     addToPlaylistButton.addEventListener('click', () => {
-      addToExistingPlaylist(playlistData);
+      // Filter songs based on selection
+      if (selectedSongs.size === 0) {
+        alert('Please select at least one song to add to the playlist.');
+        return;
+      }
+
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+        }
+      };
+      addToExistingPlaylist(filteredPlaylistData);
     });
 
     spotifyButton.addEventListener('click', async () => {
       try {
+        // Filter songs based on selection
+        if (selectedSongs.size === 0) {
+          alert('Please select at least one song to create the playlist.');
+          return;
+        }
+
+        const filteredPlaylistData = {
+          ...playlistData,
+          playlist: {
+            ...playlistData.playlist,
+            songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
+          }
+        };
+
         spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
-        
-        // Obtenir l'URL d'authentification
-        const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-        const { authUrl } = await authResponse.json();
-        
-        // Use a simple approach - show the auth URL to the user
-        
-        
-        // Store the current playlist data in sessionStorage
-        sessionStorage.setItem('pendingPlaylistData', JSON.stringify(playlistData));
-        sessionStorage.setItem('authInProgress', 'true');
-        
+
         // Show instructions to the user
         const authInstructions = document.createElement('div');
         authInstructions.id = 'auth-instructions';
@@ -4078,7 +4645,7 @@ function showMusicGenreModal() {
           max-width: 500px;
           text-align: center;
         `;
-        
+
         authInstructions.innerHTML = `
           <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Create Spotify Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to create your AI-generated playlist on Spotify!</p>
@@ -4087,7 +4654,7 @@ function showMusicGenreModal() {
             <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
             <div style="margin-bottom: 15px;">
               <label style="display: block; margin-bottom: 5px; color: #ccc;">Playlist Name:</label>
-              <input type="text" id="playlist-name-input" value="${playlistData.playlist.name}" style="
+              <input type="text" id="playlist-name-input" value="${filteredPlaylistData.playlist.name}" style="
                 width: 100%;
                 padding: 8px 12px;
                 border: 1px solid #555;
@@ -4109,7 +4676,7 @@ function showMusicGenreModal() {
                 font-size: 14px;
                 height: 60px;
                 resize: vertical;
-              ">${playlistData.playlist.description}</textarea>
+              ">${filteredPlaylistData.playlist.description}</textarea>
             </div>
           </div>
           
@@ -4143,94 +4710,39 @@ function showMusicGenreModal() {
             ">Cancel</button>
           </div>
         `;
-        
+
         document.body.appendChild(authInstructions);
-        
-        // Handle auth completion
+
+        // Handle auth completion (BYO: get token from extension, then create playlist)
         document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          
-          // Get the modified playlist name and description
-          const playlistName = document.getElementById('playlist-name-input').value.trim() || playlistData.playlist.name;
-          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || playlistData.playlist.description;
-          
-          
+          const playlistName = document.getElementById('playlist-name-input').value.trim() || filteredPlaylistData.playlist.name;
+          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || filteredPlaylistData.playlist.description;
           try {
-            // Step 1: Get auth URL from server
-            const authResponse = await fetch('https://gemini.niperiusland.fr:4005/spotify-auth');
-            if (!authResponse.ok) {
-              throw new Error('Failed to get auth URL');
-            }
-            const { authUrl } = await authResponse.json();
-            
-            // Step 2: Open auth window
-            const authWindow = window.open(authUrl, 'spotify-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-            
-            // Step 3: Listen for messages from the popup window
-            const messageHandler = (event) => {
-              
-              if (event.data && event.data.success && event.data.accessToken) {
-                window.removeEventListener('message', messageHandler);
-                
-                const { accessToken, refreshToken } = event.data;
-                
-                // Remove instructions
-                document.getElementById('auth-instructions').remove();
-                
-                // Create modified playlist data with user's changes
-                const modifiedPlaylistData = {
-                  ...playlistData,
-                  playlist: {
-                    ...playlistData.playlist,
-                    name: playlistName,
-                    description: playlistDescription
-                  }
-                };
-                
-                // Create playlist with fresh token
-                createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
-                
-                // Clean up
-                sessionStorage.removeItem('authInProgress');
-                sessionStorage.removeItem('pendingPlaylistData');
-                
-                // Close the popup
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
-              } else if (event.data && event.data.success === false) {
-                window.removeEventListener('message', messageHandler);
-                alert('Authentication failed: ' + event.data.error);
-                if (authWindow && !authWindow.closed) {
-                  authWindow.close();
-                }
+            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+            const instructionsEl = document.getElementById('auth-instructions');
+            if (instructionsEl) instructionsEl.remove();
+            const modifiedPlaylistData = {
+              ...filteredPlaylistData,
+              playlist: {
+                ...filteredPlaylistData.playlist,
+                name: playlistName,
+                description: playlistDescription
               }
             };
-            
-            window.addEventListener('message', messageHandler);
-            
-            // Timeout after 5 minutes
-            setTimeout(() => {
-              window.removeEventListener('message', messageHandler);
-              if (!authWindow.closed) {
-                authWindow.close();
-                alert('Authentication timed out. Please try again.');
-              }
-            }, 300000);
-            
-          } catch (error) {
-            alert('Authentication failed: ' + error.message);
+            createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
+          } catch (err) {
+            alert(err.message || 'Authentication failed');
           }
         });
-        
+
         // Handle cancel
         document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          document.getElementById('auth-instructions').remove();
-          sessionStorage.removeItem('authInProgress');
-          sessionStorage.removeItem('pendingPlaylistData');
+          const instructionsEl = document.getElementById('auth-instructions');
+          if (instructionsEl) instructionsEl.remove();
         });
-        
+
       } catch (error) {
-        
+
         // Notification d'erreur plus belle
         const errorNotification = document.createElement('div');
         errorNotification.className = 'error-notification';
@@ -4247,7 +4759,7 @@ function showMusicGenreModal() {
           max-width: 400px;
           animation: slideIn 0.3s ease;
         `;
-        
+
         errorNotification.innerHTML = `
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 24px; margin-right: 10px;">❌</div>
@@ -4266,9 +4778,9 @@ function showMusicGenreModal() {
             font-size: 14px;
           ">Close</button>
         `;
-        
+
         document.body.appendChild(errorNotification);
-        
+
         spotifyButton.textContent = 'Create on Spotify';
         spotifyButton.disabled = false;
         spotifyButton.style.opacity = '1';
@@ -4278,6 +4790,7 @@ function showMusicGenreModal() {
     // Assemble results modal
     resultsContent.appendChild(playlistTitle);
     resultsContent.appendChild(playlistDesc);
+    resultsContent.appendChild(selectAllContainer);
     resultsContent.appendChild(songsList);
     actionButtons.appendChild(closeButton);
     actionButtons.appendChild(copyButton);
@@ -4286,8 +4799,8 @@ function showMusicGenreModal() {
     resultsContent.appendChild(actionButtons);
     resultsModal.appendChild(resultsContent);
     document.body.appendChild(resultsModal);
-    
-    
+
+
   }
 
   // Initialize display
@@ -4335,11 +4848,10 @@ function showMusicGenreModal() {
     }
     // Re-enable the main AI Playlist button when modal closes
     reEnableMainAIButton();
-    
+
     // Restore the main AI Playlist button functionality
-    const mainButton = document.querySelector('button[aria-label="AI Playlist"]');
+    const mainButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
     if (mainButton) {
-      console.log('🔓 Restoring main AI Playlist button functionality...');
       mainButton.style.pointerEvents = 'auto'; // Re-enable interactions
     }
   }
@@ -4363,39 +4875,41 @@ function showMusicGenreModal() {
   // Assemble modal
   modalContent.appendChild(closeButton);
   modalContent.appendChild(title);
+  modalContent.appendChild(quickActionsContainer);
+  modalContent.appendChild(templatesSection);
   modalContent.appendChild(breadcrumb);
   modalContent.appendChild(viewContainer);
   modalContent.appendChild(selectedDisplay);
+  modalContent.appendChild(filtersSection);
   modalContent.appendChild(songCountContainer);
-  
+
   // Add buttons in order
+  modalContent.appendChild(choosePlaylistButton);
   if (useSelectedPlaylistButton) {
     modalContent.appendChild(useSelectedPlaylistButton);
   }
   modalContent.appendChild(createButton);
-  
+
   modalOverlay.appendChild(modalContent);
   document.body.appendChild(modalOverlay);
 }
 
 // Function to clean up duplicate buttons
 function cleanupDuplicateButtons() {
-  console.log('🧹 Cleaning up duplicate buttons...');
-  
+
   // Remove duplicate AI Playlist buttons (by aria-label)
   const aiButtons = document.querySelectorAll('button[aria-label="AI Playlist"]');
   if (aiButtons.length > 1) {
-    console.log(`Found ${aiButtons.length} AI Playlist buttons, removing ${aiButtons.length - 1} duplicates...`);
     for (let i = 1; i < aiButtons.length; i++) {
       aiButtons[i].remove();
     }
   }
-  
+
   // Remove duplicate AI Playlist buttons (by text content) - but distinguish between different types
   const allButtons = document.querySelectorAll('button');
   const createButtons = [];
   const addButtons = [];
-  
+
   allButtons.forEach(button => {
     if (button.textContent) {
       if (button.textContent.includes('Create AI Playlist')) {
@@ -4405,33 +4919,30 @@ function cleanupDuplicateButtons() {
       }
     }
   });
-  
+
   // Only remove duplicates of the same type
   if (createButtons.length > 1) {
-    console.log(`Found ${createButtons.length} Create AI Playlist buttons, removing ${createButtons.length - 1} duplicates...`);
     for (let i = 1; i < createButtons.length; i++) {
       createButtons[i].remove();
     }
   }
-  
+
   if (addButtons.length > 1) {
-    console.log(`Found ${addButtons.length} Add to Current Playlist buttons, removing ${addButtons.length - 1} duplicates...`);
     for (let i = 1; i < addButtons.length; i++) {
       addButtons[i].remove();
     }
   }
-  
+
   // Remove duplicate Choose Playlist buttons
-  const chooseButtons = document.querySelectorAll('button[aria-label="Choose Playlist"]');
+  const chooseButtons = document.querySelectorAll(CONFIG.SELECTORS.CHOOSE_PLAYLIST_BUTTON);
   if (chooseButtons.length > 1) {
-    console.log(`Found ${chooseButtons.length} Choose Playlist buttons, removing ${chooseButtons.length - 1} duplicates...`);
     for (let i = 1; i < chooseButtons.length; i++) {
       chooseButtons[i].remove();
     }
   }
-  
+
   // Check if main AI Playlist button is missing and restore it
-  const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
+  const mainAIButton = document.querySelector(CONFIG.SELECTORS.AI_PLAYLIST_BUTTON);
   let hasCreateButton = false;
   let hasAddButton = false;
 
@@ -4445,22 +4956,18 @@ function cleanupDuplicateButtons() {
       }
     }
   });
-  
+
   // Only restore if we're on a playlist page AND no Create button exists
   if (window.location.href.includes('/playlist/') && !mainAIButton && !hasCreateButton) {
-    console.log('⚠️ No Create AI Playlist button found, attempting to restore...');
     addAIPlaylistButton();
   } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
-    console.log('✅ Create AI Playlist button found, no restoration needed');
   }
-  
+
   // Ensure main AI Playlist button is always enabled
   if (mainAIButton && mainAIButton.disabled) {
-    console.log('🔓 Re-enabling disabled main AI Playlist button...');
     reEnableMainAIButton();
   }
-  
-  console.log('✅ Duplicate cleanup completed');
+
 }
 
 // Start the injection when the page loads
@@ -4468,16 +4975,16 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     cleanupDuplicateButtons();
     addAIPlaylistButton();
-    watchForPageChanges();
-    
+    watchForPageChangesWrapper();
+
     // Periodic cleanup to prevent duplicates
-    setInterval(cleanupDuplicateButtons, 5000); // Every 5 seconds
+    setInterval(cleanupDuplicateButtons, CONFIG.TIMEOUTS.CLEANUP_INTERVAL);
   });
 } else {
   cleanupDuplicateButtons();
   addAIPlaylistButton();
   watchForPageChanges();
-  
+
   // Periodic cleanup to prevent duplicates
   setInterval(cleanupDuplicateButtons, 5000); // Every 5 seconds
 }
