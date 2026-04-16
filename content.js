@@ -3875,7 +3875,7 @@ function showMusicGenreModal() {
 
       } catch (error) {
         if (error.message.includes('Failed to fetch')) {
-          alert('Server connection error. Please check that the server is running on https://gemini.niperiusland.fr:4005');
+          alert('Server connection error. Please check that the server is running on https://polar-ravine-64133-f97528c41675.herokuapp.com');
         } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
           alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
         } else {

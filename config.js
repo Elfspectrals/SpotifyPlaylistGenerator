@@ -2,7 +2,7 @@
 
 const CONFIG = {
   // URL du serveur backend
-  API_BASE_URL: 'https://gemini.niperiusland.fr:4005',
+  API_BASE_URL: 'https://polar-ravine-64133-f97528c41675.herokuapp.com',
 
   // Endpoints API
   ENDPOINTS: {
