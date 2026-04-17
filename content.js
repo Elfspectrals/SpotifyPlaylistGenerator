@@ -1359,26 +1359,8 @@ async function addAIPlaylistButton() {
       // Create the AI Playlist button without reference to Create button
       const aiPlaylistButton = document.createElement('button');
       aiPlaylistButton.type = 'button';
-      aiPlaylistButton.className = 'UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
+      aiPlaylistButton.className = 'spg-ai-playlist-btn spg-ai-playlist-btn--floating';
       aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
-      aiPlaylistButton.style.cssText = `
-        margin: 8px;
-        padding: 8px 16px;
-        background: linear-gradient(135deg, #1db954, #1ed760);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
-      `;
 
       // Add the plus icon
       const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1421,9 +1403,9 @@ async function addAIPlaylistButton() {
     // Create the AI Playlist button
     const aiPlaylistButton = document.createElement('button');
     aiPlaylistButton.type = 'button';
-    aiPlaylistButton.className = 'UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
+    aiPlaylistButton.className =
+      'spg-ai-playlist-btn UCyimCp8rEfL5nB8paBu LLlfyKiKbOd8gfCmHcZX HgSl1rNhQllYYZneaYji LNzflW6HN3b7upl8Pt7w G_xEAccmp3ulqXjuviWK Lau6kc9Au_87a19N7MRq v7brahHJw__K_QX72Un8';
     aiPlaylistButton.setAttribute('aria-label', 'AI Playlist');
-    aiPlaylistButton.style.marginLeft = '8px';
 
     // Add the plus icon (same as Create button)
     const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

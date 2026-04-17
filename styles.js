@@ -626,6 +626,81 @@ function injectGlobalStyles() {
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
+
+    /*
+     * Bouton principal « AI Playlist » (content.js, aria-label="AI Playlist")
+     * Style proche Spotify : vert #1db954, lisible sur fond sombre / busy UI
+     */
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] {
+      box-sizing: border-box;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 10px 16px !important;
+      margin: 0 0 0 8px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.02em;
+      color: #ffffff !important;
+      background: #1db954 !important;
+      background-image: none !important;
+      border: 1px solid rgba(0, 0, 0, 0.25) !important;
+      border-radius: 9999px !important;
+      cursor: pointer;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.12) inset,
+        0 4px 16px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+      flex-shrink: 0;
+      z-index: 10000;
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"]:hover:not(:disabled):not(.button-disabled) {
+      background: #1ed760 !important;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.15) inset,
+        0 6px 20px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"]:active:not(:disabled):not(.button-disabled) {
+      transform: scale(0.98);
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"]:focus-visible {
+      outline: 2px solid #ffffff !important;
+      outline-offset: 3px;
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] svg,
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] path {
+      fill: #ffffff !important;
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] span {
+      color: #ffffff !important;
+    }
+
+    /* Variante flottante (pas de bouton Créer trouvé) : toujours visible */
+    button.spg-ai-playlist-btn.spg-ai-playlist-btn--floating[aria-label="AI Playlist"] {
+      position: fixed !important;
+      top: 16px !important;
+      right: 16px !important;
+      margin: 0 !important;
+      z-index: 100000 !important;
+    }
+
+    @media (max-width: 768px) {
+      button.spg-ai-playlist-btn.spg-ai-playlist-btn--floating[aria-label="AI Playlist"] {
+        top: auto !important;
+        bottom: 20px !important;
+        right: 16px !important;
+      }
+    }
   `;
   document.head.appendChild(disabledButtonStyles);
 }
