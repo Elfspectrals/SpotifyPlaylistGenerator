@@ -18,54 +18,13 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     // Utiliser la fonction du module API
     const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
 
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'success-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      color: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
-      z-index: 10002;
-      max-width: 400px;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-        <div style="font-weight: bold; font-size: 18px;">Songs Added!</div>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist
-      </div>
-      <div style="margin-bottom: 15px;">
-        <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-          Open Playlist →
-        </a>
-      </div>
-      <button onclick="this.parentElement.remove()" style="
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-      ">Close</button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
+    // Show success notification (centralized component)
+    window.spgNotify({
+      type: 'success',
+      title: 'Songs Added!',
+      body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist`,
+      link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
+    });
 
     // Close the results modal after successful addition
     setTimeout(() => {
@@ -101,54 +60,13 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     // Utiliser la fonction du module API (appelée via window pour éviter conflit de nom)
     const result = await window.createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken);
 
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'success-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      color: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
-      z-index: 10002;
-      max-width: 400px;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-        <div style="font-weight: bold; font-size: 18px;">Playlist Created!</div>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added
-      </div>
-      <div style="margin-bottom: 15px;">
-        <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-          Open in Spotify →
-        </a>
-      </div>
-      <button onclick="this.parentElement.remove()" style="
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-      ">Close</button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
+    // Show success notification (centralized component)
+    window.spgNotify({
+      type: 'success',
+      title: 'Playlist Created!',
+      body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added`,
+      link: { href: result.playlistUrl, label: 'Open in Spotify \u2192' },
+    });
 
     // Close the results modal after successful creation
     setTimeout(() => {
@@ -462,53 +380,13 @@ function saveCurrentPlaylist(showNotification = true) {
 
       // Only show notification if explicitly requested
       if (showNotification) {
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'playlist-saved-notification';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #1db954, #1ed760);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
-          z-index: 10002;
-          max-width: 400px;
-          animation: slideIn 0.3s ease;
-        `;
-
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <div style="font-size: 24px; margin-right: 10px;">✅</div>
-            <div style="font-weight: bold; font-size: 18px;">Playlist Selected!</div>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>${playlistName}</strong> has been saved
-          </div>
-          <div style="margin-bottom: 15px; font-size: 14px; opacity: 0.9;">
-            You can now use this playlist in AI Playlist generator
-          </div>
-          <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-          ">Close</button>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-close after 4 seconds
-        setTimeout(() => {
-          if (notification.parentElement) {
-            notification.remove();
-          }
-        }, 4000);
+        window.spgNotify({
+          type: 'success',
+          icon: '\u2705',
+          title: 'Playlist Selected!',
+          body: `<strong>${playlistName}</strong> has been saved<br>You can now use this playlist in AI Playlist generator`,
+          autoClose: 4000,
+        });
       }
 
     } else {
@@ -1059,17 +937,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Close button
   const closeButton = document.createElement('button');
   closeButton.textContent = 'Close';
-  closeButton.style.cssText = `
-    background: #666;
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  `;
+  closeButton.className = 'spg-btn spg-btn--secondary';
 
   closeButton.addEventListener('click', () => {
     const modal = document.getElementById('playlist-results-modal');
@@ -1083,17 +951,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Copy button
   const copyButton = document.createElement('button');
   copyButton.textContent = 'Copy Playlist';
-  copyButton.style.cssText = `
-    background: linear-gradient(135deg, #1db954, #1ed760);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  `;
+  copyButton.className = 'spg-btn spg-btn--secondary';
 
   copyButton.addEventListener('click', () => {
     const selectedSongsList = playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index));
@@ -1115,17 +973,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   // Create New Playlist button (always show - user can always create a new playlist)
   const createPlaylistButton = document.createElement('button');
   createPlaylistButton.textContent = 'Create New Playlist';
-  createPlaylistButton.style.cssText = `
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      color: white;
-      border: none;
-      padding: 12px 30px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    `;
+  createPlaylistButton.className = 'spg-btn spg-btn--primary';
 
   createPlaylistButton.addEventListener('click', async () => {
     try {
@@ -1167,17 +1015,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
     addToPlaylistButton = document.createElement('button');
     addToPlaylistButton.textContent = `Add to Playlist: ${selectedPlaylistName}`;
-    addToPlaylistButton.style.cssText = `
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      color: white;
-      border: none;
-      padding: 12px 30px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    `;
+    addToPlaylistButton.className = 'spg-btn spg-btn--primary';
 
     addToPlaylistButton.addEventListener('click', async () => {
       try {
@@ -4508,54 +4346,13 @@ function showMusicGenreModal() {
         // Utiliser la fonction du module API
         const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
 
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'success-notification';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #1db954, #1ed760);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
-          z-index: 10002;
-          max-width: 400px;
-        `;
-
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-            <div style="font-weight: bold; font-size: 18px;">Songs Added!</div>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist
-          </div>
-          <div style="margin-bottom: 15px;">
-            <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-              Open Playlist →
-            </a>
-          </div>
-          <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-          ">Close</button>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-close after 5 seconds
-        setTimeout(() => {
-          if (notification.parentElement) {
-            notification.remove();
-          }
-        }, 5000);
+        // Show success notification (centralized component)
+        window.spgNotify({
+          type: 'success',
+          title: 'Songs Added!',
+          body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist`,
+          link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
+        });
 
         // Close the results modal after successful addition
         setTimeout(() => {
@@ -4724,44 +4521,13 @@ function showMusicGenreModal() {
         });
 
       } catch (error) {
-
-        // Notification d'erreur plus belle
-        const errorNotification = document.createElement('div');
-        errorNotification.className = 'error-notification';
-        errorNotification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #e74c3c, #c0392b);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
-          z-index: 10002;
-          max-width: 400px;
-          animation: slideIn 0.3s ease;
-        `;
-
-        errorNotification.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <div style="font-size: 24px; margin-right: 10px;">❌</div>
-            <div style="font-weight: bold; font-size: 18px;">Error</div>
-          </div>
-          <div style="margin-bottom: 15px;">
-            ${error.message}
-          </div>
-          <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-          ">Close</button>
-        `;
-
-        document.body.appendChild(errorNotification);
+        window.spgNotify({
+          type: 'error',
+          icon: '\u274C',
+          title: 'Error',
+          body: error.message,
+          autoClose: 0,
+        });
 
         spotifyButton.textContent = 'Create on Spotify';
         spotifyButton.disabled = false;

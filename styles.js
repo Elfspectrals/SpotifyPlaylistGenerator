@@ -770,6 +770,228 @@ function injectGlobalStyles() {
         right: 16px !important;
       }
     }
+
+    /* ============================================================
+       SPOTIFY AI — COMPONENT LIBRARY
+       Reusable classes built on the design tokens above.
+       Used by ui.js factories and the modals.
+       ============================================================ */
+
+    /* --- Modal shell --- */
+    .spg-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(6px);
+      z-index: 10000;
+      animation: spgOverlayIn 0.22s var(--spg-ease);
+      padding: 20px;
+    }
+    .spg-modal {
+      background: var(--spg-surface);
+      border: 1px solid var(--spg-border);
+      border-radius: var(--spg-radius);
+      box-shadow: var(--spg-shadow);
+      max-width: 760px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      position: relative;
+      animation: spgModalIn 0.32s var(--spg-ease);
+      scrollbar-width: thin;
+      scrollbar-color: var(--spg-surface-3) transparent;
+    }
+    .spg-modal::-webkit-scrollbar { width: 10px; }
+    .spg-modal::-webkit-scrollbar-thumb {
+      background: var(--spg-surface-3);
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    .spg-modal__header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 22px 28px 16px;
+      background: linear-gradient(180deg, var(--spg-surface) 70%, transparent);
+    }
+    .spg-modal__title {
+      margin: 0;
+      color: var(--spg-text);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .spg-modal__subtitle {
+      color: var(--spg-text-soft);
+      font-size: 13px;
+      margin: 4px 0 0;
+    }
+    .spg-modal__body { padding: 4px 28px 28px; }
+    .spg-modal__footer {
+      position: sticky;
+      bottom: 0;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      padding: 16px 28px 22px;
+      background: linear-gradient(0deg, var(--spg-surface) 70%, transparent);
+    }
+
+    /* --- Close button --- */
+    .spg-close {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      background: var(--spg-surface-2);
+      color: var(--spg-text-soft);
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.15s var(--spg-ease), color 0.15s var(--spg-ease), transform 0.12s var(--spg-ease);
+    }
+    .spg-close:hover { background: var(--spg-surface-3); color: var(--spg-text); transform: rotate(90deg); }
+
+    /* --- Buttons --- */
+    .spg-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 11px 22px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      border: 1px solid transparent;
+      border-radius: var(--spg-radius-pill);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s var(--spg-ease), transform 0.12s var(--spg-ease),
+                  box-shadow 0.15s var(--spg-ease), border-color 0.15s var(--spg-ease);
+    }
+    .spg-btn:active { transform: scale(0.97); }
+    .spg-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .spg-btn--primary { background: var(--spg-green); color: #000; }
+    .spg-btn--primary:hover:not(:disabled) {
+      background: var(--spg-green-hover);
+      box-shadow: 0 6px 22px rgba(29, 185, 84, 0.35);
+      transform: translateY(-1px);
+    }
+    .spg-btn--secondary {
+      background: var(--spg-surface-2);
+      color: var(--spg-text);
+      border-color: var(--spg-border);
+    }
+    .spg-btn--secondary:hover:not(:disabled) { background: var(--spg-surface-3); }
+    .spg-btn--ghost { background: transparent; color: var(--spg-text-soft); }
+    .spg-btn--ghost:hover:not(:disabled) { background: var(--spg-surface-2); color: var(--spg-text); }
+    .spg-btn--accent { background: var(--spg-pink); color: #fff; }
+    .spg-btn--accent:hover:not(:disabled) {
+      background: #ff4fb6;
+      box-shadow: 0 6px 22px rgba(240, 55, 165, 0.35);
+      transform: translateY(-1px);
+    }
+    .spg-btn--danger { background: var(--spg-danger); color: #fff; }
+    .spg-btn--danger:hover:not(:disabled) { background: #ff5b4c; }
+    .spg-btn--block { width: 100%; }
+
+    /* --- Chips --- */
+    .spg-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      background: var(--spg-surface-2);
+      color: var(--spg-text);
+      border: 1px solid var(--spg-border);
+      border-radius: var(--spg-radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .spg-chip__remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--spg-text);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s var(--spg-ease);
+    }
+    .spg-chip__remove:hover { background: var(--spg-danger); }
+
+    /* --- Toast / notification --- */
+    .spg-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      max-width: 380px;
+      background: var(--spg-surface-2);
+      color: var(--spg-text);
+      border: 1px solid var(--spg-border);
+      border-left: 4px solid var(--spg-green);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: var(--spg-shadow);
+      z-index: 10010;
+      animation: spgToastIn 0.3s var(--spg-ease);
+    }
+    .spg-toast--error { border-left-color: var(--spg-danger); }
+    .spg-toast__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .spg-toast__icon { font-size: 22px; line-height: 1; }
+    .spg-toast__body { font-size: 14px; color: var(--spg-text-soft); }
+    .spg-toast__body strong { color: var(--spg-text); }
+    .spg-toast__link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--spg-green-hover);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .spg-toast__link:hover { text-decoration: underline; }
+    .spg-toast__close {
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--spg-text);
+      padding: 7px 14px;
+      border-radius: var(--spg-radius-pill);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .spg-toast__close:hover { background: rgba(255, 255, 255, 0.18); }
+
+    @keyframes spgToastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
   `;
   document.head.appendChild(disabledButtonStyles);
 }
