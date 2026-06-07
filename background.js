@@ -1,6 +1,9 @@
 (function () {
+  // Shared Spotify app Client ID (PKCE, no secret needed).
+  // Same app for every user: no manual setup required.
+  const SPOTIFY_CLIENT_ID = '88f72a9065824fdf8d3b169f7c301404';
+
   const STORAGE_KEYS = {
-    CLIENT_ID: 'byoClientId',
     ACCESS_TOKEN: 'byoAccessToken',
     REFRESH_TOKEN: 'byoRefreshToken',
     TOKEN_EXPIRY: 'byoTokenExpiry'
@@ -85,7 +88,7 @@
   function getStored() {
     return new Promise(function (resolve) {
       chrome.storage.local.get(
-        [STORAGE_KEYS.CLIENT_ID, STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.TOKEN_EXPIRY],
+        [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.TOKEN_EXPIRY],
         resolve
       );
     });
@@ -148,10 +151,7 @@
 
   async function getValidToken() {
     const stored = await getStored();
-    const clientId = stored[STORAGE_KEYS.CLIENT_ID];
-    if (!clientId) {
-      return { needSettings: true };
-    }
+    const clientId = SPOTIFY_CLIENT_ID;
 
     const redirectUri = chrome.identity.getRedirectURL();
     let accessToken = stored[STORAGE_KEYS.ACCESS_TOKEN];

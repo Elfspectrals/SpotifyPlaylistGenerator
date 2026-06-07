@@ -1,6 +1,6 @@
 // Module de gestion de l'authentification Spotify
 
-// BYO: get token from background (OAuth with user's Client ID). Returns { accessToken, refreshToken } or throws / returns needSettings.
+// Get token from background (OAuth PKCE with the shared Client ID). Returns { accessToken, refreshToken } or throws.
 function getSpotifyAccessToken() {
   return new Promise(function (resolve, reject) {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
@@ -12,20 +12,10 @@ function getSpotifyAccessToken() {
         reject(new Error(chrome.runtime.lastError.message || 'Failed to get token'));
         return;
       }
-      if (response && response.needSettings) {
-        if (typeof window !== 'undefined' && window.open) {
-          window.open(chrome.runtime.getURL('options.html'), '_blank');
-        }
-        reject(new Error('Please set your Spotify Client ID in extension settings (options).'));
-        return;
-      }
       if (response && response.error) {
         const errMsg = response.error;
         const parts = errMsg.split('|REDIRECT_URI|');
-        const hint = parts.length > 1
-          ? ' Use this exact Redirect URI in your Spotify app: ' + parts[1]
-          : ' In Spotify Dashboard → Your app → Settings → Redirect URIs, add the exact URL from extension options (Copy button).';
-        reject(new Error(parts[0] + hint));
+        reject(new Error(parts[0]));
         return;
       }
       if (response && response.accessToken) {
