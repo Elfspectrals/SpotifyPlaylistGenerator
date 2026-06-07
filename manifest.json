@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": ["https://open.spotify.com/*"],
-      "js": ["config.js", "styles.js", "ui.js", "utils.js", "api.js", "buttons.js", "auth.js", "content.js"]
+      "js": ["config.js", "styles.js", "ui.js", "radio.js", "utils.js", "api.js", "buttons.js", "auth.js", "content.js"]
     }
   ]
 }

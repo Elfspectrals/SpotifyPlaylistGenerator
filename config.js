@@ -81,20 +81,114 @@ const CONFIG = {
     { label: 'Longue (60+ min)', value: 'long', icon: '⏳' }
   ],
 
-  // Pays d'origine disponibles
+  // Pays d'origine disponibles (recherche + multi-sélection côté UI).
+  // `value` = nom anglais envoyé au backend (utilisé dans le prompt IA).
   COUNTRIES: [
-    { label: 'Any Country', value: null, icon: '🌍', flag: '' },
-    { label: 'France', value: 'FR', icon: '🇫🇷', flag: 'FR' },
-    { label: 'Germany', value: 'GER', icon: '🇩🇪', flag: 'GER' },
-    { label: 'United Kingdom', value: 'ENG', icon: '🇬🇧', flag: 'ENG' },
-    { label: 'United States', value: 'US', icon: '🇺🇸', flag: 'US' },
-    { label: 'Canada', value: 'CA', icon: '🇨🇦', flag: 'CA' },
-    { label: 'Spain', value: 'ES', icon: '🇪🇸', flag: 'ES' },
-    { label: 'Italy', value: 'IT', icon: '🇮🇹', flag: 'IT' },
-    { label: 'Japan', value: 'JP', icon: '🇯🇵', flag: 'JP' },
-    { label: 'South Korea', value: 'KR', icon: '🇰🇷', flag: 'KR' },
-    { label: 'Brazil', value: 'BR', icon: '🇧🇷', flag: 'BR' },
-    { label: 'Australia', value: 'AU', icon: '🇦🇺', flag: 'AU' }
+    // North America
+    { label: 'United States', value: 'United States', flag: '🇺🇸', region: 'North America' },
+    { label: 'Canada', value: 'Canada', flag: '🇨🇦', region: 'North America' },
+    { label: 'Mexico', value: 'Mexico', flag: '🇲🇽', region: 'North America' },
+    // Latin America
+    { label: 'Brazil', value: 'Brazil', flag: '🇧🇷', region: 'Latin America' },
+    { label: 'Argentina', value: 'Argentina', flag: '🇦🇷', region: 'Latin America' },
+    { label: 'Chile', value: 'Chile', flag: '🇨🇱', region: 'Latin America' },
+    { label: 'Colombia', value: 'Colombia', flag: '🇨🇴', region: 'Latin America' },
+    { label: 'Peru', value: 'Peru', flag: '🇵🇪', region: 'Latin America' },
+    { label: 'Cuba', value: 'Cuba', flag: '🇨🇺', region: 'Latin America' },
+    { label: 'Puerto Rico', value: 'Puerto Rico', flag: '🇵🇷', region: 'Latin America' },
+    { label: 'Jamaica', value: 'Jamaica', flag: '🇯🇲', region: 'Latin America' },
+    { label: 'Uruguay', value: 'Uruguay', flag: '🇺🇾', region: 'Latin America' },
+    { label: 'Venezuela', value: 'Venezuela', flag: '🇻🇪', region: 'Latin America' },
+    // Western Europe
+    { label: 'United Kingdom', value: 'United Kingdom', flag: '🇬🇧', region: 'Western Europe' },
+    { label: 'Ireland', value: 'Ireland', flag: '🇮🇪', region: 'Western Europe' },
+    { label: 'France', value: 'France', flag: '🇫🇷', region: 'Western Europe' },
+    { label: 'Germany', value: 'Germany', flag: '🇩🇪', region: 'Western Europe' },
+    { label: 'Spain', value: 'Spain', flag: '🇪🇸', region: 'Western Europe' },
+    { label: 'Portugal', value: 'Portugal', flag: '🇵🇹', region: 'Western Europe' },
+    { label: 'Italy', value: 'Italy', flag: '🇮🇹', region: 'Western Europe' },
+    { label: 'Netherlands', value: 'Netherlands', flag: '🇳🇱', region: 'Western Europe' },
+    { label: 'Belgium', value: 'Belgium', flag: '🇧🇪', region: 'Western Europe' },
+    { label: 'Switzerland', value: 'Switzerland', flag: '🇨🇭', region: 'Western Europe' },
+    { label: 'Austria', value: 'Austria', flag: '🇦🇹', region: 'Western Europe' },
+    // Nordics
+    { label: 'Sweden', value: 'Sweden', flag: '🇸🇪', region: 'Nordics' },
+    { label: 'Norway', value: 'Norway', flag: '🇳🇴', region: 'Nordics' },
+    { label: 'Denmark', value: 'Denmark', flag: '🇩🇰', region: 'Nordics' },
+    { label: 'Finland', value: 'Finland', flag: '🇫🇮', region: 'Nordics' },
+    { label: 'Iceland', value: 'Iceland', flag: '🇮🇸', region: 'Nordics' },
+    // Eastern Europe
+    { label: 'Poland', value: 'Poland', flag: '🇵🇱', region: 'Eastern Europe' },
+    { label: 'Russia', value: 'Russia', flag: '🇷🇺', region: 'Eastern Europe' },
+    { label: 'Ukraine', value: 'Ukraine', flag: '🇺🇦', region: 'Eastern Europe' },
+    { label: 'Czechia', value: 'Czechia', flag: '🇨🇿', region: 'Eastern Europe' },
+    { label: 'Hungary', value: 'Hungary', flag: '🇭🇺', region: 'Eastern Europe' },
+    { label: 'Romania', value: 'Romania', flag: '🇷🇴', region: 'Eastern Europe' },
+    { label: 'Greece', value: 'Greece', flag: '🇬🇷', region: 'Eastern Europe' },
+    { label: 'Croatia', value: 'Croatia', flag: '🇭🇷', region: 'Eastern Europe' },
+    { label: 'Serbia', value: 'Serbia', flag: '🇷🇸', region: 'Eastern Europe' },
+    // Middle East & North Africa
+    { label: 'Turkey', value: 'Turkey', flag: '🇹🇷', region: 'Middle East & North Africa' },
+    { label: 'Israel', value: 'Israel', flag: '🇮🇱', region: 'Middle East & North Africa' },
+    { label: 'Egypt', value: 'Egypt', flag: '🇪🇬', region: 'Middle East & North Africa' },
+    { label: 'Morocco', value: 'Morocco', flag: '🇲🇦', region: 'Middle East & North Africa' },
+    { label: 'Algeria', value: 'Algeria', flag: '🇩🇿', region: 'Middle East & North Africa' },
+    { label: 'Tunisia', value: 'Tunisia', flag: '🇹🇳', region: 'Middle East & North Africa' },
+    { label: 'Lebanon', value: 'Lebanon', flag: '🇱🇧', region: 'Middle East & North Africa' },
+    { label: 'Saudi Arabia', value: 'Saudi Arabia', flag: '🇸🇦', region: 'Middle East & North Africa' },
+    { label: 'United Arab Emirates', value: 'United Arab Emirates', flag: '🇦🇪', region: 'Middle East & North Africa' },
+    { label: 'Iran', value: 'Iran', flag: '🇮🇷', region: 'Middle East & North Africa' },
+    // Sub-Saharan Africa
+    { label: 'Nigeria', value: 'Nigeria', flag: '🇳🇬', region: 'Sub-Saharan Africa' },
+    { label: 'South Africa', value: 'South Africa', flag: '🇿🇦', region: 'Sub-Saharan Africa' },
+    { label: 'Ghana', value: 'Ghana', flag: '🇬🇭', region: 'Sub-Saharan Africa' },
+    { label: 'Senegal', value: 'Senegal', flag: '🇸🇳', region: 'Sub-Saharan Africa' },
+    { label: 'Kenya', value: 'Kenya', flag: '🇰🇪', region: 'Sub-Saharan Africa' },
+    { label: 'Ethiopia', value: 'Ethiopia', flag: '🇪🇹', region: 'Sub-Saharan Africa' },
+    { label: 'Mali', value: 'Mali', flag: '🇲🇱', region: 'Sub-Saharan Africa' },
+    { label: 'Ivory Coast', value: 'Ivory Coast', flag: '🇨🇮', region: 'Sub-Saharan Africa' },
+    { label: 'Congo (DRC)', value: 'Democratic Republic of the Congo', flag: '🇨🇩', region: 'Sub-Saharan Africa' },
+    { label: 'Angola', value: 'Angola', flag: '🇦🇴', region: 'Sub-Saharan Africa' },
+    // East Asia
+    { label: 'Japan', value: 'Japan', flag: '🇯🇵', region: 'East Asia' },
+    { label: 'South Korea', value: 'South Korea', flag: '🇰🇷', region: 'East Asia' },
+    { label: 'China', value: 'China', flag: '🇨🇳', region: 'East Asia' },
+    { label: 'Taiwan', value: 'Taiwan', flag: '🇹🇼', region: 'East Asia' },
+    { label: 'Hong Kong', value: 'Hong Kong', flag: '🇭🇰', region: 'East Asia' },
+    { label: 'Mongolia', value: 'Mongolia', flag: '🇲🇳', region: 'East Asia' },
+    // South & Southeast Asia
+    { label: 'India', value: 'India', flag: '🇮🇳', region: 'South & Southeast Asia' },
+    { label: 'Pakistan', value: 'Pakistan', flag: '🇵🇰', region: 'South & Southeast Asia' },
+    { label: 'Bangladesh', value: 'Bangladesh', flag: '🇧🇩', region: 'South & Southeast Asia' },
+    { label: 'Indonesia', value: 'Indonesia', flag: '🇮🇩', region: 'South & Southeast Asia' },
+    { label: 'Philippines', value: 'Philippines', flag: '🇵🇭', region: 'South & Southeast Asia' },
+    { label: 'Thailand', value: 'Thailand', flag: '🇹🇭', region: 'South & Southeast Asia' },
+    { label: 'Vietnam', value: 'Vietnam', flag: '🇻🇳', region: 'South & Southeast Asia' },
+    { label: 'Malaysia', value: 'Malaysia', flag: '🇲🇾', region: 'South & Southeast Asia' },
+    { label: 'Singapore', value: 'Singapore', flag: '🇸🇬', region: 'South & Southeast Asia' },
+    // Oceania
+    { label: 'Australia', value: 'Australia', flag: '🇦🇺', region: 'Oceania' },
+    { label: 'New Zealand', value: 'New Zealand', flag: '🇳🇿', region: 'Oceania' }
+  ],
+
+  // Tempo / BPM hints (optional, used by the Radio panel)
+  TEMPOS: [
+    { label: 'Any', value: null },
+    { label: 'Slow', value: 'slow' },
+    { label: 'Mid', value: 'mid' },
+    { label: 'Fast', value: 'fast' }
+  ],
+
+  // Curated vibe presets (one click sets genres + radio knobs)
+  VIBE_PRESETS: [
+    { label: '3 A.M. Drive', icon: '🌃', genres: ['Synthwave', 'Trip Hop', 'Lo-Fi'], energy: 35, popularity: 45, surprise: 55, mood: 'relaxing' },
+    { label: 'Boss Fight', icon: '🎮', genres: ['Metal', 'Electronic', 'Industrial'], energy: 95, popularity: 50, surprise: 60, mood: 'energetic' },
+    { label: 'Sunday Café', icon: '☕', genres: ['Jazz', 'Bossa Nova', 'Soul'], energy: 25, popularity: 55, surprise: 40, mood: 'relaxing' },
+    { label: 'Heartbreak', icon: '💔', genres: ['Indie', 'Singer-Songwriter', 'Soul'], energy: 30, popularity: 50, surprise: 45, mood: 'melancholic' },
+    { label: 'Workout Beast', icon: '💪', genres: ['Hip Hop', 'EDM', 'Trap'], energy: 90, popularity: 70, surprise: 35, mood: 'motivational' },
+    { label: 'Festival Peak', icon: '🎉', genres: ['House', 'Pop', 'Dance'], energy: 85, popularity: 80, surprise: 40, mood: 'festive' },
+    { label: 'Deep Focus', icon: '🧠', genres: ['Ambient', 'Classical', 'IDM'], energy: 20, popularity: 35, surprise: 50, mood: 'relaxing' },
+    { label: 'Rebel Yell', icon: '🤘', genres: ['Punk', 'Garage Rock', 'Post-Punk'], energy: 88, popularity: 40, surprise: 65, mood: 'energetic' }
   ],
 
   // Genres rares pour le mode Découverte

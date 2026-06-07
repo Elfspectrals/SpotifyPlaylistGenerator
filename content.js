@@ -1538,6 +1538,11 @@ function showMusicGenreModal() {
     mainButton.style.pointerEvents = 'none'; // Temporarily disable to prevent conflicts
   }
 
+  // Fresh Radio settings for each modal open
+  if (window.SPG_RADIO && typeof window.SPG_RADIO.reset === 'function') {
+    window.SPG_RADIO.reset();
+  }
+
   // Create modal overlay
   const modalOverlay = document.createElement('div');
   modalOverlay.id = 'ai-playlist-modal';
@@ -3608,7 +3613,7 @@ function showMusicGenreModal() {
 
         try {
           // Call the AI to generate songs (utilise le module API)
-          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
+          const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, window.SPG_RADIO.getOptions());
 
           if (!playlistData || !playlistData.playlist) {
             throw new Error('Invalid server response format');
@@ -3671,7 +3676,7 @@ function showMusicGenreModal() {
 
       try {
         // Appel au serveur AI pour générer la playlist (utilise le module API)
-        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, selectedCountry);
+        const playlistData = await window.generatePlaylist(selectedGenres, selectedSongCount, window.SPG_RADIO.getOptions());
 
         // Vérifier que la réponse contient les données attendues
         if (!playlistData || !playlistData.playlist) {
@@ -4636,10 +4641,30 @@ function showMusicGenreModal() {
   `;
   modalContent.appendChild(stepper);
 
+  // Radio engine context: lets presets / roulette populate the genre selection.
+  const allSubgenres = [];
+  Object.values(musicFamilies).forEach((fam) => {
+    if (fam && Array.isArray(fam.subgenres)) allSubgenres.push(...fam.subgenres);
+  });
+  const radioCtx = {
+    allSubgenres,
+    onSetGenres: (arr) => {
+      selectedGenres = Array.isArray(arr) ? arr.slice() : [];
+      updateSelectedDisplay();
+      currentFamily = null;
+      createFamilyButtons();
+    },
+    onSettingsChanged: () => { if (radioCtx.refreshSliders) radioCtx.refreshSliders(); },
+  };
+  const radioSettingsPanel = window.SPG_RADIO.buildSettingsPanel(radioCtx);
+  const radioQuickPanel = window.SPG_RADIO.buildQuickPanel(radioCtx);
+  const countrySelector = window.SPG_RADIO.buildCountrySelector();
+
   // Step 1 panel — choose the music
   const step1Panel = document.createElement('div');
   step1Panel.className = 'spg-wizard-panel';
   step1Panel.appendChild(quickActionsContainer);
+  step1Panel.appendChild(radioQuickPanel);
   step1Panel.appendChild(templatesSection);
   step1Panel.appendChild(breadcrumb);
   step1Panel.appendChild(viewContainer);
@@ -4648,7 +4673,8 @@ function showMusicGenreModal() {
   // Step 2 panel — settings & generation
   const step2Panel = document.createElement('div');
   step2Panel.className = 'spg-wizard-panel spg-wizard-panel--hidden';
-  step2Panel.appendChild(filtersSection);
+  step2Panel.appendChild(countrySelector);
+  step2Panel.appendChild(radioSettingsPanel);
   step2Panel.appendChild(songCountContainer);
   step2Panel.appendChild(choosePlaylistButton);
 
