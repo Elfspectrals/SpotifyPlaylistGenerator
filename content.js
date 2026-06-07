@@ -25,11 +25,11 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
       position: fixed;
       top: 20px;
       right: 20px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #1db954, #1ed760);
       color: white;
       padding: 20px;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
       z-index: 10002;
       max-width: 400px;
     `;
@@ -225,7 +225,7 @@ function addChoosePlaylistButton() {
         choosePlaylistButton.setAttribute('aria-label', 'Choose Playlist');
         choosePlaylistButton.setAttribute('data-testid', 'choose-playlist-button');
         choosePlaylistButton.style.cssText = `
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #1db954, #1ed760);
           color: white;
           border: none;
           border-radius: 50%;
@@ -237,7 +237,7 @@ function addChoosePlaylistButton() {
           cursor: pointer;
           transition: all 0.3s ease;
           margin-left: 8px;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
         `;
 
         // Add the icon (checkmark or plus icon)
@@ -250,12 +250,12 @@ function addChoosePlaylistButton() {
         // Add hover effects
         choosePlaylistButton.addEventListener('mouseenter', () => {
           choosePlaylistButton.style.transform = 'scale(1.1)';
-          choosePlaylistButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+          choosePlaylistButton.style.boxShadow = '0 6px 20px rgba(29, 185, 84, 0.4)';
         });
 
         choosePlaylistButton.addEventListener('mouseleave', () => {
           choosePlaylistButton.style.transform = 'scale(1)';
-          choosePlaylistButton.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+          choosePlaylistButton.style.boxShadow = '0 4px 12px rgba(29, 185, 84, 0.3)';
         });
 
         // Add click handler
@@ -469,11 +469,11 @@ function saveCurrentPlaylist(showNotification = true) {
           position: fixed;
           top: 20px;
           right: 20px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #1db954, #1ed760);
           color: white;
           padding: 20px;
           border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
           z-index: 10002;
           max-width: 400px;
           animation: slideIn 0.3s ease;
@@ -567,7 +567,7 @@ function showChoosePlaylistModal() {
   const title = document.createElement('h2');
   title.textContent = 'Add AI Songs to This Playlist';
   title.style.cssText = `
-    color: #667eea;
+    color: #1db954;
     font-size: 28px;
     margin-bottom: 20px;
     font-weight: bold;
@@ -587,7 +587,7 @@ function showChoosePlaylistModal() {
     <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
       🎵 Current Playlist
     </div>
-    <div style="color: #667eea; font-size: 16px; margin-bottom: 5px;">
+    <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
       Playlist ID: ${playlistId}
     </div>
     <div style="color: #999; font-size: 14px;">
@@ -635,9 +635,9 @@ function showChoosePlaylistModal() {
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      border: 2px solid #667eea;
-      background: ${count === 5 ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent'};
-      color: ${count === 5 ? 'white' : '#667eea'};
+      border: 2px solid #1db954;
+      background: ${count === 5 ? 'linear-gradient(135deg, #1db954, #1ed760)' : 'transparent'};
+      color: ${count === 5 ? 'white' : '#1db954'};
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
@@ -651,11 +651,11 @@ function showChoosePlaylistModal() {
       // Remove selection from all buttons
       songCountSelector.querySelectorAll('button').forEach(btn => {
         btn.style.background = 'transparent';
-        btn.style.color = '#667eea';
+        btn.style.color = '#1db954';
       });
 
       // Select current button
-      button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
       button.style.color = 'white';
 
       selectedSongCount = count;
@@ -679,7 +679,7 @@ function showChoosePlaylistModal() {
   const generateButton = document.createElement('button');
   generateButton.textContent = 'Generate & Add Songs';
   generateButton.style.cssText = `
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1db954, #1ed760);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -921,13 +921,13 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #667eea;
+    accent-color: #1db954;
   `;
 
   const selectedCount = document.createElement('span');
   selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
   selectedCount.style.cssText = `
-    color: #667eea;
+    color: #1db954;
     font-size: 14px;
     font-weight: bold;
   `;
@@ -986,7 +986,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       width: 20px;
       height: 20px;
       cursor: pointer;
-      accent-color: #667eea;
+      accent-color: #1db954;
       flex-shrink: 0;
     `;
 
@@ -1084,7 +1084,7 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
   const copyButton = document.createElement('button');
   copyButton.textContent = 'Copy Playlist';
   copyButton.style.cssText = `
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1db954, #1ed760);
     color: white;
     border: none;
     padding: 12px 30px;
@@ -1767,7 +1767,7 @@ function showMusicGenreModal() {
   randomButton.textContent = '🎲 Random Playlist';
   randomButton.title = 'Generate a playlist with random popular genres (Rock, Pop, Electronic, etc.)';
   randomButton.style.cssText = `
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1db954, #1ed760);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -1790,7 +1790,7 @@ function showMusicGenreModal() {
   `;
   randomButton.addEventListener('mouseenter', () => {
     randomButton.style.transform = 'scale(1.05)';
-    randomButton.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+    randomButton.style.boxShadow = '0 4px 15px rgba(29, 185, 84, 0.4)';
   });
   randomButton.addEventListener('mouseleave', () => {
     randomButton.style.transform = 'scale(1)';
@@ -1843,7 +1843,7 @@ function showMusicGenreModal() {
   discoveryButton.textContent = '🔍 Discovery Mode';
   discoveryButton.title = 'Explore rare and niche genres (Post-Rock, Shoegaze, Krautrock, etc.)';
   discoveryButton.style.cssText = `
-    background: linear-gradient(135deg, #f093fb, #f5576c);
+    background: linear-gradient(135deg, #f037a5, #c91e7e);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -1866,7 +1866,7 @@ function showMusicGenreModal() {
   `;
   discoveryButton.addEventListener('mouseenter', () => {
     discoveryButton.style.transform = 'scale(1.05)';
-    discoveryButton.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.4)';
+    discoveryButton.style.boxShadow = '0 4px 15px rgba(240, 55, 165, 0.4)';
   });
   discoveryButton.addEventListener('mouseleave', () => {
     discoveryButton.style.transform = 'scale(1)';
@@ -1981,7 +1981,7 @@ function showMusicGenreModal() {
     const templateButton = document.createElement('button');
     templateButton.innerHTML = `${template.icon} ${templateName}`;
     templateButton.style.cssText = `
-      background: ${isCustom ? 'linear-gradient(135deg, #f39c12, #e67e22)' : 'linear-gradient(135deg, #667eea, #764ba2)'};
+      background: ${isCustom ? 'linear-gradient(135deg, #f39c12, #e67e22)' : 'linear-gradient(135deg, #1db954, #1ed760)'};
       color: white;
       border: none;
       padding: 8px 16px;
@@ -2590,7 +2590,7 @@ function showMusicGenreModal() {
     const saveNewButton = document.createElement('button');
     saveNewButton.textContent = '💾 Save New Template';
     saveNewButton.style.cssText = `
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #1db954, #1ed760);
       color: white;
       border: none;
       padding: 12px 30px;
@@ -2963,7 +2963,7 @@ function showMusicGenreModal() {
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #1db954, #1ed760);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3458,9 +3458,9 @@ function showMusicGenreModal() {
         b.style.color = '#999';
         b.style.borderColor = '#555';
       });
-      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
       btn.style.color = 'white';
-      btn.style.borderColor = '#667eea';
+      btn.style.borderColor = '#1db954';
       selectedDecade = decade.value;
     });
     decadeButtons.appendChild(btn);
@@ -3563,9 +3563,9 @@ function showMusicGenreModal() {
     btn.style.cssText = `
       padding: 6px 12px;
       border-radius: 15px;
-      border: 2px solid #667eea;
-      background: ${country.value === null ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent'};
-      color: ${country.value === null ? 'white' : '#667eea'};
+      border: 2px solid #1db954;
+      background: ${country.value === null ? 'linear-gradient(135deg, #1db954, #1ed760)' : 'transparent'};
+      color: ${country.value === null ? 'white' : '#1db954'};
       font-size: 12px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -3573,12 +3573,12 @@ function showMusicGenreModal() {
     btn.addEventListener('click', () => {
       countryButtons.querySelectorAll('button').forEach(b => {
         b.style.background = 'transparent';
-        b.style.color = '#667eea';
-        b.style.borderColor = '#667eea';
+        b.style.color = '#1db954';
+        b.style.borderColor = '#1db954';
       });
-      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+      btn.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
       btn.style.color = 'white';
-      btn.style.borderColor = '#667eea';
+      btn.style.borderColor = '#1db954';
       selectedCountry = country.value;
     });
     countryButtons.appendChild(btn);
@@ -3608,7 +3608,7 @@ function showMusicGenreModal() {
     ? `📋 Change Selected Playlist (${selectedPlaylistData.name})`
     : '📋 Choose Playlist to Add Songs';
   choosePlaylistButton.style.cssText = `
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #1db954, #1ed760);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -3622,7 +3622,7 @@ function showMusicGenreModal() {
 
   choosePlaylistButton.addEventListener('mouseenter', () => {
     choosePlaylistButton.style.transform = 'scale(1.05)';
-    choosePlaylistButton.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+    choosePlaylistButton.style.boxShadow = '0 8px 25px rgba(29, 185, 84, 0.4)';
   });
 
   choosePlaylistButton.addEventListener('mouseleave', () => {
@@ -3668,17 +3668,17 @@ function showMusicGenreModal() {
 
     instructionContent.innerHTML = `
       <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
-      <h2 style="color: #667eea; font-size: 24px; margin-bottom: 20px; font-weight: bold;">
+      <h2 style="color: #1db954; font-size: 24px; margin-bottom: 20px; font-weight: bold;">
         Choose a Playlist
       </h2>
       <p style="color: #fff; font-size: 16px; margin-bottom: 30px; line-height: 1.6;">
         To add AI-generated songs to a playlist:<br><br>
         1. Navigate to the playlist you want to use<br>
-        2. Click the <strong style="color: #667eea;">✓ Choose Playlist</strong> button on that playlist page<br>
+        2. Click the <strong style="color: #1db954;">✓ Choose Playlist</strong> button on that playlist page<br>
         3. Then open the AI Playlist Generator again
       </p>
       <button id="close-instruction-modal" style="
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #1db954, #1ed760);
         color: white;
         border: none;
         padding: 12px 30px;
@@ -3730,7 +3730,7 @@ function showMusicGenreModal() {
     useSelectedPlaylistButton = document.createElement('button');
     useSelectedPlaylistButton.textContent = `Use Selected Playlist: ${selectedPlaylistData.name}`;
     useSelectedPlaylistButton.style.cssText = `
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #1db954, #1ed760);
       color: white;
       border: none;
       padding: 15px 30px;
@@ -3750,7 +3750,7 @@ function showMusicGenreModal() {
     useSelectedPlaylistButton.addEventListener('mouseenter', () => {
       if (selectedGenres.length > 0) {
         useSelectedPlaylistButton.style.transform = 'scale(1.05)';
-        useSelectedPlaylistButton.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+        useSelectedPlaylistButton.style.boxShadow = '0 8px 25px rgba(29, 185, 84, 0.4)';
       }
     });
 
@@ -4147,13 +4147,13 @@ function showMusicGenreModal() {
       width: 20px;
       height: 20px;
       cursor: pointer;
-      accent-color: #667eea;
+      accent-color: #1db954;
     `;
 
     const selectedCount = document.createElement('span');
     selectedCount.textContent = `${selectedSongs.size} of ${playlistData.playlist.songs.length} selected`;
     selectedCount.style.cssText = `
-      color: #667eea;
+      color: #1db954;
       font-size: 14px;
       font-weight: bold;
     `;
@@ -4212,7 +4212,7 @@ function showMusicGenreModal() {
         width: 20px;
         height: 20px;
         cursor: pointer;
-        accent-color: #667eea;
+        accent-color: #1db954;
         flex-shrink: 0;
       `;
 
@@ -4327,7 +4327,7 @@ function showMusicGenreModal() {
     const addToPlaylistButton = document.createElement('button');
     addToPlaylistButton.textContent = 'Add to Current Playlist';
     addToPlaylistButton.style.cssText = `
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #1db954, #1ed760);
       color: white;
       border: none;
       padding: 12px 30px;
@@ -4410,11 +4410,11 @@ function showMusicGenreModal() {
         `;
 
         authInstructions.innerHTML = `
-          <h3 style="margin-bottom: 20px; color: #667eea;">🎵 Add to Current Playlist</h3>
+          <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Add to Current Playlist</h3>
           <p style="margin-bottom: 20px;">Ready to add AI-generated songs to your current playlist!</p>
           
           <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #667eea; font-weight: bold;">📝 Playlist Details:</p>
+            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
             <div style="margin-bottom: 15px;">
               <label style="display: block; margin-bottom: 5px; color: #ccc;">Current Playlist ID:</label>
               <input type="text" value="${playlistId}" readonly style="
@@ -4434,7 +4434,7 @@ function showMusicGenreModal() {
           </div>
           
           <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #667eea; font-weight: bold;">📋 What will happen:</p>
+            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📋 What will happen:</p>
             <ul style="margin: 0; padding-left: 20px; color: #ccc;">
               <li>AI-generated songs will be added to your current playlist</li>
               <li>All songs will be searched and matched on Spotify</li>
@@ -4444,7 +4444,7 @@ function showMusicGenreModal() {
           </div>
           <div style="display: flex; gap: 10px; justify-content: center;">
             <button id="auth-complete-btn" style="
-              background: #667eea;
+              background: #1db954;
               color: white;
               border: none;
               padding: 10px 20px;
@@ -4515,11 +4515,11 @@ function showMusicGenreModal() {
           position: fixed;
           top: 20px;
           right: 20px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #1db954, #1ed760);
           color: white;
           padding: 20px;
           border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
           z-index: 10002;
           max-width: 400px;
         `;

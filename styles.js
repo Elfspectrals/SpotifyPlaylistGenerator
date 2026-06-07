@@ -3,6 +3,75 @@
 function injectGlobalStyles() {
   const disabledButtonStyles = document.createElement('style');
   disabledButtonStyles.textContent = `
+    /* ============================================================
+       SPOTIFY AI — DESIGN SYSTEM (design tokens & base)
+       Single source of truth for the extension's look & feel.
+       ============================================================ */
+    :root {
+      --spg-bg:          #121212;
+      --spg-surface:     #181818;
+      --spg-surface-2:   #282828;
+      --spg-surface-3:   #3a3a3a;
+      --spg-border:      rgba(255, 255, 255, 0.10);
+      --spg-text:        #ffffff;
+      --spg-text-soft:   #d4d4d4;   /* lisible (remplace les #999/#888 trop faibles) */
+      --spg-text-mute:   #a7a7a7;
+      --spg-green:       #1db954;
+      --spg-green-hover: #1ed760;
+      --spg-pink:        #f037a5;
+      --spg-danger:      #e74c3c;
+      --spg-radius:      14px;
+      --spg-radius-pill: 9999px;
+      --spg-shadow:      0 16px 40px rgba(0, 0, 0, 0.55);
+      --spg-ring:        0 0 0 2px rgba(29, 185, 84, 0.65);
+      --spg-ease:        cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Modal entrance animations */
+    @keyframes spgOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spgModalIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    #ai-playlist-modal { animation: spgOverlayIn 0.22s var(--spg-ease); }
+    #ai-playlist-modal .modal-content {
+      animation: spgModalIn 0.32s var(--spg-ease);
+      scrollbar-width: thin;
+      scrollbar-color: var(--spg-surface-3) transparent;
+    }
+    #ai-playlist-modal .modal-content::-webkit-scrollbar { width: 10px; }
+    #ai-playlist-modal .modal-content::-webkit-scrollbar-thumb {
+      background: var(--spg-surface-3);
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    #ai-playlist-modal .modal-content::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    /* Keyboard-accessible focus ring on every control inside the modal */
+    #ai-playlist-modal button:focus-visible,
+    #ai-playlist-modal input:focus-visible,
+    .results-modal-content button:focus-visible,
+    .auth-instructions-modal button:focus-visible,
+    .auth-instructions-modal input:focus-visible {
+      outline: none !important;
+      box-shadow: var(--spg-ring) !important;
+    }
+
+    /* Respect the user's reduced-motion preference (extension UI only) */
+    @media (prefers-reduced-motion: reduce) {
+      #ai-playlist-modal, #ai-playlist-modal *,
+      .results-modal-content, .results-modal-content *,
+      .auth-instructions-modal, .auth-instructions-modal *,
+      .success-notification, .error-notification,
+      .spg-ai-playlist-btn, .song-item, .subgenre-grid-button {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
     .button-disabled {
       opacity: 0.3 !important;
       background: #333 !important;
