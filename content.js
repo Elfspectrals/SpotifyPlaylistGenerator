@@ -4620,23 +4620,95 @@ function showMusicGenreModal() {
   };
   document.addEventListener('keydown', handleEscape);
 
-  // Assemble modal
+  // Assemble modal as a 2-step wizard.
+  // Step 1 = pick the music, Step 2 = settings & generate.
+  // All section/button logic above is reused untouched; only the layout changes.
   modalContent.appendChild(closeButton);
   modalContent.appendChild(title);
-  modalContent.appendChild(quickActionsContainer);
-  modalContent.appendChild(templatesSection);
-  modalContent.appendChild(breadcrumb);
-  modalContent.appendChild(viewContainer);
-  modalContent.appendChild(selectedDisplay);
-  modalContent.appendChild(filtersSection);
-  modalContent.appendChild(songCountContainer);
 
-  // Add buttons in order
-  modalContent.appendChild(choosePlaylistButton);
+  // Stepper indicator
+  const stepper = document.createElement('div');
+  stepper.className = 'spg-steps';
+  stepper.innerHTML = `
+    <div class="spg-step spg-step--active" data-step-indicator="1"><span class="spg-step__dot">1</span><span>Music</span></div>
+    <div class="spg-step__bar"></div>
+    <div class="spg-step" data-step-indicator="2"><span class="spg-step__dot">2</span><span>Settings</span></div>
+  `;
+  modalContent.appendChild(stepper);
+
+  // Step 1 panel — choose the music
+  const step1Panel = document.createElement('div');
+  step1Panel.className = 'spg-wizard-panel';
+  step1Panel.appendChild(quickActionsContainer);
+  step1Panel.appendChild(templatesSection);
+  step1Panel.appendChild(breadcrumb);
+  step1Panel.appendChild(viewContainer);
+  step1Panel.appendChild(selectedDisplay);
+
+  // Step 2 panel — settings & generation
+  const step2Panel = document.createElement('div');
+  step2Panel.className = 'spg-wizard-panel spg-wizard-panel--hidden';
+  step2Panel.appendChild(filtersSection);
+  step2Panel.appendChild(songCountContainer);
+  step2Panel.appendChild(choosePlaylistButton);
+
+  modalContent.appendChild(step1Panel);
+  modalContent.appendChild(step2Panel);
+
+  // Wizard navigation (Back on the left, actions on the right)
+  const wizardNav = document.createElement('div');
+  wizardNav.className = 'spg-wizard-nav';
+
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.className = 'spg-btn spg-btn--ghost';
+  backBtn.textContent = '\u2190 Back';
+  backBtn.style.visibility = 'hidden';
+
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'spg-btn spg-btn--primary';
+  nextBtn.textContent = 'Next \u2192';
+
+  const navRight = document.createElement('div');
+  navRight.className = 'spg-wizard-nav__right';
+  navRight.appendChild(nextBtn);
   if (useSelectedPlaylistButton) {
-    modalContent.appendChild(useSelectedPlaylistButton);
+    navRight.appendChild(useSelectedPlaylistButton);
   }
-  modalContent.appendChild(createButton);
+  navRight.appendChild(createButton);
+
+  wizardNav.appendChild(backBtn);
+  wizardNav.appendChild(navRight);
+  modalContent.appendChild(wizardNav);
+
+  function goToStep(step) {
+    const onStep2 = step === 2;
+    step1Panel.classList.toggle('spg-wizard-panel--hidden', onStep2);
+    step2Panel.classList.toggle('spg-wizard-panel--hidden', !onStep2);
+    backBtn.style.visibility = onStep2 ? 'visible' : 'hidden';
+    nextBtn.style.display = onStep2 ? 'none' : '';
+    createButton.style.display = onStep2 ? '' : 'none';
+    if (useSelectedPlaylistButton) {
+      useSelectedPlaylistButton.style.display = onStep2 ? '' : 'none';
+    }
+    const ind1 = stepper.querySelector('[data-step-indicator="1"]');
+    const ind2 = stepper.querySelector('[data-step-indicator="2"]');
+    if (ind1) ind1.classList.toggle('spg-step--active', !onStep2);
+    if (ind2) ind2.classList.toggle('spg-step--active', onStep2);
+    modalContent.scrollTop = 0;
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (selectedGenres.length === 0) {
+      alert('Please select at least one music style first.');
+      return;
+    }
+    goToStep(2);
+  });
+  backBtn.addEventListener('click', () => goToStep(1));
+
+  goToStep(1);
 
   modalOverlay.appendChild(modalContent);
   document.body.appendChild(modalOverlay);
