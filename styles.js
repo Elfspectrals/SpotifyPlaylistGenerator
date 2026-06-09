@@ -696,71 +696,92 @@ function injectGlobalStyles() {
       100% { transform: scale(1); }
     }
 
-    /*
-     * Bouton principal « AI Playlist » (content.js, aria-label="AI Playlist")
-     * Style proche Spotify : vert #1db954, lisible sur fond sombre / busy UI
-     */
+    /* Bouton principal « AI Playlist » — glass dark + accent vert */
     button.spg-ai-playlist-btn[aria-label="AI Playlist"] {
       box-sizing: border-box;
       display: inline-flex !important;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      min-height: 40px;
-      padding: 10px 16px !important;
+      gap: 7px;
+      min-height: 36px;
+      padding: 8px 14px 8px 12px !important;
       margin: 0 0 0 8px;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !important;
       font-size: 13px !important;
       font-weight: 700 !important;
-      letter-spacing: 0.02em;
-      color: #ffffff !important;
-      background: #1db954 !important;
+      letter-spacing: 0.01em;
+      color: #1ed760 !important;
+      background: rgba(12, 12, 12, 0.88) !important;
       background-image: none !important;
-      border: 1px solid rgba(0, 0, 0, 0.25) !important;
+      border: 1px solid rgba(29, 185, 84, 0.45) !important;
       border-radius: 9999px !important;
       cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.12) inset,
-        0 4px 16px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.06);
-      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 4px 18px rgba(0, 0, 0, 0.35);
+      transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease, color 0.18s ease;
       flex-shrink: 0;
       z-index: 10000;
     }
 
     button.spg-ai-playlist-btn[aria-label="AI Playlist"]:hover:not(:disabled):not(.button-disabled) {
-      background: #1ed760 !important;
+      color: #fff !important;
+      background: rgba(29, 185, 84, 0.22) !important;
+      border-color: rgba(30, 215, 96, 0.75) !important;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.15) inset,
-        0 6px 20px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.08);
+        0 0 0 1px rgba(30, 215, 96, 0.15) inset,
+        0 0 20px rgba(29, 185, 84, 0.25),
+        0 6px 22px rgba(0, 0, 0, 0.4);
+      transform: translateY(-1px);
     }
 
     button.spg-ai-playlist-btn[aria-label="AI Playlist"]:active:not(:disabled):not(.button-disabled) {
-      transform: scale(0.98);
+      transform: translateY(0) scale(0.98);
+    }
+
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"]:disabled,
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"].button-disabled {
+      opacity: 0.45 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
     }
 
     button.spg-ai-playlist-btn[aria-label="AI Playlist"]:focus-visible {
-      outline: 2px solid #ffffff !important;
+      outline: 2px solid #1ed760 !important;
       outline-offset: 3px;
     }
 
-    button.spg-ai-playlist-btn[aria-label="AI Playlist"] svg,
-    button.spg-ai-playlist-btn[aria-label="AI Playlist"] path {
-      fill: #ffffff !important;
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] .spg-ai-playlist-btn__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
+      line-height: 0;
     }
 
-    button.spg-ai-playlist-btn[aria-label="AI Playlist"] span {
-      color: #ffffff !important;
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] .spg-ai-playlist-btn__icon svg {
+      display: block;
     }
 
-    /* Variante flottante (pas de bouton Créer trouvé) : toujours visible */
+    button.spg-ai-playlist-btn[aria-label="AI Playlist"] .spg-ai-playlist-btn__label {
+      color: inherit !important;
+      white-space: nowrap;
+    }
+
     button.spg-ai-playlist-btn.spg-ai-playlist-btn--floating[aria-label="AI Playlist"] {
       position: fixed !important;
       top: 16px !important;
       right: 16px !important;
       margin: 0 !important;
       z-index: 100000 !important;
+      padding: 10px 16px 10px 14px !important;
+      min-height: 40px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 8px 28px rgba(0, 0, 0, 0.5),
+        0 0 24px rgba(29, 185, 84, 0.12);
     }
 
     @media (max-width: 768px) {
@@ -1055,6 +1076,47 @@ function injectGlobalStyles() {
     /* ============================================================
        SPOTIFY AI — RADIO ENGINE UI
        ============================================================ */
+    /* Expandable radio cards (Random / Discovery) */
+    .spg-radiocard {
+      border: 1px solid var(--spg-border);
+      border-radius: 14px;
+      background: var(--spg-surface-2);
+      overflow: hidden;
+      transition: border-color 0.2s var(--spg-ease);
+    }
+    .spg-radiocard:hover { border-color: rgba(255, 255, 255, 0.22); }
+    .spg-radiocard__header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: transparent;
+      border: none;
+      color: var(--spg-text);
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+    }
+    .spg-radiocard__header:hover { background: var(--spg-surface-3); }
+    .spg-radiocard__icon { font-size: 24px; line-height: 1; }
+    .spg-radiocard__text { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .spg-radiocard__title { font-size: 15px; font-weight: 800; }
+    .spg-radiocard__desc { font-size: 12px; color: var(--spg-text-mute); }
+    .spg-radiocard__chev {
+      color: var(--spg-text-mute);
+      font-size: 14px;
+      transition: transform 0.2s var(--spg-ease);
+    }
+    .spg-radiocard__header--open .spg-radiocard__chev { transform: rotate(180deg); }
+    .spg-radiocard__body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 4px 16px 16px;
+    }
+    .spg-radiocard__body--collapsed { display: none; }
+
     .spg-radio { display: flex; flex-direction: column; gap: 14px; }
     .spg-radio__title {
       font-size: 13px;
@@ -1146,6 +1208,7 @@ function injectGlobalStyles() {
       gap: 10px;
     }
     .spg-preset {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1159,8 +1222,29 @@ function injectGlobalStyles() {
       transition: transform 0.12s var(--spg-ease), background 0.15s var(--spg-ease), border-color 0.15s var(--spg-ease);
     }
     .spg-preset:hover { background: var(--spg-surface-3); border-color: var(--spg-green); transform: translateY(-2px); }
+    .spg-preset--custom { border-color: rgba(240, 55, 165, 0.45); }
+    .spg-preset--custom:hover { border-color: var(--spg-pink); }
     .spg-preset__icon { font-size: 24px; line-height: 1; }
-    .spg-preset__label { font-size: 12px; font-weight: 700; text-align: center; }
+    .spg-preset__label { font-size: 12px; font-weight: 700; text-align: center; word-break: break-word; }
+    .spg-preset__del {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--spg-pink);
+      color: #fff;
+      font-size: 14px;
+      line-height: 20px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.15s var(--spg-ease);
+    }
+    .spg-preset:hover .spg-preset__del,
+    .spg-preset__del:hover { opacity: 1; }
+    .spg-preset-save { display: flex; gap: 8px; align-items: center; }
+    .spg-preset-save .spg-input { flex: 1; }
 
     /* Fusion */
     .spg-fusion { display: flex; flex-direction: column; gap: 10px; }
@@ -1179,11 +1263,46 @@ function injectGlobalStyles() {
     }
     .spg-toggle input { width: 18px; height: 18px; accent-color: var(--spg-green); cursor: pointer; }
 
-    /* Era */
-    .spg-era { display: flex; flex-direction: column; gap: 8px; transition: opacity 0.2s var(--spg-ease); }
-    .spg-era--disabled { opacity: 0.4; pointer-events: none; }
+    /* Step 2 settings cards */
+    .spg-settings { display: flex; flex-direction: column; gap: 14px; }
+    .spg-settings__card {
+      border: 1px solid var(--spg-border);
+      border-radius: 14px;
+      background: var(--spg-surface-2);
+      padding: 16px;
+    }
+    .spg-settings__head {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--spg-green-hover);
+    }
+    .spg-settings__body { display: flex; flex-direction: column; gap: 14px; }
+    .spg-settings__sliders { display: flex; flex-direction: column; gap: 12px; }
+
+    /* Era — decade chips + year inputs */
+    .spg-era-pills .spg-pillrow { gap: 6px; }
+    .spg-year-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .spg-year-range--hidden { display: none; }
+    .spg-year-range__label { color: var(--spg-text-mute); font-size: 13px; font-weight: 600; }
+    .spg-year-range__sep { color: var(--spg-text-mute); font-size: 14px; }
+    .spg-input--year { width: 88px; text-align: center; padding: 8px 10px; }
 
     /* Country selector */
+    .spg-locale .spg-country { margin-top: 4px; }
+    .spg-locale .spg-country + .spg-country {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--spg-border);
+    }
     .spg-country { display: flex; flex-direction: column; gap: 10px; }
     .spg-country__chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; }
     .spg-country__empty { color: var(--spg-text-mute); font-size: 13px; }

@@ -29,30 +29,6 @@ const CONFIG = {
     SONG_COUNT_OPTIONS: [3, 5, 8, 10, 15]
   },
 
-  // Templates de playlists
-  PLAYLIST_TEMPLATES: {
-    'Workout': {
-      mood: 'Énergique',
-      icon: '💪'
-    },
-    'Study': {
-      mood: 'Concentré',
-      icon: '📚'
-    },
-    'Party': {
-      mood: 'Festif',
-      icon: '🎉'
-    },
-    'Chill': {
-      mood: 'Détendu',
-      icon: '😌'
-    },
-    'Road Trip': {
-      mood: 'Aventureux',
-      icon: '🚗'
-    }
-  },
-
   // Décennies disponibles
   DECADES: [
     { label: 'Années 60', value: '1960s', icon: '🎸' },
@@ -171,6 +147,27 @@ const CONFIG = {
     { label: 'New Zealand', value: 'New Zealand', flag: '🇳🇿', region: 'Oceania' }
   ],
 
+  // Langues de chant principales — indépendant de l'origine de l'artiste.
+  LANGUAGES: [
+    { label: 'English', value: 'English', flag: '🇬🇧', region: 'Western' },
+    { label: 'French', value: 'French', flag: '🇫🇷', region: 'Western' },
+    { label: 'Spanish', value: 'Spanish', flag: '🇪🇸', region: 'Western' },
+    { label: 'Portuguese', value: 'Portuguese', flag: '🇵🇹', region: 'Western' },
+    { label: 'German', value: 'German', flag: '🇩🇪', region: 'Western' },
+    { label: 'Italian', value: 'Italian', flag: '🇮🇹', region: 'Western' },
+    { label: 'Russian', value: 'Russian', flag: '🇷🇺', region: 'Western' },
+    { label: 'Dutch', value: 'Dutch', flag: '🇳🇱', region: 'Western' },
+    { label: 'Polish', value: 'Polish', flag: '🇵🇱', region: 'Western' },
+    { label: 'Turkish', value: 'Turkish', flag: '🇹🇷', region: 'Western' },
+    { label: 'Chinese', value: 'Chinese', flag: '🇨🇳', region: 'Asian' },
+    { label: 'Japanese', value: 'Japanese', flag: '🇯🇵', region: 'Asian' },
+    { label: 'Korean', value: 'Korean', flag: '🇰🇷', region: 'Asian' },
+    { label: 'Arabic', value: 'Arabic', flag: '🇸🇦', region: 'Asian' },
+    { label: 'Hindi', value: 'Hindi', flag: '🇮🇳', region: 'Asian' },
+    { label: 'Indonesian', value: 'Indonesian', flag: '🇮🇩', region: 'Asian' },
+    { label: 'Instrumental', value: 'Instrumental', flag: '🎻', region: 'Other' }
+  ],
+
   // Tempo / BPM hints (optional, used by the Radio panel)
   TEMPOS: [
     { label: 'Any', value: null },
@@ -206,7 +203,7 @@ const CONFIG = {
     PENDING_PLAYLIST_DATA: 'pendingPlaylistData',
     PENDING_PLAYLIST_ID: 'pendingPlaylistId',
     SELECTED_PLAYLIST: 'selectedPlaylist',
-    CUSTOM_TEMPLATES: 'customPlaylistTemplates'
+    CUSTOM_PRESETS: 'spgCustomVibePresets'
   },
 
   // Sélecteurs DOM
