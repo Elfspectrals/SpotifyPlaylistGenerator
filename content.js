@@ -2050,7 +2050,7 @@ function showMusicGenreModal() {
   `;
 
   // Song count logic
-  let selectedSongCount = 5; // Default song count
+  let selectedSongCount = CONFIG.DEFAULTS.SONG_COUNT;
 
   // Create song count selector
   const songCountContainer = document.createElement('div');
@@ -2083,7 +2083,7 @@ function showMusicGenreModal() {
   `;
 
   // Create song count options
-  const songCounts = [3, 5, 8, 10, 15, 20];
+  const songCounts = CONFIG.DEFAULTS.SONG_COUNT_OPTIONS;
   songCounts.forEach(count => {
     const button = document.createElement('button');
     button.textContent = count.toString();
@@ -2093,8 +2093,8 @@ function showMusicGenreModal() {
       height: 50px;
       border-radius: 50%;
       border: 2px solid #1db954;
-      background: ${count === 5 ? 'linear-gradient(135deg, #1db954, #1ed760)' : 'transparent'};
-      color: ${count === 5 ? 'white' : '#1db954'};
+      background: ${count === CONFIG.DEFAULTS.SONG_COUNT ? 'linear-gradient(135deg, #1db954, #1ed760)' : 'transparent'};
+      color: ${count === CONFIG.DEFAULTS.SONG_COUNT ? 'white' : '#1db954'};
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
@@ -2134,6 +2134,9 @@ function showMusicGenreModal() {
 
     songCountSelector.appendChild(button);
   });
+
+  songCountContainer.appendChild(songCountLabel);
+  songCountContainer.appendChild(songCountSelector);
 
   // Check if there's a selected playlist
   const selectedPlaylist = localStorage.getItem('selectedPlaylist');
