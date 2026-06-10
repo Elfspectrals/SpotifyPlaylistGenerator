@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spotify AI Generator Playlist",
-  "version": "4.2",
+  "version": "4.2.1",
   "description": "🎵 AI-powered playlist generator for Spotify • Choose genres, set song count • Generate unique playlists with AI",
   "permissions": ["storage", "identity"],
   "icons": {
