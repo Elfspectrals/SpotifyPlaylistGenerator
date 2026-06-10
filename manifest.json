@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spotify AI Generator Playlist",
-  "version": "4.1",
+  "version": "4.2",
   "description": "🎵 AI-powered playlist generator for Spotify • Choose genres, set song count • Generate unique playlists with AI",
   "permissions": ["storage", "identity"],
   "icons": {
@@ -12,7 +12,8 @@
   },
   "host_permissions": [
     "https://open.spotify.com/*",
-    "https://accounts.spotify.com/*"
+    "https://accounts.spotify.com/*",
+    "https://polar-ravine-64133-f97528c41675.herokuapp.com/*"
   ],
   "background": {
     "service_worker": "background.js"

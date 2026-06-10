@@ -2925,122 +2925,29 @@ function showMusicGenreModal() {
 
     // Function to add songs to existing playlist
     async function addToExistingPlaylist(playlistData) {
+      const playlistId = getCurrentPlaylistId();
+      if (!playlistId) {
+        alert('No playlist detected. Please make sure you are on a Spotify playlist page.');
+        return;
+      }
+
       try {
-        const playlistId = getCurrentPlaylistId();
-
-        if (!playlistId) {
-          alert('No playlist detected. Please make sure you are on a Spotify playlist page.');
-          return;
-        }
-
         addToPlaylistButton.textContent = '🔐 Connecting to Spotify...';
         addToPlaylistButton.disabled = true;
         addToPlaylistButton.style.opacity = '0.7';
 
-        // Show instructions to the user
-        const authInstructions = document.createElement('div');
-        authInstructions.id = 'auth-instructions';
-        authInstructions.className = 'auth-instructions-modal';
-        authInstructions.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #1a1a1a;
-          color: white;
-          padding: 30px;
-          border-radius: 15px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-          border: 1px solid #333;
-          z-index: 10003;
-          max-width: 500px;
-          text-align: center;
-        `;
-
-        authInstructions.innerHTML = `
-          <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Add to Current Playlist</h3>
-          <p style="margin-bottom: 20px;">Ready to add AI-generated songs to your current playlist!</p>
-          
-          <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; color: #ccc;">Current Playlist ID:</label>
-              <input type="text" value="${playlistId}" readonly style="
-                width: 100%;
-                padding: 8px 12px;
-                border: 1px solid #555;
-                border-radius: 5px;
-                background: #333;
-                color: white;
-                font-size: 14px;
-              " />
-            </div>
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; color: #ccc;">Songs to Add:</label>
-              <div style="color: #1db954; font-weight: bold;">${playlistData.playlist.songs.length} AI-generated songs</div>
-            </div>
-          </div>
-          
-          <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📋 What will happen:</p>
-            <ul style="margin: 0; padding-left: 20px; color: #ccc;">
-              <li>AI-generated songs will be added to your current playlist</li>
-              <li>All songs will be searched and matched on Spotify</li>
-              <li>You'll get a confirmation of how many songs were added</li>
-              <li>Modal will close automatically after completion</li>
-            </ul>
-          </div>
-          <div style="display: flex; gap: 10px; justify-content: center;">
-            <button id="auth-complete-btn" style="
-              background: #1db954;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 20px;
-              cursor: pointer;
-              font-weight: bold;
-            ">Add Songs to Playlist</button>
-            <button id="auth-cancel-btn" style="
-              background: #666;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 20px;
-              cursor: pointer;
-              font-weight: bold;
-            ">Cancel</button>
-          </div>
-        `;
-
-        document.body.appendChild(authInstructions);
-
-        // Handle auth completion (BYO: get token from extension, then add songs)
-        document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          try {
-            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-            const instructionsEl = document.getElementById('auth-instructions');
-            if (instructionsEl) instructionsEl.remove();
-            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
-          } catch (err) {
-            alert(err.message || 'Authentication failed');
-          }
-        });
-
-        // Handle cancel
-        document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          const instructionsEl = document.getElementById('auth-instructions');
-          if (instructionsEl) instructionsEl.remove();
-        });
-
+        const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+        await addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
       } catch (error) {
         alert(error.message || 'Error adding to playlist');
+      } finally {
         addToPlaylistButton.textContent = 'Add to Current Playlist';
         addToPlaylistButton.disabled = false;
         addToPlaylistButton.style.opacity = '1';
       }
     }
 
-    // Function to add songs to existing playlist
+    // Function to add songs to existing playlist via API
     async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
       try {
         // Format data for Spotify
@@ -3097,150 +3004,29 @@ function showMusicGenreModal() {
     });
 
     spotifyButton.addEventListener('click', async () => {
-      try {
-        // Filter songs based on selection
-        if (selectedSongs.size === 0) {
-          alert('Please select at least one song to create the playlist.');
-          return;
+      if (selectedSongs.size === 0) {
+        alert('Please select at least one song to create the playlist.');
+        return;
+      }
+
+      const filteredPlaylistData = {
+        ...playlistData,
+        playlist: {
+          ...playlistData.playlist,
+          songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
         }
+      };
 
-        const filteredPlaylistData = {
-          ...playlistData,
-          playlist: {
-            ...playlistData.playlist,
-            songs: playlistData.playlist.songs.filter((_, index) => selectedSongs.has(index))
-          }
-        };
-
+      try {
         spotifyButton.textContent = '🔐 Connecting to Spotify...';
         spotifyButton.disabled = true;
         spotifyButton.style.opacity = '0.7';
 
-        // Show instructions to the user
-        const authInstructions = document.createElement('div');
-        authInstructions.id = 'auth-instructions';
-        authInstructions.className = 'auth-instructions-modal';
-        authInstructions.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #1a1a1a;
-          color: white;
-          padding: 30px;
-          border-radius: 15px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-          border: 1px solid #333;
-          z-index: 10003;
-          max-width: 500px;
-          text-align: center;
-        `;
-
-        authInstructions.innerHTML = `
-          <h3 style="margin-bottom: 20px; color: #1db954;">🎵 Create Spotify Playlist</h3>
-          <p style="margin-bottom: 20px;">Ready to create your AI-generated playlist on Spotify!</p>
-          
-          <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📝 Playlist Details:</p>
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; color: #ccc;">Playlist Name:</label>
-              <input type="text" id="playlist-name-input" value="${filteredPlaylistData.playlist.name}" style="
-                width: 100%;
-                padding: 8px 12px;
-                border: 1px solid #555;
-                border-radius: 5px;
-                background: #333;
-                color: white;
-                font-size: 14px;
-              " />
-            </div>
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; color: #ccc;">Description:</label>
-              <textarea id="playlist-desc-input" style="
-                width: 100%;
-                padding: 8px 12px;
-                border: 1px solid #555;
-                border-radius: 5px;
-                background: #333;
-                color: white;
-                font-size: 14px;
-                height: 60px;
-                resize: vertical;
-              ">${filteredPlaylistData.playlist.description}</textarea>
-            </div>
-          </div>
-          
-          <div style="background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin-bottom: 10px; color: #1db954; font-weight: bold;">📋 What will happen:</p>
-            <ul style="margin: 0; padding-left: 20px; color: #ccc;">
-              <li>Your playlist will be created on Spotify</li>
-              <li>All the AI-generated songs will be added</li>
-              <li>You'll get a link to open the playlist</li>
-              <li>Modal will close automatically after creation</li>
-            </ul>
-          </div>
-          <div style="display: flex; gap: 10px; justify-content: center;">
-            <button id="auth-complete-btn" style="
-              background: #1db954;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 20px;
-              cursor: pointer;
-              font-weight: bold;
-            ">Create Playlist</button>
-            <button id="auth-cancel-btn" style="
-              background: #666;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 20px;
-              cursor: pointer;
-              font-weight: bold;
-            ">Cancel</button>
-          </div>
-        `;
-
-        document.body.appendChild(authInstructions);
-
-        // Handle auth completion (BYO: get token from extension, then create playlist)
-        document.getElementById('auth-complete-btn').addEventListener('click', async () => {
-          const playlistName = document.getElementById('playlist-name-input').value.trim() || filteredPlaylistData.playlist.name;
-          const playlistDescription = document.getElementById('playlist-desc-input').value.trim() || filteredPlaylistData.playlist.description;
-          try {
-            const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-            const instructionsEl = document.getElementById('auth-instructions');
-            if (instructionsEl) instructionsEl.remove();
-            const modifiedPlaylistData = {
-              ...filteredPlaylistData,
-              playlist: {
-                ...filteredPlaylistData.playlist,
-                name: playlistName,
-                description: playlistDescription
-              }
-            };
-            createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
-          } catch (err) {
-            alert(err.message || 'Authentication failed');
-          }
-        });
-
-        // Handle cancel
-        document.getElementById('auth-cancel-btn').addEventListener('click', () => {
-          const instructionsEl = document.getElementById('auth-instructions');
-          if (instructionsEl) instructionsEl.remove();
-        });
-
+        const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
+        createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
       } catch (error) {
-        window.spgNotify({
-          type: 'error',
-          icon: '\u274C',
-          title: 'Error',
-          body: error.message,
-          autoClose: 0,
-        });
-
-        spotifyButton.textContent = 'Create on Spotify';
+        alert(error.message || 'Authentication failed');
+        spotifyButton.textContent = 'Create New Playlist';
         spotifyButton.disabled = false;
         spotifyButton.style.opacity = '1';
       }

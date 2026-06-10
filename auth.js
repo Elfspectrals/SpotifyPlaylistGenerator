@@ -1,21 +1,51 @@
 // Module de gestion de l'authentification Spotify
 
-// Get token from background (OAuth PKCE with the shared Client ID). Returns { accessToken, refreshToken } or throws.
+const EXTENSION_RELOAD_MSG =
+  'Extension rechargée — actualisez la page Spotify (F5), puis réessayez.';
+
+function isExtensionContextValid() {
+  try {
+    return Boolean(
+      typeof chrome !== 'undefined' &&
+      chrome.runtime &&
+      chrome.runtime.id &&
+      typeof chrome.runtime.sendMessage === 'function'
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+function mapAuthError(message) {
+  const msg = String(message || '');
+  if (
+    msg.includes('Extension context') ||
+    msg.includes('Extension context invalidated') ||
+    msg.includes('context invalidated') ||
+    msg.includes('Receiving end does not exist')
+  ) {
+    return EXTENSION_RELOAD_MSG;
+  }
+  return msg || 'Authentication failed';
+}
+
+// Get token from background (OAuth PKCE). Returns { accessToken, refreshToken } or throws.
 function getSpotifyAccessToken() {
   return new Promise(function (resolve, reject) {
-    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
-      reject(new Error('Extension context not available'));
+    if (!isExtensionContextValid()) {
+      reject(new Error(EXTENSION_RELOAD_MSG));
       return;
     }
+
     chrome.runtime.sendMessage({ type: 'getSpotifyToken' }, function (response) {
       if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message || 'Failed to get token'));
+        reject(new Error(mapAuthError(chrome.runtime.lastError.message)));
         return;
       }
       if (response && response.error) {
         const errMsg = response.error;
         const parts = errMsg.split('|REDIRECT_URI|');
-        reject(new Error(parts[0]));
+        reject(new Error(mapAuthError(parts[0])));
         return;
       }
       if (response && response.accessToken) {
@@ -31,14 +61,12 @@ function getSpotifyAccessToken() {
 async function handleAuthCallback(code) {
   try {
     const { accessToken } = await window.exchangeCodeForToken(code);
-    
-    // Get the pending playlist data
+
     const pendingPlaylistData = JSON.parse(sessionStorage.getItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA));
     if (!pendingPlaylistData) {
       throw new Error('No pending playlist data found');
     }
-    
-    // Import createSpotifyPlaylist from api module
+
     if (typeof window.createSpotifyPlaylistAPI === 'function') {
       await window.createSpotifyPlaylistAPI(accessToken, pendingPlaylistData);
     } else if (typeof createSpotifyPlaylist === 'function') {
@@ -46,26 +74,22 @@ async function handleAuthCallback(code) {
     } else {
       throw new Error('createSpotifyPlaylist function not available');
     }
-    
-    // Clean up
+
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-    
   } catch (error) {
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-    alert('Authentication failed: ' + error.message);
+    alert('Authentication failed: ' + mapAuthError(error.message));
   }
 }
 
-// Initialize auth callback handler if returning from Spotify auth
 function initAuthCallback() {
   if (sessionStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS) === 'true') {
-    // Check if we have auth parameters in the URL
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const error = urlParams.get('error');
-    
+
     if (code) {
       handleAuthCallback(code);
     } else if (error) {
@@ -79,7 +103,6 @@ function initAuthCallback() {
   }
 }
 
-// Listen for messages from auth window (fallback)
 function setupAuthMessageListener() {
   window.addEventListener('message', async (event) => {
     if (event.data && event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
@@ -93,18 +116,18 @@ function setupAuthMessageListener() {
   });
 }
 
-// Exposer les fonctions globalement pour utilisation dans content.js
 window.getSpotifyAccessToken = getSpotifyAccessToken;
+window.isExtensionContextValid = isExtensionContextValid;
 window.handleAuthCallback = handleAuthCallback;
 window.initAuthCallback = initAuthCallback;
 window.setupAuthMessageListener = setupAuthMessageListener;
 
-// Export pour utilisation dans d'autres modules (si Node.js)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    getSpotifyAccessToken,
+    isExtensionContextValid,
     handleAuthCallback,
     initAuthCallback,
-    setupAuthMessageListener
+    setupAuthMessageListener,
   };
 }
-
