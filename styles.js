@@ -127,6 +127,23 @@ function injectGlobalStyles() {
       to { transform: rotate(360deg); }
     }
 
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .ai-toast.warning-notification,
+    .ai-toast.info-notification {
+      top: 20px;
+      right: 20px;
+    }
+
     /* Loading button styles */
     .button-loading {
       position: relative;
@@ -525,7 +542,10 @@ function injectGlobalStyles() {
     /* Notification responsive styles */
     @media (max-width: 768px) {
       .success-notification,
-      .error-notification {
+      .error-notification,
+      .warning-notification,
+      .info-notification,
+      .ai-toast {
         top: 10px !important;
         right: 10px !important;
         left: 10px !important;
@@ -548,7 +568,10 @@ function injectGlobalStyles() {
     
     @media (max-width: 480px) {
       .success-notification,
-      .error-notification {
+      .error-notification,
+      .warning-notification,
+      .info-notification,
+      .ai-toast {
         padding: 12px !important;
         font-size: 13px !important;
       }
