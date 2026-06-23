@@ -4,6 +4,15 @@
 // Injecter les styles globaux (depuis styles.js)
 injectGlobalStyles();
 
+if (window.SPOTIFY_API_MODE !== 'background' || window.SPOTIFY_API_BUILD !== CONFIG.EXTENSION_VERSION) {
+  showToast({
+    type: 'error',
+    title: 'Extension update required',
+    message: 'Go to chrome://extensions, click Reload on this extension, then refresh this Spotify tab.',
+    duration: 0
+  });
+}
+
 // Initialiser l'authentification (depuis auth.js)
 initAuthCallback();
 setupAuthMessageListener();
@@ -18,54 +27,13 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     // Utiliser la fonction du module API
     const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
 
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'success-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-      z-index: 10002;
-      max-width: 400px;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-        <div style="font-weight: bold; font-size: 18px;">Songs Added!</div>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist
-      </div>
-      <div style="margin-bottom: 15px;">
-        <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-          Open Playlist →
-        </a>
-      </div>
-      <button onclick="this.parentElement.remove()" style="
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-      ">Close</button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
+    showToast({
+      type: 'success',
+      title: 'Songs Added!',
+      message: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
+      link: result.playlistUrl,
+      linkLabel: 'Open Playlist'
+    });
 
     // Close the results modal after successful addition
     setTimeout(() => {
@@ -82,7 +50,12 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     reEnableMainAIButton();
 
   } catch (error) {
-    alert('Error adding songs to playlist: ' + error.message);
+    showToast({
+      type: 'error',
+      title: 'Could Not Add Songs',
+      message: error.message,
+      duration: 7000
+    });
 
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
@@ -101,54 +74,13 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     // Utiliser la fonction du module API (appelée via window pour éviter conflit de nom)
     const result = await window.createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken);
 
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'success-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      color: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3);
-      z-index: 10002;
-      max-width: 400px;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-        <div style="font-weight: bold; font-size: 18px;">Playlist Created!</div>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added
-      </div>
-      <div style="margin-bottom: 15px;">
-        <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-          Open in Spotify →
-        </a>
-      </div>
-      <button onclick="this.parentElement.remove()" style="
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 14px;
-      ">Close</button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
+    showToast({
+      type: 'success',
+      title: 'Playlist Created!',
+      message: `${result.tracksAdded}/${result.totalTracks} songs added`,
+      link: result.playlistUrl,
+      linkLabel: 'Open in Spotify'
+    });
 
     // Close the results modal after successful creation
     setTimeout(() => {
@@ -165,7 +97,12 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     reEnableMainAIButton();
 
   } catch (error) {
-    alert('Error creating playlist: ' + error.message);
+    showToast({
+      type: 'error',
+      title: 'Could Not Create Playlist',
+      message: error.message,
+      duration: 7000
+    });
 
     // Re-enable all relevant buttons after error
     toggleButtonsState(false);
@@ -741,7 +678,7 @@ function showChoosePlaylistModal() {
       showPlaylistResultsForAdding(playlistData, playlistId);
 
     } catch (error) {
-      alert('Error generating songs: ' + error.message);
+      showGenerationError(error);
       generateButton.textContent = 'Generate & Add Songs';
       generateButton.disabled = false;
       generateButton.style.opacity = '1';
@@ -1148,11 +1085,16 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       createPlaylistButton.style.opacity = '0.7';
 
       const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-      createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
+      await createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
 
-    } catch (error) {
-      alert(error.message || 'Error creating playlist');
-      createPlaylistButton.textContent = 'Create New Playlist';
+      } catch (error) {
+        showToast({
+          type: 'error',
+          title: 'Could Not Create Playlist',
+          message: error.message,
+          duration: 7000
+        });
+        createPlaylistButton.textContent = 'Create New Playlist';
       createPlaylistButton.disabled = false;
       createPlaylistButton.style.opacity = '1';
     }
@@ -1200,10 +1142,15 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         addToPlaylistButton.style.opacity = '0.7';
 
         const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-        addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
+        await addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
 
       } catch (error) {
-        alert(error.message || 'Error adding to playlist');
+        showToast({
+          type: 'error',
+          title: 'Could Not Add Songs',
+          message: error.message,
+          duration: 7000
+        });
         addToPlaylistButton.textContent = selectedPlaylistName
           ? `Add to Playlist: ${selectedPlaylistName}`
           : 'Add to Current Playlist';
@@ -3788,13 +3735,7 @@ function showMusicGenreModal() {
           showPlaylistResultsForAdding(playlistData, selectedPlaylistData.id);
 
         } catch (error) {
-          if (error.message.includes('Failed to fetch')) {
-            alert(`Server connection error. Please check that the server is running on ${CONFIG.API_BASE_URL}`);
-          } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
-            alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
-          } else {
-            alert(`Error generating playlist: ${error.message}`);
-          }
+          showGenerationError(error);
         } finally {
           // Restore button
           useSelectedPlaylistButton.textContent = `Use Selected Playlist: ${selectedPlaylistData.name}`;
@@ -3856,13 +3797,7 @@ function showMusicGenreModal() {
         showPlaylistResults(playlistData);
 
       } catch (error) {
-        if (error.message.includes('Failed to fetch')) {
-          alert('Server connection error. Please check that the server is running on https://polar-ravine-64133-f97528c41675.herokuapp.com');
-        } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
-          alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
-        } else {
-          alert(`Error generating playlist: ${error.message}`);
-        }
+        showGenerationError(error);
       } finally {
         // Restaurer le bouton
         createButton.textContent = 'Create AI Playlist';
@@ -4472,9 +4407,14 @@ function showMusicGenreModal() {
             const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
             const instructionsEl = document.getElementById('auth-instructions');
             if (instructionsEl) instructionsEl.remove();
-            addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken);
+            addSongsToExistingPlaylistLocal(accessToken, playlistData, playlistId, refreshToken);
           } catch (err) {
-            alert(err.message || 'Authentication failed');
+            showToast({
+              type: 'error',
+              title: 'Authentication Failed',
+              message: err.message,
+              duration: 7000
+            });
           }
         });
 
@@ -4485,88 +4425,44 @@ function showMusicGenreModal() {
         });
 
       } catch (error) {
-        alert(error.message || 'Error adding to playlist');
+        showToast({
+          type: 'error',
+          title: 'Could Not Add Songs',
+          message: error.message,
+          duration: 7000
+        });
         addToPlaylistButton.textContent = 'Add to Current Playlist';
         addToPlaylistButton.disabled = false;
         addToPlaylistButton.style.opacity = '1';
       }
     }
 
-    // Function to add songs to existing playlist
-    async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
+    // Function to add songs to existing playlist (uses global handler + background API)
+    async function addSongsToExistingPlaylistLocal(accessToken, playlistData, playlistId, refreshToken) {
       try {
-        // Format data for Spotify
-        const spotifyPlaylistData = {
-          name: playlistData.playlist.name || 'AI Generated Playlist',
-          description: playlistData.playlist.description || 'Generated by AI',
-          songs: (playlistData.playlist.songs || []).map(song => ({
-            title: song.title,
-            artist: song.artist
-          }))
-        };
-
-        // Utiliser la fonction du module API
         const result = await window.addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, refreshToken);
 
-        // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'success-notification';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-          z-index: 10002;
-          max-width: 400px;
-        `;
+        showToast({
+          type: 'success',
+          title: 'Songs Added!',
+          message: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
+          link: result.playlistUrl,
+          linkLabel: 'Open Playlist'
+        });
 
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <div style="font-size: 24px; margin-right: 10px;">🎵</div>
-            <div style="font-weight: bold; font-size: 18px;">Songs Added!</div>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist
-          </div>
-          <div style="margin-bottom: 15px;">
-            <a href="${result.playlistUrl}" target="_blank" style="color: white; text-decoration: underline;">
-              Open Playlist →
-            </a>
-          </div>
-          <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-          ">Close</button>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-close after 5 seconds
-        setTimeout(() => {
-          if (notification.parentElement) {
-            notification.remove();
-          }
-        }, 5000);
-
-        // Close the results modal after successful addition
         setTimeout(() => {
           const resultsModal = document.getElementById('playlist-results-modal');
           if (resultsModal && resultsModal.parentNode) {
             resultsModal.parentNode.removeChild(resultsModal);
           }
         }, 2000);
-
       } catch (error) {
-        alert('Error adding songs to playlist: ' + error.message);
+        showToast({
+          type: 'error',
+          title: 'Could Not Add Songs',
+          message: error.message,
+          duration: 7000
+        });
       }
     }
 
@@ -4713,7 +4609,12 @@ function showMusicGenreModal() {
             };
             createSpotifyPlaylist(accessToken, modifiedPlaylistData, refreshToken);
           } catch (err) {
-            alert(err.message || 'Authentication failed');
+            showToast({
+              type: 'error',
+              title: 'Authentication Failed',
+              message: err.message,
+              duration: 7000
+            });
           }
         });
 
@@ -4725,43 +4626,12 @@ function showMusicGenreModal() {
 
       } catch (error) {
 
-        // Notification d'erreur plus belle
-        const errorNotification = document.createElement('div');
-        errorNotification.className = 'error-notification';
-        errorNotification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #e74c3c, #c0392b);
-          color: white;
-          padding: 20px;
-          border-radius: 15px;
-          box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
-          z-index: 10002;
-          max-width: 400px;
-          animation: slideIn 0.3s ease;
-        `;
-
-        errorNotification.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <div style="font-size: 24px; margin-right: 10px;">❌</div>
-            <div style="font-weight: bold; font-size: 18px;">Error</div>
-          </div>
-          <div style="margin-bottom: 15px;">
-            ${error.message}
-          </div>
-          <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-          ">Close</button>
-        `;
-
-        document.body.appendChild(errorNotification);
+        showToast({
+          type: 'error',
+          title: 'Could Not Create Playlist',
+          message: error.message,
+          duration: 7000
+        });
 
         spotifyButton.textContent = 'Create on Spotify';
         spotifyButton.disabled = false;
