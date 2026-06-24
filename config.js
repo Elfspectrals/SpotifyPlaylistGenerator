@@ -1,9 +1,6 @@
 // Configuration centralisée pour l'extension Spotify AI Playlist Generator
 
 const CONFIG = {
-  // Extension version (must match manifest.json)
-  EXTENSION_VERSION: '4.2.1',
-
   // URL du serveur backend
   API_BASE_URL: 'https://polar-ravine-64133-f97528c41675.herokuapp.com',
 

@@ -80,16 +80,7 @@ async function handleAuthCallback(code) {
   } catch (error) {
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-    if (typeof showToast === 'function') {
-      showToast({
-        type: 'error',
-        title: 'Authentication Failed',
-        message: mapAuthError(error.message),
-        duration: 7000
-      });
-    } else {
-      alert('Authentication failed: ' + mapAuthError(error.message));
-    }
+    alert('Authentication failed: ' + mapAuthError(error.message));
   }
 }
 
@@ -104,16 +95,7 @@ function initAuthCallback() {
     } else if (error) {
       sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
       sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
-      if (typeof showToast === 'function') {
-        showToast({
-          type: 'error',
-          title: 'Authentication Failed',
-          message: error,
-          duration: 7000
-        });
-      } else {
-        alert('Authentication failed: ' + error);
-      }
+      alert('Authentication failed: ' + error);
     } else {
       sessionStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_IN_PROGRESS);
       sessionStorage.removeItem(CONFIG.STORAGE_KEYS.PENDING_PLAYLIST_DATA);
