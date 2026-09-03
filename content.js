@@ -3165,7 +3165,7 @@ function showMusicGenreModal() {
   };
   const radioSettingsPanel = window.SPG_RADIO.buildSettingsPanel(radioCtx);
   const radioQuickPanel = window.SPG_RADIO.buildQuickPanel(radioCtx);
-  const localePanel = window.SPG_RADIO.buildLocalePanel();
+  const languagePanel = window.SPG_RADIO.buildLanguagePanel();
 
   // Step 1 panel — choose the music
   const step1Panel = document.createElement('div');
@@ -3180,7 +3180,7 @@ function showMusicGenreModal() {
   const step2Panel = document.createElement('div');
   step2Panel.className = 'spg-wizard-panel spg-wizard-panel--hidden';
   step2Panel.appendChild(radioSettingsPanel);
-  step2Panel.appendChild(localePanel);
+  step2Panel.appendChild(languagePanel);
   step2Panel.appendChild(songCountContainer);
   step2Panel.appendChild(choosePlaylistButton);
 

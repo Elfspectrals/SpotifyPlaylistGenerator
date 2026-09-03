@@ -22,21 +22,24 @@ async function apiRequest(url, options = {}) {
 }
 
 // Générer une playlist avec l'IA.
-// Le 3e argument accepte soit un code pays (rétro-compat), soit un objet
-// d'options Radio: { countries, languages, energy, popularity, surprise, era,
-// mood, duration, fusion, vibePrompt, journey, countryOrigin }.
+// Le 3e argument accepte un objet d'options Radio: { energy, popularity,
+// surprise, era, mood, duration, fusion, vibePrompt, journey, languages }.
+// countries / countryOrigin are always sent as "" (origin UI removed).
 async function generatePlaylist(selectedGenres, songCount, optionsOrCountry = null) {
   const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.GENERATE_PLAYLIST}`;
 
   const options = (optionsOrCountry && typeof optionsOrCountry === 'object' && !Array.isArray(optionsOrCountry))
     ? optionsOrCountry
-    : { countryOrigin: optionsOrCountry };
+    : {};
 
   return apiRequest(url, {
     method: 'POST',
     body: JSON.stringify({
       selectedGenres,
       songCount,
+      countries: '',
+      countryOrigin: '',
+      languages: '',
       ...options
     }),
     mode: 'cors',

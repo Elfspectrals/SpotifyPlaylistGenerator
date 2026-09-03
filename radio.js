@@ -1,6 +1,6 @@
 // Radio engine — holds the rich generation settings and builds the UI controls
-// (sliders, vibe presets, genre fusion, roulette, free prompt, time machine,
-// multi-country selector). Reads window.SPG_UI (ui.js) and window.CONFIG.
+// (sliders, vibe presets, genre fusion, roulette, free prompt, time machine).
+// Reads window.SPG_UI (ui.js) and window.CONFIG.
 
 (function () {
   const el = (window.SPG_UI && window.SPG_UI.el) || function (tag, o = {}) {
@@ -28,8 +28,7 @@
     fusion: { a: '', b: '', ratio: 50 },
     vibePrompt: '',
     journey: false,
-    countries: [],  // artist origin (nationality / scene)
-    languages: [], // lyrics / singing language (can differ from origin)
+    languages: [],
   };
 
   function reset() {
@@ -38,16 +37,19 @@
     state.eraEnabled = false; state.eraDecade = null; state.era = { from: 1990, to: 2025 };
     state.fusion = { a: '', b: '', ratio: 50 };
     state.vibePrompt = ''; state.journey = false;
-    state.countries = [];
     state.languages = [];
   }
 
   // Build the payload sent to the backend (omit empty optionals).
+  // countries / countryOrigin stay "" (origin UI removed). languages comes from the picker.
   function getOptions() {
     const opts = {
       energy: state.energy,
       popularity: state.popularity,
       surprise: state.surprise,
+      countries: '',
+      countryOrigin: '',
+      languages: state.languages.length ? state.languages.slice() : '',
     };
     if (state.mood) opts.mood = state.mood;
     if (state.duration) opts.duration = state.duration;
@@ -57,8 +59,6 @@
     }
     if (state.vibePrompt && state.vibePrompt.trim()) opts.vibePrompt = state.vibePrompt.trim();
     if (state.journey) opts.journey = true;
-    if (state.countries.length) opts.countries = state.countries.slice();
-    if (state.languages.length) opts.languages = state.languages.slice();
     return opts;
   }
 
@@ -515,7 +515,7 @@
     return wrap;
   }
 
-  // ---- Generic multi-select picker (countries, languages, …) ---------------
+  // ---- Language multi-select (singing language only; origin removed) --------
   function buildMultiPicker({ items, selected, label, hint, emptyText, searchPlaceholder }) {
     const wrap = el('div', { className: 'spg-country' });
     const chips = el('div', { className: 'spg-country__chips' });
@@ -589,34 +589,23 @@
     return wrap;
   }
 
-  function buildCountrySelector() {
-    return buildMultiPicker({
-      items: (window.CONFIG && CONFIG.COUNTRIES) || [],
-      selected: state.countries,
-      label: '🌍 Artist origin',
-      hint: 'Where artists come from (nationality / scene) — optional',
-      emptyText: '🌍 Any origin (global mix)',
-      searchPlaceholder: '🔎 Search a country…',
-    });
-  }
-
   function buildLanguageSelector() {
     return buildMultiPicker({
       items: (window.CONFIG && CONFIG.LANGUAGES) || [],
       selected: state.languages,
       label: '🗣️ Singing language',
-      hint: 'Language of the lyrics — can differ from origin (e.g. French artist → English lyrics)',
+      hint: 'Language of the lyrics / vocals — optional',
       emptyText: '🗣️ Any language',
       searchPlaceholder: '🔎 Search a language…',
     });
   }
 
-  function buildLocalePanel() {
+  function buildLanguagePanel() {
     return el('section', {
       className: 'spg-settings__card spg-locale',
       children: [
-        el('h3', { className: 'spg-settings__head', text: '🌍 Origin & Language' }),
-        el('div', { className: 'spg-settings__body', children: [buildCountrySelector(), buildLanguageSelector()] }),
+        el('h3', { className: 'spg-settings__head', text: '🗣️ Language' }),
+        el('div', { className: 'spg-settings__body', children: [buildLanguageSelector()] }),
       ],
     });
   }
@@ -628,8 +617,7 @@
     buildRadioCard,
     buildQuickPanel,
     buildSettingsPanel,
-    buildCountrySelector,
     buildLanguageSelector,
-    buildLocalePanel,
+    buildLanguagePanel,
   };
 })();

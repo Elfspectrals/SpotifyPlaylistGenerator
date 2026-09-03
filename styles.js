@@ -1296,13 +1296,8 @@ function injectGlobalStyles() {
     .spg-year-range__sep { color: var(--spg-text-mute); font-size: 14px; }
     .spg-input--year { width: 88px; text-align: center; padding: 8px 10px; }
 
-    /* Country selector */
+    /* Language multi-select */
     .spg-locale .spg-country { margin-top: 4px; }
-    .spg-locale .spg-country + .spg-country {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--spg-border);
-    }
     .spg-country { display: flex; flex-direction: column; gap: 10px; }
     .spg-country__chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; }
     .spg-country__empty { color: var(--spg-text-mute); font-size: 13px; }
