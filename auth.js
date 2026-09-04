@@ -105,13 +105,20 @@ function initAuthCallback() {
 
 function setupAuthMessageListener() {
   window.addEventListener('message', async (event) => {
-    if (event.data && event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
-      const { accessToken, playlistData } = event.data;
-      if (typeof window.createSpotifyPlaylistAPI === 'function') {
-        await window.createSpotifyPlaylistAPI(accessToken, playlistData);
-      } else if (typeof createSpotifyPlaylist === 'function') {
-        await createSpotifyPlaylist(accessToken, playlistData);
-      }
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+    if (!event.data || event.data.type !== 'SPOTIFY_AUTH_SUCCESS') {
+      return;
+    }
+    const { accessToken, playlistData } = event.data;
+    if (!accessToken || accessToken === 'spotapi-authenticated' || !playlistData) {
+      return;
+    }
+    if (typeof window.createSpotifyPlaylistAPI === 'function') {
+      await window.createSpotifyPlaylistAPI(accessToken, playlistData);
+    } else if (typeof createSpotifyPlaylist === 'function') {
+      await createSpotifyPlaylist(accessToken, playlistData);
     }
   });
 }

@@ -109,20 +109,21 @@ async function createSpotifyPlaylistAPI(accessToken, playlistData, refreshToken 
   };
   
   try {
-    // For SpotAPI, accessToken can be 'spotapi-authenticated' or null
-    const tokenToSend = accessToken || 'spotapi-authenticated';
-    
+    if (!accessToken || accessToken === 'spotapi-authenticated') {
+      throw new Error('Missing Spotify access token');
+    }
+
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        accessToken: tokenToSend, 
+        accessToken, 
         playlistData: spotifyPlaylistData 
       })
     });
     
     // If token expired, try to refresh it (only for OAuth mode)
-    if (!response.ok && refreshToken && accessToken !== 'spotapi-authenticated') {
+    if (response.status === 401 && refreshToken) {
       try {
         const { accessToken: newAccessToken } = await refreshSpotifyToken(refreshToken);
         
@@ -167,21 +168,22 @@ async function addSongsToSpotifyPlaylist(accessToken, playlistId, playlistData, 
   };
   
   try {
-    // For SpotAPI, accessToken can be 'spotapi-authenticated' or null
-    const tokenToSend = accessToken || 'spotapi-authenticated';
-    
+    if (!accessToken || accessToken === 'spotapi-authenticated') {
+      throw new Error('Missing Spotify access token');
+    }
+
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        accessToken: tokenToSend, 
+        accessToken, 
         playlistId,
         playlistData: spotifyPlaylistData 
       })
     });
     
     // If token expired, try to refresh it (only for OAuth mode)
-    if (!response.ok && refreshToken && accessToken !== 'spotapi-authenticated') {
+    if (response.status === 401 && refreshToken) {
       try {
         const { accessToken: newAccessToken } = await refreshSpotifyToken(refreshToken);
         

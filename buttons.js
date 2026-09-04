@@ -8,6 +8,13 @@ function toggleButtonsState(disabled = true, showLoading = true) {
     if (button.getAttribute('aria-label') === 'AI Playlist') {
       return; // Skip this button, keep it enabled
     }
+
+    const isExtensionButton = button.closest('#ai-playlist-modal')
+      || button.closest('#playlist-results-modal')
+      || button.closest('#choose-playlist-modal');
+    if (!isExtensionButton) {
+      return;
+    }
     
     if (button.textContent && (
       button.textContent.includes('Add to Current Playlist') ||
