@@ -90,10 +90,10 @@ function toggleButtonsState(disabled = true, showLoading = true) {
           button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
           button.style.color = 'white';
         } else if (button.textContent.includes('Use Selected Playlist')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
           button.style.color = 'white';
         } else if (button.textContent.includes('Generate') || button.textContent.includes('AI Generation')) {
-          button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+          button.style.background = 'linear-gradient(135deg, #1db954, #1ed760)';
           button.style.color = 'white';
         }
         

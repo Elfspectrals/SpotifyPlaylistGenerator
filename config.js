@@ -29,30 +29,6 @@ const CONFIG = {
     SONG_COUNT_OPTIONS: [3, 5, 8, 10, 15]
   },
 
-  // Templates de playlists
-  PLAYLIST_TEMPLATES: {
-    'Workout': {
-      mood: 'Énergique',
-      icon: '💪'
-    },
-    'Study': {
-      mood: 'Concentré',
-      icon: '📚'
-    },
-    'Party': {
-      mood: 'Festif',
-      icon: '🎉'
-    },
-    'Chill': {
-      mood: 'Détendu',
-      icon: '😌'
-    },
-    'Road Trip': {
-      mood: 'Aventureux',
-      icon: '🚗'
-    }
-  },
-
   // Décennies disponibles
   DECADES: [
     { label: 'Années 60', value: '1960s', icon: '🎸' },
@@ -81,20 +57,45 @@ const CONFIG = {
     { label: 'Longue (60+ min)', value: 'long', icon: '⏳' }
   ],
 
-  // Pays d'origine disponibles
-  COUNTRIES: [
-    { label: 'Any Country', value: null, icon: '🌍', flag: '' },
-    { label: 'France', value: 'FR', icon: '🇫🇷', flag: 'FR' },
-    { label: 'Germany', value: 'GER', icon: '🇩🇪', flag: 'GER' },
-    { label: 'United Kingdom', value: 'ENG', icon: '🇬🇧', flag: 'ENG' },
-    { label: 'United States', value: 'US', icon: '🇺🇸', flag: 'US' },
-    { label: 'Canada', value: 'CA', icon: '🇨🇦', flag: 'CA' },
-    { label: 'Spain', value: 'ES', icon: '🇪🇸', flag: 'ES' },
-    { label: 'Italy', value: 'IT', icon: '🇮🇹', flag: 'IT' },
-    { label: 'Japan', value: 'JP', icon: '🇯🇵', flag: 'JP' },
-    { label: 'South Korea', value: 'KR', icon: '🇰🇷', flag: 'KR' },
-    { label: 'Brazil', value: 'BR', icon: '🇧🇷', flag: 'BR' },
-    { label: 'Australia', value: 'AU', icon: '🇦🇺', flag: 'AU' }
+  // Langues de chant principales (lyrics / vocals).
+  LANGUAGES: [
+    { label: 'English', value: 'English', flag: '🇬🇧', region: 'Western' },
+    { label: 'French', value: 'French', flag: '🇫🇷', region: 'Western' },
+    { label: 'Spanish', value: 'Spanish', flag: '🇪🇸', region: 'Western' },
+    { label: 'Portuguese', value: 'Portuguese', flag: '🇵🇹', region: 'Western' },
+    { label: 'German', value: 'German', flag: '🇩🇪', region: 'Western' },
+    { label: 'Italian', value: 'Italian', flag: '🇮🇹', region: 'Western' },
+    { label: 'Russian', value: 'Russian', flag: '🇷🇺', region: 'Western' },
+    { label: 'Dutch', value: 'Dutch', flag: '🇳🇱', region: 'Western' },
+    { label: 'Polish', value: 'Polish', flag: '🇵🇱', region: 'Western' },
+    { label: 'Turkish', value: 'Turkish', flag: '🇹🇷', region: 'Western' },
+    { label: 'Chinese', value: 'Chinese', flag: '🇨🇳', region: 'Asian' },
+    { label: 'Japanese', value: 'Japanese', flag: '🇯🇵', region: 'Asian' },
+    { label: 'Korean', value: 'Korean', flag: '🇰🇷', region: 'Asian' },
+    { label: 'Arabic', value: 'Arabic', flag: '🇸🇦', region: 'Asian' },
+    { label: 'Hindi', value: 'Hindi', flag: '🇮🇳', region: 'Asian' },
+    { label: 'Indonesian', value: 'Indonesian', flag: '🇮🇩', region: 'Asian' },
+    { label: 'Instrumental', value: 'Instrumental', flag: '🎻', region: 'Other' }
+  ],
+
+  // Tempo / BPM hints (optional, used by the Radio panel)
+  TEMPOS: [
+    { label: 'Any', value: null },
+    { label: 'Slow', value: 'slow' },
+    { label: 'Mid', value: 'mid' },
+    { label: 'Fast', value: 'fast' }
+  ],
+
+  // Curated vibe presets (one click sets genres + radio knobs)
+  VIBE_PRESETS: [
+    { label: '3 A.M. Drive', icon: '🌃', genres: ['Synthwave', 'Trip Hop', 'Lo-Fi'], energy: 35, popularity: 45, surprise: 55, mood: 'relaxing' },
+    { label: 'Boss Fight', icon: '🎮', genres: ['Metal', 'Electronic', 'Industrial'], energy: 95, popularity: 50, surprise: 60, mood: 'energetic' },
+    { label: 'Sunday Café', icon: '☕', genres: ['Jazz', 'Bossa Nova', 'Soul'], energy: 25, popularity: 55, surprise: 40, mood: 'relaxing' },
+    { label: 'Heartbreak', icon: '💔', genres: ['Indie', 'Singer-Songwriter', 'Soul'], energy: 30, popularity: 50, surprise: 45, mood: 'melancholic' },
+    { label: 'Workout Beast', icon: '💪', genres: ['Hip Hop', 'EDM', 'Trap'], energy: 90, popularity: 70, surprise: 35, mood: 'motivational' },
+    { label: 'Festival Peak', icon: '🎉', genres: ['House', 'Pop', 'Dance'], energy: 85, popularity: 80, surprise: 40, mood: 'festive' },
+    { label: 'Deep Focus', icon: '🧠', genres: ['Ambient', 'Classical', 'IDM'], energy: 20, popularity: 35, surprise: 50, mood: 'relaxing' },
+    { label: 'Rebel Yell', icon: '🤘', genres: ['Punk', 'Garage Rock', 'Post-Punk'], energy: 88, popularity: 40, surprise: 65, mood: 'energetic' }
   ],
 
   // Genres rares pour le mode Découverte
@@ -112,7 +113,7 @@ const CONFIG = {
     PENDING_PLAYLIST_DATA: 'pendingPlaylistData',
     PENDING_PLAYLIST_ID: 'pendingPlaylistId',
     SELECTED_PLAYLIST: 'selectedPlaylist',
-    CUSTOM_TEMPLATES: 'customPlaylistTemplates'
+    CUSTOM_PRESETS: 'spgCustomVibePresets'
   },
 
   // Sélecteurs DOM

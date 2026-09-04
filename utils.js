@@ -33,10 +33,18 @@ function restoreButton(button) {
 // Utility function to re-enable the main AI Playlist button
 function reEnableMainAIButton() {
   const mainAIButton = document.querySelector('button[aria-label="AI Playlist"]');
-  if (mainAIButton) {
-    restoreButton(mainAIButton);
-  } else {
-  }
+  if (!mainAIButton) return;
+  delete mainAIButton.dataset.originalText;
+  mainAIButton.disabled = false;
+  mainAIButton.style.opacity = '1';
+  mainAIButton.style.cursor = 'pointer';
+  mainAIButton.style.pointerEvents = 'auto';
+  mainAIButton.style.transform = '';
+  mainAIButton.style.boxShadow = '';
+  mainAIButton.style.filter = 'none';
+  mainAIButton.style.border = '';
+  mainAIButton.style.background = '';
+  mainAIButton.classList.remove('button-disabled', 'button-loading', 'button-pulse');
 }
 
 // Wait for an element to appear in the DOM
