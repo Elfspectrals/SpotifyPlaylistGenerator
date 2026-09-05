@@ -8,6 +8,22 @@ injectGlobalStyles();
 initAuthCallback();
 setupAuthMessageListener();
 
+function errorMessage(error) {
+  return String((error && error.message) || error || '');
+}
+
+function normalizePlaylistSongs(playlistData) {
+  if (!playlistData || !playlistData.playlist) return null;
+  if (!Array.isArray(playlistData.playlist.songs)) {
+    playlistData.playlist.songs = [];
+  }
+  return playlistData;
+}
+
+function isSpotifyEditorialPlaylistId(playlistId) {
+  return typeof playlistId === 'string' && playlistId.startsWith('37i9');
+}
+
 // Global function to add songs to existing playlist via API
 async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
   try {
@@ -34,19 +50,10 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
       }
     }, 2000);
 
-    // Re-enable all buttons after successful operation
-    toggleButtonsState(false);
-
-    // Specifically re-enable the main AI Playlist button
-    reEnableMainAIButton();
-
   } catch (error) {
-    alert('Error adding songs to playlist: ' + error.message);
-
-    // Re-enable all relevant buttons after error
+    alert('Error adding songs to playlist: ' + errorMessage(error));
+  } finally {
     toggleButtonsState(false);
-
-    // Specifically re-enable the main AI Playlist button
     reEnableMainAIButton();
   }
 }
@@ -76,16 +83,9 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
       }
     }, 2000); // Close after 2 seconds to let user see the success notification
 
-    // Re-enable all buttons after successful operation
-    toggleButtonsState(false);
-
-    // Specifically re-enable the main AI Playlist button
-    reEnableMainAIButton();
-
   } catch (error) {
-    alert('Error creating playlist: ' + error.message);
-
-    // Re-enable all relevant buttons after error
+    alert('Error creating playlist: ' + errorMessage(error));
+  } finally {
     toggleButtonsState(false);
 
     // Specifically re-enable the main AI Playlist button
@@ -194,10 +194,16 @@ function addChoosePlaylistButton() {
   }
 }
 
+let playlistChangeObserverStarted = false;
+
 // Function to set up observer for playlist changes
 function setupPlaylistChangeObserver() {
+  if (playlistChangeObserverStarted) {
+    return;
+  }
+  playlistChangeObserverStarted = true;
+
   let currentPlaylistId = null;
-  let saveTimeout = null;
   let buttonTimeout = null;
 
   // Get current playlist ID
@@ -216,22 +222,8 @@ function setupPlaylistChangeObserver() {
     if (newPlaylistMatch) {
       const newPlaylistId = newPlaylistMatch[1];
 
-      // If we're on a different playlist, update the selected playlist automatically
-      // BUT only if the user has already selected a playlist before
       if (currentPlaylistId !== newPlaylistId) {
         currentPlaylistId = newPlaylistId;
-
-        // Only auto-save if user has previously selected a playlist
-        const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
-        if (hasSelectedPlaylist) {
-          // Clear existing timeout and set new one (debounce)
-          if (saveTimeout) {
-            clearTimeout(saveTimeout);
-          }
-          saveTimeout = setTimeout(() => {
-            saveCurrentPlaylist(false); // Silent save, no notification
-          }, 2000); // Wait 2 seconds to avoid spam
-        }
       }
     }
 
@@ -275,18 +267,6 @@ function setupPlaylistChangeObserver() {
         const newPlaylistMatch = window.location.href.match(/\/playlist\/([a-zA-Z0-9]+)/);
         if (newPlaylistMatch && newPlaylistMatch[1] !== currentPlaylistId) {
           currentPlaylistId = newPlaylistMatch[1];
-
-          // Only auto-save if user has previously selected a playlist
-          const hasSelectedPlaylist = localStorage.getItem('selectedPlaylist');
-          if (hasSelectedPlaylist) {
-            // Use the same debounced save function
-            if (saveTimeout) {
-              clearTimeout(saveTimeout);
-            }
-            saveTimeout = setTimeout(() => {
-              saveCurrentPlaylist(false); // Silent save, no notification
-            }, 2000);
-          }
         }
       }
     }, 500); // Wait 500ms to avoid spam
@@ -302,6 +282,10 @@ function saveCurrentPlaylist(showNotification = true) {
 
     if (playlistMatch) {
       const playlistId = playlistMatch[1];
+      if (isSpotifyEditorialPlaylistId(playlistId)) {
+        alert('This Spotify playlist cannot be modified. Choose one of your own playlists.');
+        return;
+      }
 
       // Get playlist name from the page - try multiple selectors for better reliability
       let playlistName = 'Selected Playlist';
@@ -671,6 +655,16 @@ function showChoosePlaylistModal() {
 
 // Function to show playlist results for adding to existing playlist
 function showPlaylistResultsForAdding(playlistData, playlistId) {
+  playlistData = normalizePlaylistSongs(playlistData);
+  if (!playlistData) {
+    alert('No playlist data received.');
+    return;
+  }
+  if (playlistData.playlist.songs.length === 0) {
+    alert('No songs found. Try different filters or generate again.');
+    return;
+  }
+
   // Close all existing modals
   const existingModal = document.getElementById('ai-playlist-modal');
   const existingResultsModal = document.getElementById('playlist-results-modal');
@@ -997,10 +991,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
       createPlaylistButton.style.opacity = '0.7';
 
       const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-      createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
+      await createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
 
     } catch (error) {
-      alert(error.message || 'Error creating playlist');
+      alert(errorMessage(error) || 'Error creating playlist');
+    } finally {
       createPlaylistButton.textContent = 'Create New Playlist';
       createPlaylistButton.disabled = false;
       createPlaylistButton.style.opacity = '1';
@@ -1039,10 +1034,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         addToPlaylistButton.style.opacity = '0.7';
 
         const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-        addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
+        await addSongsToExistingPlaylist(accessToken, filteredPlaylistData, playlistId, refreshToken);
 
       } catch (error) {
-        alert(error.message || 'Error adding to playlist');
+        alert(errorMessage(error) || 'Error adding to playlist');
+      } finally {
         addToPlaylistButton.textContent = selectedPlaylistName
           ? `Add to Playlist: ${selectedPlaylistName}`
           : 'Add to Current Playlist';
@@ -2334,15 +2330,16 @@ function showMusicGenreModal() {
           showPlaylistResultsForAdding(playlistData, selectedPlaylistData.id);
 
         } catch (error) {
-          if (error.message.includes('Failed to fetch')) {
+          const errMsg = errorMessage(error);
+          if (errMsg.includes('Failed to fetch')) {
             alert(`Server connection error. Please check that the server is running on ${CONFIG.API_BASE_URL}`);
-          } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
+          } else if (errMsg.includes('Tous les modèles Gemini sont indisponibles') || errMsg.includes('models/gemini-1.5-pro is not found')) {
             alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
           } else {
-            alert(`Error generating playlist: ${error.message}`);
+            alert(`Error generating playlist: ${errMsg}`);
           }
         } finally {
-          // Restore button
+          toggleButtonsState(false);
           useSelectedPlaylistButton.textContent = `Use Selected Playlist: ${selectedPlaylistData.name}`;
           useSelectedPlaylistButton.disabled = false;
           useSelectedPlaylistButton.style.opacity = '1';
@@ -2403,12 +2400,13 @@ function showMusicGenreModal() {
         showPlaylistResults(playlistData);
 
       } catch (error) {
-        if (error.message.includes('Failed to fetch')) {
+        const errMsg = errorMessage(error);
+        if (errMsg.includes('Failed to fetch')) {
           alert('Server connection error. Please check that the server is running on https://polar-ravine-64133-f97528c41675.herokuapp.com');
-        } else if (error.message.includes('Tous les modèles Gemini sont indisponibles') || error.message.includes('models/gemini-1.5-pro is not found')) {
+        } else if (errMsg.includes('Tous les modèles Gemini sont indisponibles') || errMsg.includes('models/gemini-1.5-pro is not found')) {
           alert('🚫 We got a problem with our AI service. Please come back later when our AI models are available again. Sorry for the inconvenience!');
         } else {
-          alert(`Error generating playlist: ${error.message}`);
+          alert(`Error generating playlist: ${errMsg}`);
         }
       } finally {
         // Restaurer le bouton
@@ -2588,6 +2586,16 @@ function showMusicGenreModal() {
 
   // Function to show playlist results
   function showPlaylistResults(playlistData) {
+    playlistData = normalizePlaylistSongs(playlistData);
+    if (!playlistData) {
+      alert('No playlist data received.');
+      return;
+    }
+    if (playlistData.playlist.songs.length === 0) {
+      alert('No songs found. Try different filters or generate again.');
+      return;
+    }
+
     // Close all existing modals
     const existingModal = document.getElementById('ai-playlist-modal');
     const existingResultsModal = document.getElementById('playlist-results-modal');
@@ -3023,9 +3031,10 @@ function showMusicGenreModal() {
         spotifyButton.style.opacity = '0.7';
 
         const { accessToken, refreshToken } = await window.getSpotifyAccessToken();
-        createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
+        await createSpotifyPlaylist(accessToken, filteredPlaylistData, refreshToken);
       } catch (error) {
-        alert(error.message || 'Authentication failed');
+        alert(errorMessage(error) || 'Authentication failed');
+      } finally {
         spotifyButton.textContent = 'Create New Playlist';
         spotifyButton.disabled = false;
         spotifyButton.style.opacity = '1';
@@ -3040,7 +3049,9 @@ function showMusicGenreModal() {
     actionButtons.appendChild(closeButton);
     actionButtons.appendChild(copyButton);
     actionButtons.appendChild(spotifyButton);
-    actionButtons.appendChild(addToPlaylistButton);
+    if (getCurrentPlaylistId()) {
+      actionButtons.appendChild(addToPlaylistButton);
+    }
     resultsContent.appendChild(actionButtons);
     resultsModal.appendChild(resultsContent);
     document.body.appendChild(resultsModal);
@@ -3154,7 +3165,7 @@ function showMusicGenreModal() {
     onDurationPick: (duration) => {
       if (duration === 'short') selectedSongCount = 5;
       else if (duration === 'medium') selectedSongCount = 10;
-      else if (duration === 'long') selectedSongCount = 20;
+      else if (duration === 'long') selectedSongCount = 15;
       songCountSelector.querySelectorAll('.song-count-btn').forEach((btn) => {
         const count = parseInt(btn.textContent, 10);
         const active = count === selectedSongCount;
@@ -3310,10 +3321,8 @@ function cleanupDuplicateButtons() {
     }
   });
 
-  // Only restore if we're on a playlist page AND no Create button exists
-  if (window.location.href.includes('/playlist/') && !mainAIButton && !hasCreateButton) {
+  if (!mainAIButton && !hasCreateButton) {
     addAIPlaylistButton();
-  } else if (window.location.href.includes('/playlist/') && hasCreateButton) {
   }
 
   // Ensure main AI Playlist button is always enabled
@@ -3336,8 +3345,8 @@ if (document.readyState === 'loading') {
 } else {
   cleanupDuplicateButtons();
   addAIPlaylistButton();
-  watchForPageChanges();
+  watchForPageChangesWrapper();
 
   // Periodic cleanup to prevent duplicates
-  setInterval(cleanupDuplicateButtons, 5000); // Every 5 seconds
+  setInterval(cleanupDuplicateButtons, CONFIG.TIMEOUTS.CLEANUP_INTERVAL);
 }
