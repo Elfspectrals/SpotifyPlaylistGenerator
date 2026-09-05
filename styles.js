@@ -34,7 +34,9 @@ function injectGlobalStyles() {
       to   { opacity: 1; transform: translateY(0) scale(1); }
     }
     #ai-playlist-modal { animation: spgOverlayIn 0.22s var(--spg-ease); }
-    #ai-playlist-modal .modal-content {
+    #ai-playlist-modal .modal-content,
+    #choose-playlist-modal .modal-content {
+      position: relative;
       animation: spgModalIn 0.32s var(--spg-ease);
       scrollbar-width: thin;
       scrollbar-color: var(--spg-surface-3) transparent;
@@ -188,35 +190,37 @@ function injectGlobalStyles() {
     }
 
     .song-album {
-      color: #888;
+      color: var(--spg-text-mute);
       font-size: 14px;
       margin-bottom: 3px;
       font-style: italic;
     }
 
     .song-genre {
-      color: #999;
+      color: var(--spg-text-mute);
       font-size: 14px;
     }
 
     .song-duration {
-      color: #666;
+      color: var(--spg-text-mute);
       font-size: 12px;
       margin-top: 3px;
     }
 
     .song-number {
-      color: #666;
+      color: var(--spg-text-mute);
       font-size: 14px;
       margin-left: 15px;
     }
 
-    /* Tooltip styles for quick action buttons */
-    button[title] {
+    /* Tooltip styles for extension controls only */
+    #ai-playlist-modal button[title],
+    .spg-preset[title] {
       position: relative;
     }
 
-    button[title]:hover::after {
+    #ai-playlist-modal button[title]:hover::after,
+    .spg-preset[title]:hover::after {
       content: attr(title);
       position: absolute;
       bottom: 100%;
@@ -234,7 +238,8 @@ function injectGlobalStyles() {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    button[title]:hover::before {
+    #ai-playlist-modal button[title]:hover::before,
+    .spg-preset[title]:hover::before {
       content: '';
       position: absolute;
       bottom: 100%;
@@ -339,8 +344,8 @@ function injectGlobalStyles() {
       
       #view-container {
         width: 100% !important;
-        height: 400px !important;
-        max-width: 350px;
+        height: auto !important;
+        max-width: 100%;
       }
       
       .family-button {
@@ -438,8 +443,8 @@ function injectGlobalStyles() {
       }
       
       #view-container {
-        height: 300px !important;
-        max-width: 280px;
+        height: auto !important;
+        max-width: 100%;
       }
       
       .family-button {
@@ -787,7 +792,7 @@ function injectGlobalStyles() {
     @media (max-width: 768px) {
       button.spg-ai-playlist-btn.spg-ai-playlist-btn--floating[aria-label="AI Playlist"] {
         top: auto !important;
-        bottom: 20px !important;
+        bottom: 96px !important;
         right: 16px !important;
       }
     }

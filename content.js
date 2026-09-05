@@ -616,7 +616,9 @@ function showChoosePlaylistModal() {
 
   // Close button
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = '✕';
+  closeButton.type = 'button';
+  closeButton.setAttribute('aria-label', 'Close');
+  closeButton.textContent = '✕';
   closeButton.style.cssText = `
     position: absolute;
     top: 15px;
@@ -1493,6 +1495,7 @@ function showMusicGenreModal() {
   const modalContent = document.createElement('div');
   modalContent.className = 'modal-content';
   modalContent.style.cssText = `
+    position: relative;
     background: #1a1a1a;
     border-radius: 20px;
     padding: 40px;
@@ -1607,15 +1610,34 @@ function showMusicGenreModal() {
   // Container for current view
   const viewContainer = document.createElement('div');
   viewContainer.id = 'view-container';
-  viewContainer.style.cssText = `
-    position: relative;
-    width: 600px;
-    height: 600px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  `;
+
+  function setFamilyGridLayout() {
+    viewContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 640px;
+      height: auto;
+      margin: 0 auto;
+      position: relative;
+    `;
+  }
+
+  function setSubgenreLayout() {
+    viewContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 640px;
+      height: auto;
+      margin: 0 auto;
+      position: relative;
+    `;
+  }
+
+  setFamilyGridLayout();
 
   // Track selected genres and current view
   let selectedGenres = [];
@@ -1623,60 +1645,51 @@ function showMusicGenreModal() {
 
   // Function to create family buttons
   function createFamilyButtons() {
+    setFamilyGridLayout();
     viewContainer.innerHTML = '';
     const families = Object.keys(musicFamilies);
-    const angleStep = 360 / families.length;
 
-    families.forEach((familyName, index) => {
+    families.forEach((familyName) => {
       const family = musicFamilies[familyName];
       const button = document.createElement('button');
+      button.type = 'button';
       button.className = 'family-button';
-      button.innerHTML = `
-        <div style="font-size: 28px; margin-bottom: 5px;">${family.icon}</div>
-        <div style="font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1;">${familyName}</div>
-      `;
+      button.title = familyName;
 
-      const angle = index * angleStep;
-      // Responsive radius based on screen size
-      const screenWidth = window.innerWidth;
-      const radius = screenWidth <= 480 ? 120 : screenWidth <= 768 ? 150 : 200;
-      const x = Math.cos(angle * Math.PI / 180) * radius;
-      const y = Math.sin(angle * Math.PI / 180) * radius;
+      const icon = document.createElement('div');
+      icon.style.cssText = 'font-size: 22px; margin-bottom: 6px;';
+      icon.textContent = family.icon;
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;';
+      label.textContent = familyName;
+      button.appendChild(icon);
+      button.appendChild(label);
 
       button.style.cssText = `
-        position: absolute;
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
+        width: 100%;
+        min-height: 88px;
+        border-radius: 14px;
         border: 2px solid ${family.color};
         background: linear-gradient(135deg, ${family.color}20, ${family.color}40);
         color: #fff;
         cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translate(${x}px, ${y}px);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        padding: 10px 8px;
         box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
-        font-size: 12px;
-        z-index: 1;
       `;
 
       button.addEventListener('mouseenter', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1.3)`;
-        button.style.boxShadow = `0 12px 35px ${family.color}80, 0 6px 20px rgba(0, 0, 0, 0.4)`;
-        button.style.zIndex = '10';
-        button.style.border = `3px solid ${family.color}`;
-        button.style.background = `linear-gradient(135deg, ${family.color}40, ${family.color}60)`;
+        button.style.transform = 'translateY(-2px)';
+        button.style.boxShadow = `0 8px 20px ${family.color}66`;
       });
 
       button.addEventListener('mouseleave', () => {
-        button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+        button.style.transform = 'none';
         button.style.boxShadow = '0 3px 12px rgba(0, 0, 0, 0.3)';
-        button.style.zIndex = '1';
-        button.style.border = `2px solid ${family.color}`;
-        button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
       });
 
       button.addEventListener('click', () => {
@@ -1685,63 +1698,70 @@ function showMusicGenreModal() {
 
       viewContainer.appendChild(button);
     });
-
-    // Center AI icon
-    const centerCircle = document.createElement('div');
-    centerCircle.style.cssText = `
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #1db954, #1ed760);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      z-index: 10;
-    `;
-    centerCircle.innerHTML = '🤖';
-    viewContainer.appendChild(centerCircle);
   }
 
   // Function to show subgenres
   function showSubgenres(familyName) {
     currentFamily = familyName;
     const family = musicFamilies[familyName];
+    setSubgenreLayout();
     viewContainer.innerHTML = '';
 
-    // Update breadcrumb
-    breadcrumb.innerHTML = `Main Categories > <span style="color: ${family.color}">${familyName}</span>`;
+    breadcrumb.textContent = '';
+    breadcrumb.appendChild(document.createTextNode('Main Categories > '));
+    const familyLabel = document.createElement('span');
+    familyLabel.style.color = family.color;
+    familyLabel.textContent = familyName;
+    breadcrumb.appendChild(familyLabel);
 
-    // Get subgenres first
     const subgenres = family.subgenres;
 
-    // Add search functionality for large subgenre lists
+    const toolbar = document.createElement('div');
+    toolbar.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    `;
+
+    const backButton = document.createElement('button');
+    backButton.type = 'button';
+    backButton.textContent = '← Back';
+    backButton.style.cssText = `
+      flex-shrink: 0;
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    backButton.addEventListener('click', () => {
+      currentFamily = null;
+      breadcrumb.textContent = 'Main Categories';
+      createFamilyButtons();
+    });
+    toolbar.appendChild(backButton);
+
+    let searchInput = null;
     if (subgenres.length > 20) {
       const searchContainer = document.createElement('div');
       searchContainer.className = 'search-container';
       searchContainer.style.cssText = `
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        height: 50px;
+        flex: 1;
+        height: 44px;
         display: flex;
         align-items: center;
-        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
-        border-radius: 25px;
+        background: #2a2a2a;
+        border-radius: 22px;
         border: 2px solid #333;
-        padding: 0 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
+        padding: 0 14px;
       `;
 
-      const searchInput = document.createElement('input');
-      searchInput.type = 'text';
-      searchInput.placeholder = `Search ${familyName} subgenres...`;
+      searchInput = document.createElement('input');
+      searchInput.type = 'search';
+      searchInput.placeholder = `Search ${familyName}...`;
       searchInput.style.cssText = `
         flex: 1;
         background: transparent;
@@ -1749,85 +1769,32 @@ function showMusicGenreModal() {
         color: #fff;
         font-size: 14px;
         outline: none;
-        padding: 0 10px;
       `;
-
-      const searchIcon = document.createElement('div');
-      searchIcon.innerHTML = '🔍';
-      searchIcon.style.cssText = `
-        font-size: 18px;
-        margin-right: 10px;
-        opacity: 0.7;
-      `;
-
-      searchContainer.appendChild(searchIcon);
       searchContainer.appendChild(searchInput);
-      viewContainer.appendChild(searchContainer);
-
-      // Store reference to search input for filtering
-      window.currentSearchInput = searchInput;
+      toolbar.appendChild(searchContainer);
     }
 
-    // Back button
-    const backButton = document.createElement('button');
-    backButton.innerHTML = '← Back';
-    backButton.style.cssText = `
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 14px;
-      z-index: 20;
+    viewContainer.appendChild(toolbar);
+
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'subgenre-grid-container';
+    gridContainer.style.cssText = `
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      padding: 12px;
+      max-height: 380px;
+      background: #1a1a1a;
+      border-radius: 14px;
+      border: 1px solid #333;
     `;
-    backButton.addEventListener('click', () => {
-      currentFamily = null;
-      breadcrumb.textContent = 'Main Categories';
-      createFamilyButtons();
-    });
-    viewContainer.appendChild(backButton);
 
-    // Create subgenre buttons with improved layout
-
-    // If there are too many subgenres, use a grid layout instead of circular
-    if (subgenres.length > 20) {
-      // Create a scrollable grid container with improved styling
-      const gridContainer = document.createElement('div');
-      gridContainer.className = 'subgenre-grid-container';
-      gridContainer.style.cssText = `
-        position: absolute;
-        top: 80px;
-        left: 20px;
-        right: 20px;
-        bottom: 20px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 15px;
-        padding: 20px;
-        max-height: 450px;
-        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-        border-radius: 20px;
-        border: 2px solid #333;
-        box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3);
-        scrollbar-width: thin;
-        scrollbar-color: #666 #333;
-        backdrop-filter: blur(10px);
-      `;
-
-      // Scrollbar and animation styles are now in styles.js
-
-      subgenres.forEach((subgenre) => {
+    subgenres.forEach((subgenre) => {
         const button = document.createElement('button');
+        button.type = 'button';
         button.className = 'subgenre-button subgenre-grid-button';
-        button.innerHTML = `
-          <div style="font-size: 12px; font-weight: bold; text-align: center; line-height: 1.2;">${subgenre}</div>
-        `;
+        button.textContent = subgenre;
 
         // Check if this subgenre is already selected
         const isAlreadySelected = selectedGenres.includes(subgenre);
@@ -1900,133 +1867,31 @@ function showMusicGenreModal() {
         gridContainer.appendChild(button);
       });
 
-      viewContainer.appendChild(gridContainer);
+    viewContainer.appendChild(gridContainer);
 
-      // Add search functionality after grid is created
-      if (window.currentSearchInput) {
-        window.currentSearchInput.addEventListener('input', (e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          const buttons = gridContainer.querySelectorAll('.subgenre-grid-button');
-
-          buttons.forEach(button => {
-            const subgenreText = button.textContent.toLowerCase();
-            if (subgenreText.includes(searchTerm)) {
-              button.classList.remove('hidden');
-              button.classList.add('visible');
-              button.style.display = 'flex';
-            } else {
-              button.classList.remove('visible');
-              button.classList.add('hidden');
-              setTimeout(() => {
-                if (button.classList.contains('hidden')) {
-                  button.style.display = 'none';
-                }
-              }, 300);
-            }
-          });
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const buttons = gridContainer.querySelectorAll('.subgenre-grid-button');
+        let visibleCount = 0;
+        buttons.forEach((button) => {
+          const match = button.textContent.toLowerCase().includes(searchTerm);
+          button.style.display = match ? 'flex' : 'none';
+          if (match) visibleCount += 1;
         });
-      }
-    } else {
-      // Use circular layout for smaller numbers of subgenres
-      const angleStep = 360 / subgenres.length;
-
-      subgenres.forEach((subgenre, index) => {
-        const button = document.createElement('button');
-        button.className = 'subgenre-button';
-        button.innerHTML = `
-        <div style="font-size: 14px; font-weight: bold;">${subgenre}</div>
-      `;
-
-        const angle = index * angleStep;
-        // Responsive radius for subgenres
-        const screenWidth = window.innerWidth;
-        const radius = screenWidth <= 480 ? 100 : screenWidth <= 768 ? 130 : 180;
-        const x = Math.cos(angle * Math.PI / 180) * radius;
-        const y = Math.sin(angle * Math.PI / 180) * radius;
-
-        // Check if this subgenre is already selected
-        const isAlreadySelected = selectedGenres.includes(subgenre);
-
-        button.style.cssText = `
-        position: absolute;
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: ${isAlreadySelected ? '3px solid #fff' : `2px solid ${family.color}`};
-        background: ${isAlreadySelected ? `linear-gradient(135deg, ${family.color}, ${family.color}cc)` : `linear-gradient(135deg, ${family.color}20, ${family.color}40)`};
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        transform: translate(${x}px, ${y}px) ${isAlreadySelected ? 'scale(1.05)' : 'scale(1)'};
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        box-shadow: ${isAlreadySelected ? `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)` : '0 4px 15px rgba(0, 0, 0, 0.3)'};
-        font-size: 12px;
-        text-align: center;
-        padding: 5px;
-      `;
-
-        button.addEventListener('mouseenter', () => {
-          if (!isAlreadySelected) {
-            button.style.transform = `translate(${x}px, ${y}px) scale(1.1)`;
-            button.style.boxShadow = `0 8px 25px ${family.color}50`;
+        let empty = gridContainer.querySelector('[data-spg-empty-search]');
+        if (visibleCount === 0) {
+          if (!empty) {
+            empty = document.createElement('div');
+            empty.dataset.spgEmptySearch = '1';
+            empty.style.cssText = 'grid-column: 1 / -1; color: #a7a7a7; text-align: center; padding: 20px;';
+            empty.textContent = 'No matching styles';
+            gridContainer.appendChild(empty);
           }
-        });
-
-        button.addEventListener('mouseleave', () => {
-          if (!isAlreadySelected) {
-            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-            button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)';
-          } else {
-            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
-            button.style.boxShadow = `0 12px 30px ${family.color}80, 0 6px 15px rgba(0, 0, 0, 0.4)`;
-          }
-        });
-
-        button.addEventListener('click', () => {
-          // Toggle selection
-          const isSelected = selectedGenres.includes(subgenre);
-
-          if (isSelected) {
-            // Remove from selection
-            selectedGenres = selectedGenres.filter(g => g !== subgenre);
-            button.style.background = `linear-gradient(135deg, ${family.color}20, ${family.color}40)`;
-            button.style.border = `2px solid ${family.color}`;
-            button.style.transform = `translate(${x}px, ${y}px) scale(1)`;
-          } else {
-            // Add to selection
-            selectedGenres.push(subgenre);
-            button.style.background = `linear-gradient(135deg, ${family.color}, ${family.color}cc)`;
-            button.style.border = `2px solid #fff`;
-            button.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
-          }
-
-          updateSelectedDisplay();
-        });
-
-        viewContainer.appendChild(button);
+        } else if (empty) {
+          empty.remove();
+        }
       });
-
-      // Center family icon
-      const centerCircle = document.createElement('div');
-      centerCircle.style.cssText = `
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, ${family.color}, ${family.color}cc);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      z-index: 10;
-    `;
-      centerCircle.innerHTML = family.icon;
-      viewContainer.appendChild(centerCircle);
     }
   }
 
@@ -3064,7 +2929,9 @@ function showMusicGenreModal() {
 
   // Close button
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = '✕';
+  closeButton.type = 'button';
+  closeButton.setAttribute('aria-label', 'Close');
+  closeButton.textContent = '✕';
   closeButton.style.cssText = `
     position: absolute;
     top: 15px;
