@@ -13,6 +13,7 @@
   "host_permissions": [
     "https://open.spotify.com/*",
     "https://accounts.spotify.com/*",
+    "https://api.spotify.com/*",
     "https://polar-ravine-64133-f97528c41675.herokuapp.com/*"
   ],
   "background": {

@@ -61,18 +61,11 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     // Show success notification (centralized component)
     window.spgNotify({
       type: 'success',
-      title: 'Songs Added!',
+      title: result.tracksAdded === result.totalTracks ? 'Songs Added!' : 'Partial add',
       body: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
       link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
+      autoClose: result.tracksAdded === result.totalTracks ? 5000 : 0,
     });
-
-    // Close the results modal after successful addition
-    setTimeout(() => {
-      const resultsModal = document.getElementById('playlist-results-modal');
-      if (resultsModal && resultsModal.parentNode) {
-        resultsModal.parentNode.removeChild(resultsModal);
-      }
-    }, 2000);
 
   } catch (error) {
     alert('Error adding songs to playlist: ' + errorMessage(error));
@@ -94,18 +87,11 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     // Show success notification (centralized component)
     window.spgNotify({
       type: 'success',
-      title: 'Playlist Created!',
+      title: result.tracksAdded === result.totalTracks ? 'Playlist Created!' : 'Playlist created with missing tracks',
       body: `${result.tracksAdded}/${result.totalTracks} songs added`,
       link: { href: result.playlistUrl, label: 'Open in Spotify \u2192' },
+      autoClose: result.tracksAdded === result.totalTracks ? 5000 : 0,
     });
-
-    // Close the results modal after successful creation
-    setTimeout(() => {
-      const resultsModal = document.getElementById('playlist-results-modal');
-      if (resultsModal && resultsModal.parentNode) {
-        resultsModal.parentNode.removeChild(resultsModal);
-      }
-    }, 2000); // Close after 2 seconds to let user see the success notification
 
   } catch (error) {
     alert('Error creating playlist: ' + errorMessage(error));
@@ -1020,6 +1006,9 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
         // Filter songs based on selection
         if (selectedSongs.size === 0) {
           alert('Please select at least one song to add to the playlist.');
+          return;
+        }
+        if (!window.confirm(`Add ${selectedSongs.size} song(s) to "${selectedPlaylistName}"? This cannot be undone from the extension.`)) {
           return;
         }
 
@@ -2772,18 +2761,11 @@ function showMusicGenreModal() {
         // Show success notification (centralized component)
         window.spgNotify({
           type: 'success',
-          title: 'Songs Added!',
+          title: result.tracksAdded === result.totalTracks ? 'Songs Added!' : 'Partial add',
           body: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
           link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
+          autoClose: result.tracksAdded === result.totalTracks ? 5000 : 0,
         });
-
-        // Close the results modal after successful addition
-        setTimeout(() => {
-          const resultsModal = document.getElementById('playlist-results-modal');
-          if (resultsModal && resultsModal.parentNode) {
-            resultsModal.parentNode.removeChild(resultsModal);
-          }
-        }, 2000);
 
       } catch (error) {
         alert('Error adding songs to playlist: ' + error.message);
@@ -2795,6 +2777,9 @@ function showMusicGenreModal() {
       // Filter songs based on selection
       if (selectedSongs.size === 0) {
         alert('Please select at least one song to add to the playlist.');
+        return;
+      }
+      if (!window.confirm(`Add ${selectedSongs.size} song(s) to the current playlist? This cannot be undone from the extension.`)) {
         return;
       }
 
