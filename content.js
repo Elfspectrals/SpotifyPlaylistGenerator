@@ -24,6 +24,30 @@ function isSpotifyEditorialPlaylistId(playlistId) {
   return typeof playlistId === 'string' && playlistId.startsWith('37i9');
 }
 
+function appendTextRow(parent, className, text) {
+  if (!text) return;
+  const row = document.createElement('div');
+  row.className = className;
+  row.textContent = text;
+  parent.appendChild(row);
+}
+
+function renderSongDetails(song) {
+  const wrap = document.createElement('div');
+  wrap.className = 'song-item-container';
+  const content = document.createElement('div');
+  content.className = 'song-item-content';
+  appendTextRow(content, 'song-title', song.title || '');
+  const artistLine = [song.artist, song.year ? `(${song.year})` : ''].filter(Boolean).join(' ');
+  appendTextRow(content, 'song-artist', artistLine);
+  if (song.album) appendTextRow(content, 'song-album', `📀 ${song.album}`);
+  const genreLine = [song.genre, song.description].filter(Boolean).join(' • ');
+  if (genreLine) appendTextRow(content, 'song-genre', genreLine);
+  if (song.duration) appendTextRow(content, 'song-duration', `⏱️ ${song.duration}`);
+  wrap.appendChild(content);
+  return wrap;
+}
+
 // Global function to add songs to existing playlist via API
 async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId, refreshToken = null) {
   try {
@@ -38,7 +62,7 @@ async function addSongsToExistingPlaylist(accessToken, playlistData, playlistId,
     window.spgNotify({
       type: 'success',
       title: 'Songs Added!',
-      body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist`,
+      body: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
       link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
     });
 
@@ -71,7 +95,7 @@ async function createSpotifyPlaylist(accessToken, playlistData, refreshToken = n
     window.spgNotify({
       type: 'success',
       title: 'Playlist Created!',
-      body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added`,
+      body: `${result.tracksAdded}/${result.totalTracks} songs added`,
       link: { href: result.playlistUrl, label: 'Open in Spotify \u2192' },
     });
 
@@ -445,17 +469,18 @@ function showChoosePlaylistModal() {
     border: 1px solid #444;
   `;
 
-  playlistInfo.innerHTML = `
-    <div style="color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
-      🎵 Current Playlist
-    </div>
-    <div style="color: #1db954; font-size: 16px; margin-bottom: 5px;">
-      Playlist ID: ${playlistId}
-    </div>
-    <div style="color: #999; font-size: 14px;">
-      AI-generated songs will be added to this playlist
-    </div>
-  `;
+  const infoTitle = document.createElement('div');
+  infoTitle.style.cssText = 'color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 10px;';
+  infoTitle.textContent = '🎵 Current Playlist';
+  const infoId = document.createElement('div');
+  infoId.style.cssText = 'color: #1db954; font-size: 16px; margin-bottom: 5px;';
+  infoId.textContent = `Playlist ID: ${playlistId || ''}`;
+  const infoHint = document.createElement('div');
+  infoHint.style.cssText = 'color: #999; font-size: 14px;';
+  infoHint.textContent = 'AI-generated songs will be added to this playlist';
+  playlistInfo.appendChild(infoTitle);
+  playlistInfo.appendChild(infoId);
+  playlistInfo.appendChild(infoHint);
 
   // Song count selector
   const songCountContainer = document.createElement('div');
@@ -884,36 +909,11 @@ function showPlaylistResultsForAdding(playlistData, playlistId) {
 
     const songContent = document.createElement('div');
     songContent.style.cssText = 'flex: 1;';
-    songContent.innerHTML = `
-      <div class="song-item-container">
-        <div class="song-item-content">
-          <div class="song-title">
-            ${song.title}
-          </div>
-          <div class="song-artist">
-            ${song.artist}${song.year ? ` (${song.year})` : ''}
-          </div>
-          ${song.album ? `
-          <div class="song-album">
-            📀 ${song.album}
-          </div>
-          ` : ''}
-          ${song.genre || song.description ? `
-          <div class="song-genre">
-            ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
-          </div>
-          ` : ''}
-          ${song.duration ? `
-          <div class="song-duration">
-            ⏱️ ${song.duration}
-          </div>
-          ` : ''}
-        </div>
-        <div class="song-number">
-          #${index + 1}
-        </div>
-      </div>
-    `;
+    songContent.appendChild(renderSongDetails(song));
+    const songNumber = document.createElement('div');
+    songNumber.className = 'song-number';
+    songNumber.textContent = `#${index + 1}`;
+    songContent.firstChild.appendChild(songNumber);
 
     songItem.appendChild(checkbox);
     songItem.appendChild(songContent);
@@ -2325,118 +2325,75 @@ function showMusicGenreModal() {
   // Function to update selected display
   function updateSelectedDisplay() {
     if (selectedGenres.length === 0) {
-      selectedDisplay.innerHTML = `
-        <div style="color: #999; text-align: center; font-style: italic;">
-          Select one or more music styles to create your AI playlist
-        </div>
-      `;
+      selectedDisplay.textContent = '';
+      const emptyHint = document.createElement('div');
+      emptyHint.style.cssText = 'color: #999; text-align: center; font-style: italic;';
+      emptyHint.textContent = 'Select one or more music styles to create your AI playlist';
+      selectedDisplay.appendChild(emptyHint);
       createButton.style.opacity = '0.5';
       createButton.style.pointerEvents = 'none';
     } else {
-      const genreElements = selectedGenres.map(genre => {
-        // Find which family this genre belongs to
-        let familyData = null;
-        let familyName = '';
+      selectedDisplay.textContent = '';
+      const heading = document.createElement('div');
+      heading.style.cssText = 'color: #fff; margin-bottom: 10px; font-weight: bold;';
+      heading.textContent = `Selected Styles (${selectedGenres.length}):`;
+      const chips = document.createElement('div');
 
-        for (const [family, data] of Object.entries(musicFamilies)) {
+      selectedGenres.forEach((genre) => {
+        let familyData = null;
+        for (const data of Object.values(musicFamilies)) {
           if (data.subgenres.includes(genre)) {
             familyData = data;
-            familyName = family;
             break;
           }
         }
 
-        if (familyData) {
-          return `
-            <div style="
-              display: inline-flex;
-              align-items: center;
-              background: ${familyData.color}20;
-              color: ${familyData.color};
-              padding: 8px 15px;
-              margin: 5px;
-              border-radius: 20px;
-              border: 1px solid ${familyData.color};
-              font-size: 14px;
-              font-weight: bold;
-              position: relative;
-            ">
-              <span>${familyData.icon} ${genre}</span>
-              <button class="remove-genre-btn" data-genre="${genre}" style="
-                background: #e74c3c;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 20px;
-                height: 20px;
-                margin-left: 8px;
-                cursor: pointer;
-                font-size: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s ease;
-              " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">×</button>
-            </div>
-          `;
-        } else {
-          // Fallback for unknown genres
-          return `
-            <div style="
-              display: inline-flex;
-              align-items: center;
-              background: #66620;
-              color: #666;
-              padding: 8px 15px;
-              margin: 5px;
-              border-radius: 20px;
-              border: 1px solid #666;
-              font-size: 14px;
-              font-weight: bold;
-              position: relative;
-            ">
-              <span>🎵 ${genre}</span>
-              <button class="remove-genre-btn" data-genre="${genre}" style="
-                background: #e74c3c;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 20px;
-                height: 20px;
-                margin-left: 8px;
-                cursor: pointer;
-                font-size: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s ease;
-              " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">×</button>
-            </div>
-          `;
-        }
-      }).join('');
-
-      selectedDisplay.innerHTML = `
-        <div style="color: #fff; margin-bottom: 10px; font-weight: bold;">
-          Selected Styles (${selectedGenres.length}):
-        </div>
-        <div>${genreElements}</div>
-      `;
-
-      // Add event listeners to remove buttons
-      selectedDisplay.querySelectorAll('.remove-genre-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
+        const chip = document.createElement('div');
+        const color = familyData ? familyData.color : '#666';
+        chip.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          background: ${color}20;
+          color: ${color};
+          padding: 8px 15px;
+          margin: 5px;
+          border-radius: 20px;
+          border: 1px solid ${color};
+          font-size: 14px;
+          font-weight: bold;
+        `;
+        const label = document.createElement('span');
+        label.textContent = `${familyData ? familyData.icon : '🎵'} ${genre}`;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-genre-btn';
+        removeBtn.setAttribute('aria-label', `Remove ${genre}`);
+        removeBtn.textContent = '×';
+        removeBtn.style.cssText = `
+          background: #e74c3c;
+          color: #fff;
+          border: none;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          margin-left: 8px;
+          cursor: pointer;
+          font-size: 12px;
+        `;
+        removeBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const genreToRemove = button.getAttribute('data-genre');
-          selectedGenres = selectedGenres.filter(genre => genre !== genreToRemove);
-
-          // Update the visual state of the subgenre button in the circle
-          updateSubgenreButtonVisualState(genreToRemove);
-
+          selectedGenres = selectedGenres.filter((item) => item !== genre);
+          updateSubgenreButtonVisualState(genre);
           updateSelectedDisplay();
         });
+        chip.appendChild(label);
+        chip.appendChild(removeBtn);
+        chips.appendChild(chip);
       });
+
+      selectedDisplay.appendChild(heading);
+      selectedDisplay.appendChild(chips);
 
       createButton.style.opacity = '1';
       createButton.style.pointerEvents = 'auto';
@@ -2656,36 +2613,11 @@ function showMusicGenreModal() {
 
       const songContent = document.createElement('div');
       songContent.style.cssText = 'flex: 1;';
-      songContent.innerHTML = `
-        <div class="song-item-container">
-          <div class="song-item-content">
-            <div class="song-title">
-              ${song.title}
-            </div>
-            <div class="song-artist">
-              ${song.artist}${song.year ? ` (${song.year})` : ''}
-            </div>
-            ${song.album ? `
-            <div class="song-album">
-              📀 ${song.album}
-            </div>
-            ` : ''}
-            ${song.genre || song.description ? `
-            <div class="song-genre">
-              ${song.genre ? song.genre : ''}${song.genre && song.description ? ' • ' : ''}${song.description ? song.description : ''}
-            </div>
-            ` : ''}
-            ${song.duration ? `
-            <div class="song-duration">
-              ⏱️ ${song.duration}
-            </div>
-            ` : ''}
-          </div>
-          <div class="song-number">
-            #${index + 1}
-          </div>
-        </div>
-      `;
+      songContent.appendChild(renderSongDetails(song));
+      const songNumber = document.createElement('div');
+      songNumber.className = 'song-number';
+      songNumber.textContent = `#${index + 1}`;
+      songContent.firstChild.appendChild(songNumber);
 
       songItem.appendChild(checkbox);
       songItem.appendChild(songContent);
@@ -2841,7 +2773,7 @@ function showMusicGenreModal() {
         window.spgNotify({
           type: 'success',
           title: 'Songs Added!',
-          body: `<strong>${result.tracksAdded}/${result.totalTracks}</strong> songs added to your playlist`,
+          body: `${result.tracksAdded}/${result.totalTracks} songs added to your playlist`,
           link: { href: result.playlistUrl, label: 'Open Playlist \u2192' },
         });
 

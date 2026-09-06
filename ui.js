@@ -57,7 +57,7 @@
     });
     toast.appendChild(head);
 
-    if (body) toast.appendChild(el('div', { className: 'spg-toast__body', html: body }));
+    if (body) toast.appendChild(el('div', { className: 'spg-toast__body', text: String(body).replace(/<[^>]+>/g, '') }));
 
     if (link && link.href) {
       toast.appendChild(el('a', {
